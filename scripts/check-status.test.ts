@@ -138,12 +138,59 @@ describe("checkStatus", () => {
       ["48-line", []],
       ["rowspan", []],
       ["5 rowers", []],
-      ["1,50 rows", []],
+      ["1,50 rows", ["50 rows"]],
       ["v1.5 KB", []],
       ["5 row2", []],
+      ["9,876,543.25-ToKeNs", ["9,876,543.25-ToKeNs"]],
+      ["1 byte, 2 BYTES, 3 KB, 4 kB", ["1 byte", "2 BYTES", "3 KB", "4 kB"]],
+      ["1 row, 2-ROWS, 1 token, 2 tOkEnS", ["1 row", "2-ROWS", "1 token", "2 tOkEnS"]],
+      ["#151, 2026-11-24, DQ-570, §7 step 6, Q1 A, PR 5, M2b, fa19669", []],
+      ["15 words, 1 MB, 48-line, rowspan, 5 rowers", []],
+      ["[#151](https://example.invalid/pull/151) and `fa19669` and `15 words`", []],
+      ["[12 rows](record.md) and `4 KB`", ["12 rows", "4 KB"]],
+      ["[guide](docs/v2/151) and `issue/151`", []],
+      ["bytes: 89,987 and 90 MB and 12 lines and 55 issues", []],
+      ["1.5 tokens (last line, no newline)", ["1.5 tokens"]],
+      ["_1.5 tokens_ and **90 KB**", ["1.5 tokens", "90 KB"]],
+      ["result,12 rows", ["12 rows"]],
+      ["12 rows", ["12 rows"]],
+      ["80,000 bytes", ["80,000 bytes"]],
+      ["PR #151,90 KB", ["90 KB"]],
+      ["DQ-570,90 KB", ["90 KB"]],
+      ["1,,50 rows", ["50 rows"]],
+      ["10..12 rows", ["12 rows"]],
+      ["10...12 rows", ["12 rows"]],
+      [
+        "| Move §2 to §4 (the milestone view, the PR register and the old snapshots) and the prevention actions of `docs/delivery-quality.md` to files of their own, and keep the 80,000-byte limit (owner, 2026-11-24). It changes `AGENTS.md` §9, so its plan comes first | [#151](https://github.com/binhle312/cty1ng/pull/151): the ledger is still above 80,000 bytes after the move | A PR after #151, with a plan that the owner approves |",
+        ["80,000-byte", "80,000 bytes"],
+      ],
     ];
-    for (const [input, measures] of cases) {
-      const problems = checkStatus({ merged: [], statusMd: `${status([])}${input}`, since: SINCE });
+    const probeMeasures = [
+      "78 rows",
+      "90 KB",
+      "1.5 tokens",
+      "89,987 bytes",
+      "80,000-byte",
+      "1 byte",
+      "3 Bytes",
+      "12 row",
+      "120,000 tokens",
+      "1 token",
+      ".5 KB",
+    ];
+    const separators = ["\t", "/", ")(", '"', "|", ":", " ", ", ", ",", ";", "]["];
+    const casesByInput = new Map(cases);
+    for (const separator of separators) {
+      for (const first of probeMeasures) {
+        for (const second of probeMeasures) {
+          const input = first + separator + second;
+          if (!casesByInput.has(input)) casesByInput.set(input, [first, second]);
+        }
+      }
+    }
+    const notes = `${status([])}## Notes\n\n`;
+    for (const [input, measures] of casesByInput) {
+      const problems = checkStatus({ merged: [], statusMd: notes + input, since: SINCE });
       const quotedMeasures = problems.map((problem) => problem.match(/"([^"]+)"/)?.[1]);
       expect.soft(quotedMeasures, input).toEqual(measures);
     }
