@@ -1,0 +1,25 @@
+{
+  "claims": [],
+  "exempt": [
+    {
+      "file": "scripts/check-status.test.ts",
+      "name": "rejects a typed byte count",
+      "reason": "test first: red run in the PR"
+    },
+    {
+      "file": "scripts/check-status.test.ts",
+      "name": "rejects a typed row or token count",
+      "reason": "test first: red run in the PR"
+    },
+    {
+      "file": "scripts/check-status.test.ts",
+      "name": "names the line number and the measure",
+      "reason": "test first: red run in the PR"
+    },
+    {
+      "file": "scripts/check-status.test.ts",
+      "name": "permits numbers that are not measures",
+      "reason": "test first: red run in the PR"
+    }
+  ]
+}

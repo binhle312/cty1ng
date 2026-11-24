@@ -1,7 +1,7 @@
 // The checks behind `pnpm check:status`: each PR merged into `main` on or after SINCE has a link
 // in a row of the Done table of docs/status.md. A PR cannot record its own merge, so the next PR
-// adds the row (workflows/pull-request.md, "Before each push", step 6). Pure: the caller reads
-// the git history and the file.
+// adds the row (workflows/pull-request.md, "Before each push", step 6). The check also rejects
+// typed measures in docs/status.md. Pure: the caller reads the git history and the file.
 
 // The start date. The code work starts on 2026-10-30 (M0, #45), and from #45 each PR merges with
 // a merge commit; the specification PRs before it are recorded in grouped rows
@@ -50,6 +50,20 @@ export function doneRows(statusMd: string): { prs: Set<number>; problems: string
   return { prs, problems };
 }
 
+function typedMeasureProblems(statusMd: string): string[] {
+  const measure = /\b\d+(?:,\d{3})*(?:\.\d+)?[ -](?:bytes?|kb|rows?|tokens?)\b/gi;
+  const problems: string[] = [];
+  for (const [index, line] of statusMd.split("\n").entries()) {
+    for (const [text] of line.matchAll(measure)) {
+      problems.push(
+        `docs/status.md:${index + 1}: typed measure "${text}". ` +
+          "link to the record or the rule that owns the value (One home for each fact, `docs/workflows/pull-request.md`)",
+      );
+    }
+  }
+  return problems;
+}
+
 export function checkStatus(input: {
   merged: readonly Merged[];
   statusMd: string;
@@ -63,5 +77,5 @@ export function checkStatus(input: {
         `#${m.pr} (merged ${m.date}, ${m.sha.slice(0, 7)}) has no Done row in docs/status.md. ` +
         `Add: | ${m.date} | [#${m.pr}](${PULL_LINK}${m.pr}) merged. |`,
     );
-  return [...done.problems, ...missing];
+  return [...done.problems, ...missing, ...typedMeasureProblems(input.statusMd)];
 }

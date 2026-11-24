@@ -102,6 +102,51 @@ describe("doneRows", () => {
 });
 
 describe("checkStatus", () => {
+  it("rejects a typed byte count", () => {
+    const statusMd = `${status([])}89,987 bytes; 80,000-byte; 1 byte; 3 Bytes; 90 KB`;
+    const problems = checkStatus({ merged: [], statusMd, since: SINCE });
+    expect(problems, "byte measures").toEqual([
+      expect.stringContaining('"89,987 bytes"'),
+      expect.stringContaining('"80,000-byte"'),
+      expect.stringContaining('"1 byte"'),
+      expect.stringContaining('"3 Bytes"'),
+      expect.stringContaining('"90 KB"'),
+    ]);
+  });
+
+  it("rejects a typed row or token count", () => {
+    const statusMd = `${status([])}78 rows; 12 row; 120,000 tokens; 1.5 tokens`;
+    const problems = checkStatus({ merged: [], statusMd, since: SINCE });
+    expect(problems, "row and token measures").toEqual([
+      expect.stringContaining('"78 rows"'),
+      expect.stringContaining('"12 row"'),
+      expect.stringContaining('"120,000 tokens"'),
+      expect.stringContaining('"1.5 tokens"'),
+    ]);
+  });
+
+  it("names the line number and the measure", () => {
+    const statusMd = "# Status\n\n## Follow-ups\n1 row and 2 tokens\n\n## Done\n\n3 bytes";
+    const problems = checkStatus({ merged: [], statusMd, since: SINCE });
+    const fix =
+      "link to the record or the rule that owns the value (One home for each fact, `docs/workflows/pull-request.md`)";
+    expect(problems, "measure locations and fix").toEqual([
+      `docs/status.md:4: typed measure "1 row". ${fix}`,
+      `docs/status.md:4: typed measure "2 tokens". ${fix}`,
+      `docs/status.md:8: typed measure "3 bytes". ${fix}`,
+    ]);
+  });
+
+  it("permits numbers that are not measures", () => {
+    const statusMd =
+      `${status([])}#151, 2026-11-24, DQ-570, §7 step 6, Q1 A, PR 5, M2b, fa19669, ` +
+      "15 words, 1 MB, 48-line, rowspan, 5 rowers. Control: 12 rows.";
+    const problems = checkStatus({ merged: [], statusMd, since: SINCE });
+    expect(problems, "only the control is a measure").toEqual([
+      expect.stringContaining('"12 rows"'),
+    ]);
+  });
+
   it("gives the row to add for a merged PR with no Done row", () => {
     const merged = mergedPrs(merge(125, "2026-11-18"));
     expect(checkStatus({ merged, statusMd: status([]), since: SINCE }), "missing row").toEqual([

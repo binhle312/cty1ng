@@ -66,6 +66,7 @@ states no state, count or result that a file or a tool owns:
     or a no is true, or that a decision named in a step exists.
 - A `docs/status.md` line of a PR has its state, its date and its link. It has no list of files, no
   count and no claim that a test or a row owns.
+  `pnpm check:status` fails on a typed measure. Its units are in `scripts/lib/check-status.ts`.
 - The results of a script live in its output. The PR body pastes the output unchanged, with the
   commit that it names. It does not retype numbers from it. `pnpm check:breaks --report <file>`
   writes such a report.
