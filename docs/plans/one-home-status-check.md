@@ -12,6 +12,8 @@ owner's decisions in it: Q1 A, Q3 A and the words of design step 4.
 Revision 2, owner, 2026-11-24, answer "A" to R1-F4 of the review of the build (a scratch break of the
 singular `token` passed all tests; same cause in kind as DQ-856): the break list proves each part of
 the pattern with a break, in place of the exemptions.
+Revision 3, owner, 2026-11-24, answer "A" to R2-F1 of the review of the fixes (the fix of R1-F1 made
+`78 rows,90 KB` give one problem in place of two; same cause as DQ-470): one table of cases.
 
 ## Goal
 
@@ -107,6 +109,19 @@ that each break makes its test fail.
   and the letter and digit look-arounds (emphasis, `rowspan`, `5 rowers`).
 - The test of each part has a case that the break makes fail. If a part has no such case, the
   builder adds the case first (for example `1 token`).
+
+One table of cases (revision 3) holds each input of the table below and each input that a review
+found. Each row gives the input and the measures that the check must quote, or none. One test runs
+each row, with the input as the label of its result.
+
+- Measures with each separator before and after: a space, a comma with and without a space
+  (`78 rows,90 KB`), a semicolon, brackets, Markdown emphasis (`_12 rows_`, `__80,000-byte__`,
+  `*12 rows*`), the start and the end of the line.
+- The leading decimal (`.5 KB`).
+- Inputs that are not measures: the inputs of the row "Other numbers pass", and a comma inside a
+  number that is not a comma group (`1,50 rows`).
+- A pattern change keeps each row. The builder runs the table on the code before each pattern
+  change, and records each row that changes its result.
 
 | Behaviour | Test (`scripts/check-status.test.ts`) | Cases beyond the normal path |
 |---|---|---|
