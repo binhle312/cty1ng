@@ -149,8 +149,8 @@ fails it. Research IDs in the Rule column refer to `research.md` (next to this f
 **R8.1 scope fields.** Each question says why it is the reader's decision, what is settled, and what only the answer changes (SKILL.md step 3).
 
 **Known limits** (owner, 2026-11-24: keep the kit simple). The 160-word option count can be lower
-than the visible text. It leaves out the option letter, the "My pick" badge and the summary line of
-a closed option Details, which has no word limit. In the text files, two `**` markers outside code
+than the visible text. It leaves out the option letter, the shortcut number, the "My pick" badge and
+the summary line of a closed option Details, which has no word limit. In the text files, two `**` markers outside code
 in two cells of one table row (header or data) can pair across the cells. The export then drops
 both markers.
 
