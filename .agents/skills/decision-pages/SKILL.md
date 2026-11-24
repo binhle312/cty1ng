@@ -85,6 +85,10 @@ others are yours.
    gain, cost and risk. Remove an option that asks the reader to approve a settled point, that
    only defends your own earlier change, or that offers a difference the sources do not show.
    List each removed option and why in `removed`.
+
+   Then challenge each question before you write it: what stays open after the settled points,
+   and which source makes it the reader's decision? If nothing stays open, drop the question.
+   If you are not sure, run the source review of step 7 on this list now, before you write.
 4. **Write the content file** in the format of `references/content-format.md`, with the writing rules
    below. Put the conclusion in the ask and the evidence in the facts and table. Put the use
    case in the example and the story in Details.
@@ -97,12 +101,15 @@ others are yours.
    flagged sentence that stays: fixed text, a technical name, or accuracy. If the checker is not
    installed, tell the person, and apply the rules by hand.
 7. **Get a source review.** A reviewer of the same or a stronger model than yours, read-only,
-   gets the `--text` file and the paths of the sources behind each question. For each question it
+   gets the content file, the question files of step 5 (`page.q1.txt`, ...) and the paths of the
+   sources behind each question. The question files show what each screen shows; the content
+   file shows the option keys, the pick and the Details. For each question it
    answers: whose decision is it, and which source says so; what do the sources already settle;
    does an option ask for an approval that the sources do not give, or offer a difference that
    does not exist; does the question say what is settled and what only the answer changes. It
    ends with `VALID` or `INVALID` for each question. Fix each point, or answer it in writing in
-   your report. A page reader cannot find a wrong question; only a reader of the sources can.
+   your report. In a test on two rejected pages, a reader of the page alone missed an option that
+   needed an approval nobody gave; a reader of the sources found it.
 8. **Test each question screen alone.** Step 5 also writes `page.q1.txt`, `page.q2.txt` and so
    on: the text of one question screen, with its Details closed. Give each file, and nothing
    else, to a new agent session that did not see your work. Ask it to write "NOT ON THE SCREEN"
@@ -118,11 +125,13 @@ others are yours.
 
    Compare its answers with what you know. Each answer that it cannot give, or gives wrong, is a
    missing fact on that screen: add it, then build and check again. The step is done when
-   answers 1, 2, 4 and 5 are right and answer 6 names no option. If you cannot start a new
-   session, tell the person that this test did not run.
+   answers 1 to 5 are right, answer 3 gives the purpose (and both versions for a choice about
+   words), and answer 6 names no option. If you cannot start a new session, tell the person that
+   this test did not run.
 9. **Verify:** `NODE_PATH=<node_modules that has @playwright/test> node scripts/verify.mjs content.json page.html`.
-   The step is done when the last line says `0 failed`.
-10. **Look at the screenshots** that verify writes (`-overview`, `-q1`, `-finish`, `-q1-dark`).
+   The step is done when the command exits with status 0 and its summary line says `0 failed`.
+10. **Look at the screenshots** that verify writes: `-overview`, `-q1`, `-finish` and `-q1-dark`
+   for a page with questions, and only `-overview` for a report page.
    Blur your eyes: you must see, in order, the title, the ask, the pick box and the options.
    Fix what one look shows, then build and verify again.
 11. **Run the pre-send checklist** at the end of this guide, then send the page.
@@ -216,10 +225,10 @@ next page, and add the case to the step that should have found it.
 - [ ] The STE checker gave 80% or more on the `--text` file of step 5, or you told the person that it is not installed.
 - [ ] Each question has `owner`, `settled` and `decides`, and each option has `does`; no option asks for a settled point.
 - [ ] A source review ran; each of its points is fixed or answered in your report.
-- [ ] A new session passed the 6 questions of step 8 on each question screen alone, or you told the person that the test did not run.
+- [ ] A new session passed step 8 on each question screen alone (answers 1 to 5 right, answer 6 names no option), or you told the person that the test did not run.
 - [ ] The overview says what happened and why it needs the reader now.
 - [ ] Each choice about words quotes the old and the new words, with the file and the section.
-- [ ] You looked at all four screenshots after the last change, in light and dark.
+- [ ] You looked at each screenshot of step 10 after the last change.
 - [ ] Each title is a question, and each ask starts the decision in line 1.
 - [ ] Each option has a real gain; no straw man is left.
 - [ ] Each pick has its confidence, its margin when close, and "Pick another if".
