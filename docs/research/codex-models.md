@@ -144,18 +144,19 @@ worker and on the difficulty.
 
 | Task | Worker | Reviewer |
 | --- | --- | --- |
-| A focused task with a clear result: written steps, small edits, an extraction, a summary | `gpt-6-luna` at `high` | `gpt-6.2-sol` at `high` |
 | Screens and images: compare a screenshot with a design, read a chart | `gpt-6.1-terra` at `medium` | `gpt-6.2-sol` at `high` |
 | Everyday code and judgment: a bug fix, a feature, a proof, a fix after a review, security | `gpt-6.2-sol` at `high` | `gpt-6.2-astra` at `high` |
 | The cause or the design is not known at the start: a bug across modules, open trade-offs | `gpt-6.2-astra` at `high` | A new `gpt-6.2-astra` session at `high` |
 
+No row for Luna (owner, 2026-11-24): "remove luna from the selection, if the task is luna level
+simple, leader should do it by itself". The lead agent does a focused task with a clear result
+itself. The evidence about Luna above stays, for a later choice.
+
 Where this changes an earlier rule of the owner:
 
-1. **Terra.** The owner's rule of 2026-11-23 used Terra for easy tasks with written steps. OpenAI
-   gives that work to Luna, at one tenth of Terra's credits, and gives Terra the work with
-   screens, images and apps.
-2. **The effort of Luna.** OpenAI says to start Luna at `high` (S1, S9).
-3. **Astra as a worker.** The owner's rule gave each hard task to Sol. OpenAI gives the hardest
+1. **Terra.** The owner's rule of 2026-11-23 used Terra for easy tasks with written steps. That
+   work now stays with the lead agent. OpenAI gives Terra the work with screens, images and apps.
+2. **Astra as a worker.** The owner's rule gave each hard task to Sol. OpenAI gives the hardest
    work to Astra. On one coding benchmark Sol is within 0.5 points of Astra at one fifth of the
    cost, so Sol stays the worker for most code.
 
