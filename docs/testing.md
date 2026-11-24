@@ -313,6 +313,8 @@ the value at run time, for example `["sk", "proj", "abcdefghijklmnop1234"].join(
 a short value that the guard catches and a scanner does not (lesson
 `no-real-looking-secrets-in-tests.md`).
 
+**Check tests.** Give each failure path in a check test its own message.
+
 **Timed tests** (owner, 2026-11-18, q5 Q5 A). A test that checks that work is fast (so that a
 catastrophic regular expression or a quadratic loop is caught) times it with `fastestRun` or
 `fastestRunAsync` of `backend/test/timed.ts`, never with one run and `performance.now`. One slow run
