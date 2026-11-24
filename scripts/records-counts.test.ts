@@ -148,7 +148,10 @@ function text(all: LedgerFile[], path: string): string {
   return all.find((f) => f.path === path)?.text ?? "";
 }
 
-function withSplitLedger(fixture: Fixture, run: (dir: string) => void, prevention = ""): void {
+function withSplitLedger(
+  { fixture, prevention = "" }: { fixture: Fixture; prevention?: string },
+  run: (dir: string) => void,
+): void {
   const all = files(fixture);
   const main = text(all, MAIN);
   const start = main.indexOf("## 2. Milestone view");
@@ -179,7 +182,7 @@ describe("records:counts", () => {
     const fixture = onePr({
       registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
     });
-    withSplitLedger(fixture, (dir) => {
+    withSplitLedger({ fixture }, (dir) => {
       const result = runCounts(dir, "--write");
       expect(result.status, result.stderr).toBe(0);
       expect(readFileSync(join(dir, REGISTER), "utf8"), "the corrected register row").toContain(
@@ -197,14 +200,10 @@ describe("records:counts", () => {
       registerRows: [register({ pr: 10, cells: ["2 (DQ-002, DQ-853)", "1 (DQ-002)", "0", "1"] })],
       issues: [row, issue({ id: 2, pr: 10, state: "open" })],
     });
-    withSplitLedger(
-      fixture,
-      (dir) => {
-        const result = runCounts(dir);
-        expect(result.status, result.stderr).toBe(0);
-      },
-      "An earlier paper jam (DQ-001).\n",
-    );
+    withSplitLedger({ fixture, prevention: "An earlier paper jam (DQ-001).\n" }, (dir) => {
+      const result = runCounts(dir);
+      expect(result.status, result.stderr).toBe(0);
+    });
   });
 });
 
