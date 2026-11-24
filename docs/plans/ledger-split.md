@@ -138,6 +138,10 @@ Approved by the owner on 2026-11-24 ("Approve as written"), with three more answ
   criterion of "Done means".
 - **Rows over 600 bytes** ("May stay over"): a row that is already over 600 bytes may stay over
   when this PR edits it. This PR does not shorten rows by hand (DQ-868).
+- **Evidence of the closed rows** (owner, 2026-11-24, "Short pointer, may pass 600"): DQ-854,
+  DQ-855 and DQ-856 were under 600 bytes. Each keeps all its old text and adds only "Fixed in
+  `d6f2d2a`; tests and proof in the #153 description", and may pass 600 bytes with it. The test
+  names are in the PR description.
 - **DQ-578** ("Home: Unicode PR"): this PR changes only its home text, to the next PR that changes
   `check:status`: the one for the Unicode misses of the typed-measure check (FR-F5, FR-F6 of
   #151, a row in the Follow-ups of `docs/status.md`). #151 changed `check:status` and did not
