@@ -8,10 +8,8 @@ then the leader can spawn codex workers", then "let do A" (both skills have the 
 `leader` names the file of `codex-workers` to read).
 Checkpoint: plan. The skill sets the roles of the owner, the lead agent and the workers, so the
 owner approves this plan before the build.
-Approval: waiting. Revision 2 (2026-11-24) adds the owner's answers and notes of 2026-11-24
-(section "The owner's answers"). Revision 3 (2026-11-24) adds the owner's decision to remove
-Luna: the lead agent does a Luna-level task itself. The owner approves revision 3 before the
-build.
+Approval: owner, 2026-11-24, revision 3 ("Approve revision 3 as written"). Revision 2 added the
+owner's answers and notes of 2026-11-24; revision 3 added the owner's decision to remove Luna.
 
 ## Goal
 
@@ -152,13 +150,11 @@ The owner's words, from the question page of revision 1:
 5. After revision 2: "remove luna from the selection, if the task is luna level simple, leader
    should do it by itself". Built in #149 (`3f55b5a`).
 
+6. On the page of revision 3: Q1 A, "Approve revision 3 as written"; Q2 A, "Yes, in the next
+   review round" (a different agent reviews the lead agent's small change); Q3 A, "A worker: keep
+   the 5-line rule" (a simple code change of 5 lines or more goes to a worker); Q4 A, "Accept both
+   changes" (the model table of #149); Q5 A, "high, as the table has it" (a Sol reviewer).
+
 ## Open questions
 
-1. **Revision 3.** Does the owner approve this revision, with items 6, 7 and 8 of "What the skill
-   holds"?
-2. **A review for the lead agent's small change.** The plan sends it to the different reviewer in
-   the next review round. The other choice: no review for a change of fewer than 5 lines.
-3. **A simple code change of 5 lines or more.** Luna's work included small edits, and the 5-line
-   rule sends a code change of 5 lines or more to a worker. The plan keeps the 5-line rule for
-   code: a simple change of 20 lines goes to a Sol worker. The other choice: the lead agent makes
-   each simple code change itself, and the 5-line rule ends.
+None. The owner answered each question on 2026-11-24.

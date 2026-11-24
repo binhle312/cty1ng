@@ -77,7 +77,7 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 | `p3-timed-tests.md` | DQ-805, the redesign of timed tests (owner's q5 Q5 A), built in #137 | Owner, 2026-11-18, q5 Q5 A (the design); plan review: lead agent; owner review pending |
 | `p3-clock-one-timer.md` | DQ-537, a check that the app keeps one clock timer | Lead agent, 2026-11-18, against the owner's answer q5 Q4 A; owner review pending |
 | `p3-records-counts.md` | Owner's answers q4 Q3 A and Q6 A: one home for record facts; a records script writes the counts | Plan OK by the lead agent, 2026-11-18, against the owner's answers q4 Q3 A and Q6 A, revision 5; revision 6: owner, 2026-11-19, morning Q4 A, plan OK by the lead agent; owner review pending |
-| `leader-skill.md` | The `leader` skill: the owner starts the lead agent with `/leader <task>` | Owner's answers and the Luna decision of 2026-11-24 in revision 3; waiting for the owner's approval of revision 3 (plan checkpoint) |
+| `leader-skill.md` | The `leader` skill: the owner starts the lead agent with `/leader <task>` | Owner, 2026-11-24, revision 3 (plan checkpoint) |
 
 If the task names a plan, open it. Otherwise, find the slice in [status.md](../status.md), then open its plan.
 For current behaviour, read the owning documents.
