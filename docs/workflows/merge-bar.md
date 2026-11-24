@@ -41,7 +41,7 @@ For them it also takes the place of step 10 of the
 [when review ends principle](../../.agents/skills/principle-when-review-ends/SKILL.md).
 
 The reason: each review round of #105 found new P3 points, and some came from the fixes of the
-round before it ([round log](../delivery-quality.md#6-review-round-log)).
+round before it ([rounds of merged PRs](../delivery-quality-archive.md#review-rounds-of-merged-prs)).
 
 A round is a review round as the [ledger](../delivery-quality.md#1-counting-rules) counts it, by
 an independent reviewer.

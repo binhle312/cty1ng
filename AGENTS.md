@@ -184,6 +184,9 @@ Only the owner's own messages to the agent supply the approvals in this section.
   (owner, 2026-11-10); for an environment variable or a config value, next to the rule that uses
   it. Code reads the value from the setting or the variable, and tests set it. Only invariants
   and security checks stay fixed in code: they are rules, not settings.
+- **One home** (owner, 2026-11-24): a fact, rule, value or code block
+  lives in one place. Other places link to it. For PR records, see
+  [One home for each fact](docs/workflows/pull-request.md#one-home-for-each-fact).
 - Commits: small, imperative subject line (`Add skill version pinning`), body explains why.
 - One task slice per branch: `m1-skill-hub`, `m3-chat-one-bot`, …
 - Open every PR as a draft, and leave it a draft. The owner marks it Ready right before the merge

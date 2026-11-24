@@ -358,7 +358,7 @@ Prettier, `tsc`, dependency-cruiser import rules (D35), Vitest, `db:check` (Driz
 `check:index` (folder indexes complete, `architecture.md` §4.2), `check:status` (each PR merged into `main` since the start date in
 `scripts/lib/check-status.ts` has a link in a Done row of `docs/status.md`; it reads the merges of
 `HEAD^1`: the base of the PR's test merge, or `main` before the merge on a push, so a PR never needs
-its own row), `records:counts` (the Audit row of `delivery-quality.md` §2 and the count cells of
+its own row. It also rejects typed measures in `docs/status.md`), `records:counts` (the Audit row of `delivery-quality.md` §2 and the count cells of
 each `Ledger` row of its register are what the ledger rows give; the ledger tables are whole, each
 row has the cells of its header, each id has one row, and each row from DQ-853 on that is not
 `withdrawn` holds its `Same cause` answer: its search pattern finds each id that it cites, and a yes
