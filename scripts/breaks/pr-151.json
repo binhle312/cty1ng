@@ -1,0 +1,385 @@
+{
+  "claims": [
+    {
+      "id": "byte-measures",
+      "claim": "Reports byte and KB measures, including hyphens, comma groups and leading decimals.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "rejects a typed byte count"
+      },
+      "assertion": "expect(problems, \"byte measures\").toEqual([",
+      "breaks": [
+        {
+          "id": "drop-byte",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "bytes?",
+              "replace": "bytes"
+            }
+          ]
+        },
+        {
+          "id": "drop-bytes",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "bytes?",
+              "replace": "byte"
+            }
+          ]
+        },
+        {
+          "id": "drop-kb",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "kb|",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "drop-hyphen",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "[ -]",
+              "replace": " "
+            }
+          ]
+        },
+        {
+          "id": "drop-comma-group",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?:,\\d{3})*",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "drop-leading-decimal",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "|\\.\\d+",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "row-and-token-measures",
+      "claim": "Reports singular and plural row and token counts, decimal token counts and a row count in underscore emphasis.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "rejects a typed row or token count"
+      },
+      "assertion": "expect(problems, \"row and token measures\").toEqual([",
+      "breaks": [
+        {
+          "id": "drop-row",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "rows?",
+              "replace": "rows"
+            }
+          ]
+        },
+        {
+          "id": "drop-rows",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "rows?",
+              "replace": "row"
+            }
+          ]
+        },
+        {
+          "id": "drop-token",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "tokens?",
+              "replace": "tokens"
+            }
+          ]
+        },
+        {
+          "id": "drop-tokens",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "tokens?",
+              "replace": "token"
+            }
+          ]
+        },
+        {
+          "id": "drop-decimal",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?:\\.\\d+)?",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "block-underscore-at-start",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}._])"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "measure-location-and-text",
+      "claim": "Reports the line number and matched text.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "names the line number and the measure"
+      },
+      "assertion": "expect(problems, \"measure locations and fix\").toEqual([",
+      "breaks": [
+        {
+          "id": "use-zero-based-line",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "docs/status.md:${index + 1}:",
+              "replace": "docs/status.md:${index}:"
+            }
+          ]
+        },
+        {
+          "id": "omit-measure-text",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "typed measure \"${text}\".",
+              "replace": "typed measure."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "other-numbers",
+      "claim": "Leaves numbers before longer words such as rowers alone.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "permits numbers that are not measures"
+      },
+      "assertion": "expect(problems, \"only the control is a measure\").toEqual([",
+      "breaks": [
+        {
+          "id": "allow-unit-prefix",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?![\\p{L}\\p{N}])",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "measure-case-table",
+      "claim": "Quotes complete measures across separators and at line boundaries. Rejects parts of words and versions.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "quotes the measures in the case table"
+      },
+      "assertion": "expect.soft(quotedMeasures, input).toEqual(measures);",
+      "breaks": [
+        {
+          "id": "allow-letter-before-measure",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{N}.])"
+            }
+          ]
+        },
+        {
+          "id": "allow-digit-before-measure",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}.])"
+            }
+          ]
+        },
+        {
+          "id": "allow-dot-before-measure",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}])"
+            }
+          ]
+        },
+        {
+          "id": "block-dot-range",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "|(?<=\\.\\.)(?=\\d)",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "allow-leading-dot-after-range",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?=\\d)",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "allow-letter-after-measure",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?![\\p{L}\\p{N}])",
+              "replace": "(?![\\p{N}])"
+            }
+          ]
+        },
+        {
+          "id": "allow-digit-after-measure",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?![\\p{L}\\p{N}])",
+              "replace": "(?![\\p{L}])"
+            }
+          ]
+        },
+        {
+          "id": "block-comma-separator",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}.,])"
+            }
+          ]
+        },
+        {
+          "id": "block-space-boundary",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}. ])"
+            }
+          ]
+        },
+        {
+          "id": "block-semicolon-boundary",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}.;])"
+            }
+          ]
+        },
+        {
+          "id": "block-bracket-boundary",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}.\\[])"
+            }
+          ]
+        },
+        {
+          "id": "block-asterisk-emphasis",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}.*])"
+            }
+          ]
+        },
+        {
+          "id": "block-hyphen-before-measure",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}.-])"
+            }
+          ]
+        },
+        {
+          "id": "require-prefix-before-measure",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}.])(?<=.)"
+            }
+          ]
+        },
+        {
+          "id": "require-suffix-after-measure",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?![\\p{L}\\p{N}])",
+              "replace": "(?![\\p{L}\\p{N}])(?=.)"
+            }
+          ]
+        },
+        {
+          "id": "require-hyphen-between-number-and-unit",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "[ -]",
+              "replace": "-"
+            }
+          ]
+        },
+        {
+          "id": "require-space-between-number-and-unit",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "[ -]",
+              "replace": " "
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": []
+}

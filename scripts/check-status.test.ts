@@ -102,6 +102,169 @@ describe("doneRows", () => {
 });
 
 describe("checkStatus", () => {
+  it("quotes the measures in the case table", () => {
+    const cases: [input: string, measures: string[]][] = [
+      ["89,987 bytes", ["89,987 bytes"]],
+      ["80,000-byte", ["80,000-byte"]],
+      ["1 byte", ["1 byte"]],
+      ["3 Bytes", ["3 Bytes"]],
+      ["90 KB", ["90 KB"]],
+      ["78 rows", ["78 rows"]],
+      ["12 row", ["12 row"]],
+      ["1 token", ["1 token"]],
+      ["120,000 tokens", ["120,000 tokens"]],
+      ["1.5 tokens", ["1.5 tokens"]],
+      ["1 row and 2 tokens", ["1 row", "2 tokens"]],
+      ["3 bytes", ["3 bytes"]],
+      ["_12 rows_", ["12 rows"]],
+      ["__80,000-byte__", ["80,000-byte"]],
+      ["*12 rows*", ["12 rows"]],
+      [".5 KB", [".5 KB"]],
+      ["78 rows 90 KB", ["78 rows", "90 KB"]],
+      ["78 rows, 90 KB", ["78 rows", "90 KB"]],
+      ["78 rows,90 KB", ["78 rows", "90 KB"]],
+      ["78 rows;90 KB", ["78 rows", "90 KB"]],
+      ["[78 rows][90 KB]", ["78 rows", "90 KB"]],
+      ["#151", []],
+      ["2026-11-24", []],
+      ["DQ-570", []],
+      ["§7 step 6", []],
+      ["Q1 A", []],
+      ["PR 5", []],
+      ["M2b", []],
+      ["fa19669", []],
+      ["15 words", []],
+      ["1 MB", []],
+      ["48-line", []],
+      ["rowspan", []],
+      ["5 rowers", []],
+      ["1,50 rows", ["50 rows"]],
+      ["v1.5 KB", []],
+      ["5 row2", []],
+      ["9,876,543.25-ToKeNs", ["9,876,543.25-ToKeNs"]],
+      ["1 byte, 2 BYTES, 3 KB, 4 kB", ["1 byte", "2 BYTES", "3 KB", "4 kB"]],
+      ["1 row, 2-ROWS, 1 token, 2 tOkEnS", ["1 row", "2-ROWS", "1 token", "2 tOkEnS"]],
+      ["#151, 2026-11-24, DQ-570, §7 step 6, Q1 A, PR 5, M2b, fa19669", []],
+      ["15 words, 1 MB, 48-line, rowspan, 5 rowers", []],
+      ["[#151](https://example.invalid/pull/151) and `fa19669` and `15 words`", []],
+      ["[12 rows](record.md) and `4 KB`", ["12 rows", "4 KB"]],
+      ["[reference](doc.md#step-2-rows-to-keep)", ["2-rows"]],
+      ["[guide](docs/v2/151) and `issue/151`", []],
+      ["bytes: 89,987 and 90 MB and 12 lines and 55 issues", []],
+      ["1.5 tokens (last line, no newline)", ["1.5 tokens"]],
+      ["_1.5 tokens_ and **90 KB**", ["1.5 tokens", "90 KB"]],
+      ["result,12 rows", ["12 rows"]],
+      ["12 rows", ["12 rows"]],
+      ["80,000 bytes", ["80,000 bytes"]],
+      ["PR #151,90 KB", ["90 KB"]],
+      ["DQ-570,90 KB", ["90 KB"]],
+      ["1,,50 rows", ["50 rows"]],
+      ["10..12 rows", ["12 rows"]],
+      ["10...12 rows", ["12 rows"]],
+      ["10..1.5 tokens", ["1.5 tokens"]],
+      ["10..89,987 bytes", ["89,987 bytes"]],
+      [
+        "| Move §2 to §4 (the milestone view, the PR register and the old snapshots) and the prevention actions of `docs/delivery-quality.md` to files of their own, and keep the 80,000-byte limit (owner, 2026-11-24). It changes `AGENTS.md` §9, so its plan comes first | [#151](https://github.com/binhle312/cty1ng/pull/151): the ledger is still above 80,000 bytes after the move | A PR after #151, with a plan that the owner approves |",
+        ["80,000-byte", "80,000 bytes"],
+      ],
+    ];
+    const probeMeasures = [
+      "78 rows",
+      "90 KB",
+      "1.5 tokens",
+      "89,987 bytes",
+      "80,000-byte",
+      "1 byte",
+      "3 Bytes",
+      "12 row",
+      "120,000 tokens",
+      "1 token",
+      ".5 KB",
+    ];
+    const separators = ["\t", "/", ")(", '"', "|", ":", " ", ", ", ",", ";", "]["];
+    const casesByInput = new Map(cases);
+    for (const separator of separators) {
+      for (const first of probeMeasures) {
+        for (const second of probeMeasures) {
+          const input = first + separator + second;
+          if (!casesByInput.has(input)) casesByInput.set(input, [first, second]);
+        }
+      }
+    }
+    const notes = `${status([])}## Notes\n\n`;
+    for (const [input, measures] of casesByInput) {
+      const problems = checkStatus({ merged: [], statusMd: notes + input, since: SINCE });
+      const quotedMeasures = problems.map((problem) => problem.match(/"([^"]+)"/)?.[1]);
+      expect.soft(quotedMeasures, input).toEqual(measures);
+    }
+  });
+
+  it("rejects a typed byte count", () => {
+    const inputs = [
+      "89,987 bytes; 80,000-byte; 1 byte; 3 Bytes; 90 KB",
+      "__80,000-byte__",
+      ".5 KB",
+    ];
+    const problems = inputs.map((input) =>
+      checkStatus({ merged: [], statusMd: `${status([])}${input}`, since: SINCE }),
+    );
+    expect(problems, "byte measures").toEqual([
+      [
+        expect.stringContaining('"89,987 bytes"'),
+        expect.stringContaining('"80,000-byte"'),
+        expect.stringContaining('"1 byte"'),
+        expect.stringContaining('"3 Bytes"'),
+        expect.stringContaining('"90 KB"'),
+      ],
+      [expect.stringContaining('"80,000-byte"')],
+      [expect.stringContaining('".5 KB"')],
+    ]);
+  });
+
+  it("rejects a typed row or token count", () => {
+    const inputs = [
+      "78 rows; 12 row; 1 token; 120,000 tokens; 1.5 tokens",
+      "_12 rows_",
+      "*12 rows*",
+    ];
+    const problems = inputs.map((input) =>
+      checkStatus({ merged: [], statusMd: `${status([])}${input}`, since: SINCE }),
+    );
+    expect(problems, "row and token measures").toEqual([
+      [
+        expect.stringContaining('"78 rows"'),
+        expect.stringContaining('"12 row"'),
+        expect.stringContaining('"1 token"'),
+        expect.stringContaining('"120,000 tokens"'),
+        expect.stringContaining('"1.5 tokens"'),
+      ],
+      [expect.stringContaining('"12 rows"')],
+      [expect.stringContaining('"12 rows"')],
+    ]);
+  });
+
+  it("names the line number and the measure", () => {
+    const statusMd = "# Status\n\n## Follow-ups\n1 row and 2 tokens\n\n## Done\n\n3 bytes";
+    const problems = checkStatus({ merged: [], statusMd, since: SINCE });
+    const fix =
+      "link to the record or the rule that owns the value (One home for each fact, `docs/workflows/pull-request.md`)";
+    expect(problems, "measure locations and fix").toEqual([
+      `docs/status.md:4: typed measure "1 row". ${fix}`,
+      `docs/status.md:4: typed measure "2 tokens". ${fix}`,
+      `docs/status.md:8: typed measure "3 bytes". ${fix}`,
+    ]);
+  });
+
+  it("permits numbers that are not measures", () => {
+    const statusMd =
+      `${status([])}#151, 2026-11-24, DQ-570, §7 step 6, Q1 A, PR 5, M2b, fa19669, ` +
+      "15 words, 1 MB, 48-line, rowspan, 5 rowers. Control: 12 rows.";
+    const problems = checkStatus({ merged: [], statusMd, since: SINCE });
+    expect(problems, "only the control is a measure").toEqual([
+      expect.stringContaining('"12 rows"'),
+    ]);
+  });
+
   it("gives the row to add for a merged PR with no Done row", () => {
     const merged = mergedPrs(merge(125, "2026-11-18"));
     expect(checkStatus({ merged, statusMd: status([]), since: SINCE }), "missing row").toEqual([
