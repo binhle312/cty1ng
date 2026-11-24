@@ -8,7 +8,8 @@ then the leader can spawn codex workers", then "let do A" (both skills have the 
 `leader` names the file of `codex-workers` to read).
 Checkpoint: plan. The skill sets the roles of the owner, the lead agent and the workers, so the
 owner approves this plan before the build.
-Approval: waiting
+Approval: waiting. Revision 2 (2026-11-24) adds the owner's answers and notes of 2026-11-24
+(section "The owner's answers"). The owner approves revision 2 before the build.
 
 ## Goal
 
@@ -40,13 +41,29 @@ gives the parts; the build writes the text.
    8. Report to the owner. Merge only when the owner asks for it.
 5. **Stop exits.** The documents and the code disagree. A bug does not reproduce. A fix has the
    same cause as an earlier fix. An approval is missing.
-6. **Workers.** Before the first worker, read `../codex-workers/SKILL.md`, relative to the base
+6. **The lead agent's own work** (owner, Q1 A with a note). The lead agent writes the plans, the
+   briefs and the records. A worker writes the code. Exception: the lead agent makes a code change
+   of fewer than 5 changed lines itself. The count is the larger of the added and the removed
+   lines in `git diff --numstat`, summed over the code files of that change. The change still
+   goes to the different reviewer, in the next review round of the PR.
+7. **Briefs.** The lead agent writes each brief from a template in `references/`: one for a
+   worker, one for a reviewer. The templates follow Anthropic's public prompt advice
+   ([research](../research/worker-prompts.md)). The list of what a brief holds keeps its one home
+   in step 2 of `codex-workers`; a template gives that list its form, with one section for each
+   item.
+8. **The worker's plan first** (owner, Q1 note 3). A worker's first turn gives back the plan in
+   its own words, and changes no file. The lead agent checks the plan with the three tests of
+   step 4 of `codex-workers` and accepts it, or sends its corrections. Then the worker builds. The
+   lead agent's OK is not the owner's approval. The cost: one more worker turn, about 23,000 input
+   tokens before its first action (a measured turn of #149). A reviewer has no plan turn, because
+   it changes no file.
+9. **Workers.** Before the first worker, read `../codex-workers/SKILL.md`, relative to the base
    directory of this skill. If the file is missing, stop and tell the owner.
-7. **The project wins.** Where the project's agent instructions differ from this skill, the
+10. **The project wins.** Where the project's agent instructions differ from this skill, the
    project's instructions apply.
 
-Not in the first version: the rules for reports and questions from the lead agent's memory (open
-question 3), the rules of this repository (commands, file paths, the merge bar, the records), and
+Not in the first version: the rules for reports and questions from the lead agent's memory (owner,
+Q3 A), the rules of this repository (commands, file paths, the merge bar, the records), and
 the consultants (they have their own skill).
 
 ## Files
@@ -54,13 +71,17 @@ the consultants (they have their own skill).
 | File | Change |
 | --- | --- |
 | `.agents/skills/leader/SKILL.md` | New. `disable-model-invocation: true`; the trigger first in the description |
+| `.agents/skills/leader/references/worker-brief.md` | New. The brief template for a worker: context and goal, facts, scope, limits, done and checks, the first turn (plan only), the report form, the immediate task |
+| `.agents/skills/leader/references/reviewer-brief.md` | New. The brief template for a reviewer: a different agent, the diff and the plan to check, the checks it runs, no commits, findings with evidence |
 | `.agents/skills/leader/agents/openai.yaml` | New. `allow_implicit_invocation: false` |
 | `.claude/skills/leader` | New relative link |
 | `.agents/skills/README.md` | One row |
 | `.agents/skills/leader/GUIDE.md` | New. A file for people: the sketch of who talks with whom and the sketch of the stages with the owner's gates. `SKILL.md` has no link to it |
-| `.agents/skills/codex-workers/SKILL.md` | The list "Who talks with whom" moves out. Its two definitions (lead agent, worker) stay, because `/codex-workers` can run alone |
+| `.agents/skills/codex-workers/SKILL.md` | The list "Who talks with whom" moves out. Its two definitions (lead agent, worker) stay, because `/codex-workers` can run alone. Step 4 changes from "when the work has a design choice" to each build task: the first turn is a plan in the worker's own words |
 | `.agents/skills/codex-workers/GUIDE.md` | The sketch of who talks with whom moves to the guide of `leader`. The sketch of one task, turn by turn, stays |
-| `docs/workflows/coordination.md` | Only if the owner says so (open question 2) |
+| `docs/workflows/coordination.md` | Changes in this PR (owner, Q2 A): the three roles, the builder is a Codex worker, the reviewer is a different agent, a row for the lead agent, the new reason for two agents, the builder asks the lead agent, one pointer to the skill |
+| `docs/research/worker-prompts.md` | New. The evidence for the two templates |
+| `docs/README.md` | One link to the research note, in the row of research |
 | `docs/status.md` | The line of this PR |
 
 The branch starts from `codex-workers` (#149), because the build changes that skill's file.
@@ -92,7 +113,11 @@ The skill is text, so the tests are checks of the files and one run of the skill
 | The lead agent stops at an owner gate | The scratch project's instructions ask for a plan approval. The run ends with the plan and a wait, and with no build |
 | The sibling file is missing | A second scratch project has only `leader`. The run stops and tells the owner |
 | `SKILL.md` is for the agent only | It holds no sketch and no link to `GUIDE.md` |
-| The skill is portable | A search of the skill folder for `docs/`, `AGENTS.md`, `pnpm` and `principle-`: no result |
+| The skill is portable | A search of the skill folder, `references/` included, for `docs/`, `AGENTS.md`, `pnpm` and `principle-`: no result |
+| The lead agent briefs from the templates | In the scratch run, the brief file has one section for each item of step 2 of `codex-workers`, and the plan-first section |
+| Each brief item has a template section | A script compares the items of step 2 of `codex-workers` with the sections of `worker-brief.md`: no item is missing |
+| A worker's first turn is a plan only | One `gpt-6-luna` run at `high` in a scratch Git repository, with a brief from the template. The report is a plan, and `git status` shows no change |
+| The 5-line exception | In the scratch run, a task that needs a 2-line code change: the lead agent makes it and names the review. A task that needs a 20-line change: the answer has a worker start command |
 
 The run uses Claude Opus 5.5. A run with Fable 5.2 needs the owner's word.
 
@@ -105,14 +130,25 @@ The run uses Claude Opus 5.5. A run with Fable 5.2 needs the owner's word.
   line of the text and `openai.yaml` cover them.
 - **Size.** The skill stays below about 120 lines. A longer text weakens each line.
 
+## The owner's answers (2026-11-24)
+
+The owner's words, from the question page of revision 1:
+
+1. Q1 A, "Lead writes plans and records; workers write code", with these notes: "1. Leader should
+   make a small code change like under 5 lines of code change 2. Leader make a brief about what to
+   do, what not to do with a good prompt (based on anthropic public courses and demonstration),
+   remember to store the reference template for prompt for worker and the prompt for reviewer in
+   the leader skill `references/*` 3. The worker first thing to do when receive a brief from
+   leader: it has to describe the plan in it own words, leader is in charged to review and
+   approve that plan".
+2. Q2 A, "Change it in the leader PR".
+3. Q3 A, "Not now: roles, stages, gates and exits only", with the note "List the rules that you
+   mentioned here".
+4. Q4 A, "One Codex review of both skills".
+
 ## Open questions
 
-1. **The lead agent's own work.** Which work does the lead agent do itself, and which work goes
-   to a worker?
-2. **`docs/workflows/coordination.md`.** It names a builder ("Claude Code or Codex") and a
-   reviewer ("the other one"), and it says to alternate who builds. Does it change, and in which
-   PR?
-3. **Memory rules.** Do the lead agent's rules for reports and questions go into the first
-   version of the skill?
-4. **Review by a different agent.** #149 had no review by a different agent. Does the owner want
-   one for #149 and for this PR?
+1. **Revision 2.** Does the owner approve this revision, with items 6, 7 and 8 of "What the skill
+   holds"?
+2. **A review for the lead agent's small change.** The plan sends it to the different reviewer in
+   the next review round. The other choice: no review for a change of fewer than 5 lines.
