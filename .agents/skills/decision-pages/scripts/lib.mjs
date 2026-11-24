@@ -801,10 +801,10 @@ function refresh(){var a=answered();updateCount($("cA"),a);updateCount($("cR"),N
  $("keys").innerHTML=s>=1&&s<=N?"<kbd>&larr;</kbd> <kbd>&rarr;</kbd> move &middot; <kbd>1</kbd> to <kbd>"+C.counts[s-1]+"</kbd> choose":"<kbd>&larr;</kbd> <kbd>&rarr;</kbd> move";
  C.ids.forEach(updatePick);
  if(s===N+1)finish();}
-function go(k,focus){k=Math.max(0,Math.min(N+1,k));var old=st.step;
+function go(k,focus){k=Math.max(0,Math.min(N+1,k));var old=st.step,active=document.activeElement;
  releaseSwipe();st.step=k;save();refresh();var m=document.querySelector("main");if(m)m.scrollTop=0;
  if(k!==old){var wrap=currentWrap();wrap.classList.remove("in-next","in-prev");replay(wrap,k>old?"in-next":"in-prev");}
- if(focus!==false){var h=document.querySelector('.step[data-step="'+k+'"] h1');if(h)h.focus({preventScroll:true});}}
+ if(focus!==false||(k!==old&&active?.closest("[hidden]"))){var h=document.querySelector('.step[data-step="'+k+'"] h1');if(h)h.focus({preventScroll:true});}}
 function choose(id,key){var old=st.a[id];st.a[id]=key;save();applyForm();refresh();
  if(key!==old){var input=document.getElementById("r-"+id+"-"+key);replay(input&&input.closest(".opt"),"just-picked");}}
 document.addEventListener("click",function(ev){var g=ev.target.closest&&ev.target.closest("[data-go]");if(g)go(parseInt(g.getAttribute("data-go"),10));});
@@ -819,10 +819,9 @@ document.addEventListener("keydown",function(ev){if(ev.ctrlKey||ev.metaKey||ev.a
  if(ev.key==="ArrowLeft"){ev.preventDefault();go(st.step-1,false);}
  else if(ev.key==="ArrowRight"){ev.preventDefault();go(st.step+1,false);}
  else if(/^[1-9]$/.test(ev.key)&&st.step>=1&&st.step<=N){var id=C.ids[st.step-1];var r=all('input[name="'+id+'"]')[parseInt(ev.key,10)-1];if(r){ev.preventDefault();choose(id,r.value);r.focus({preventScroll:true});}}});
-// A touchpad sends wheel events through the gesture and its momentum. A new gesture
-// starts after a pause or when speed climbs again from the tail of the last swipe.
+// Wheel events from the gesture and its momentum count as one swipe until a pause.
 var SWIPE_PAUSE=180,SWIPE_DISTANCE=50,SWIPE_START=8,SWIPE_RATIO=1.5;
-var swipe={x:0,y:0,time:0,last:0,done:false},swipeTimer,dragged;
+var swipe={x:0,y:0,time:0,done:false},swipeTimer,dragged;
 var edges=[$("edge-l"),$("edge-r")];
 var shift=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--shift"));
 function currentWrap(){return document.querySelector('.step[data-step="'+st.step+'"] > .wrap');}
@@ -851,14 +850,12 @@ function showSwipe(dir,progress,committed){
  }
  swipeTimer=setTimeout(releaseSwipe,committed?160:SWIPE_PAUSE);}
 document.addEventListener("wheel",function(ev){
- if(ev.ctrlKey||ev.metaKey||ownsHorizontalScroll(ev.target))return;
- var now=performance.now(),unit=ev.deltaMode===1?16:ev.deltaMode===2?innerWidth:1;
- var dx=ev.deltaX*unit,speed=Math.abs(dx);
- if(now-swipe.time>SWIPE_PAUSE||(swipe.done&&speed>2*swipe.last&&speed>=SWIPE_START&&swipe.last<SWIPE_START)){
-  swipe.x=0;swipe.y=0;swipe.done=false;}
- swipe.time=now;swipe.last=speed;
- if(swipe.done)return;
- swipe.x+=dx;swipe.y+=Math.abs(ev.deltaY*unit);
+ var now=performance.now();
+ if(now-swipe.time>=SWIPE_PAUSE){swipe.x=0;swipe.y=0;swipe.done=false;}
+ swipe.time=now;
+ if(swipe.done||ev.ctrlKey||ev.metaKey||ownsHorizontalScroll(ev.target))return;
+ var unit=ev.deltaMode===1?16:ev.deltaMode===2?innerWidth:1;
+ swipe.x+=ev.deltaX*unit;swipe.y+=Math.abs(ev.deltaY*unit);
  var distance=Math.abs(swipe.x),dir=swipe.x>0?1:-1,next=st.step+dir;
  if(distance<SWIPE_START||distance<SWIPE_RATIO*swipe.y)return;
  var committed=distance>=SWIPE_DISTANCE;

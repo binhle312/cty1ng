@@ -280,7 +280,7 @@ await p.emulateMedia({ colorScheme: "light" });
 
 // 9. Swipe: dispatch the wheel events together so no browser scheduling gap splits a gesture.
 const swipe = async (start, deltas) => p.evaluate(({ start, deltas }) => {
-  window.decisionPage.go(start, false);
+  if (start !== null) window.decisionPage.go(start, false);
   const main = document.querySelector("main");
   return deltas.map(([deltaX, deltaY = 0]) => {
     main.dispatchEvent(new WheelEvent("wheel", { deltaX, deltaY, bubbles: true }));
@@ -305,9 +305,12 @@ const animations = await p.evaluate(() => {
   });
 });
 ok(animations.join(",") === "tick,just-done,pop-option,pop-box,pop-in", "a new answer animates the count, completed check, option and answer badge");
-const [partial, forward, tail] = await swipe(0, [[25, 3], [25, 3], [35]]);
+const [partial, forward, ...tail] = await swipe(0, [[25, 3], [25, 3], [6], [13], [12], [11], [10], [9]]);
 ok(partial.step === 0 && partial.edge === "edge-r" && Number(partial.progress) === .5 && partial.drag !== "", "short horizontal swipe fills the right ring and moves the page without changing steps");
-ok(forward.step === 1 && forward.slide === "in-next" && forward.overscroll === "none" && tail.step === 1, "forward swipe slides one step and ignores momentum");
+ok(forward.step === 1 && forward.slide === "in-next" && forward.overscroll === "none" && tail.every(({ step }) => step === 1), "forward swipe slides one step and ignores momentum");
+await p.waitForTimeout(200);
+const [second] = await swipe(null, [[60]]);
+ok(second.step === 2, "a new swipe after 200 ms advances one more step");
 await p.waitForFunction(() => !document.querySelector(".edge.live, .wrap.drag"));
 await p.waitForTimeout(180);
 const [reverse] = await swipe(1, [[-60]]);
@@ -322,6 +325,18 @@ await p.waitForTimeout(180);
 await p.emulateMedia({ reducedMotion: "reduce" });
 const [quietPartial, quiet] = await swipe(0, [[25], [25]]);
 ok(quiet.step === 1 && quiet.slide === "none" && !quiet.edge && !quietPartial.edge && quietPartial.drag === "", "reduced motion keeps swipe navigation and suppresses slide, drag and edge feedback");
+const q1Radio = p.locator('.step[data-step="1"] .opt input').first();
+await q1Radio.focus();
+await p.keyboard.press("ArrowLeft");
+ok(await ov.locator("h1").evaluate((el) => document.activeElement === el), "arrow navigation focuses the incoming heading when it hides the focused radio");
+const stepper = p.locator('.sbtn[data-go="0"]');
+await stepper.focus();
+await p.keyboard.press("ArrowRight");
+ok(await stepper.evaluate((el) => document.activeElement === el), "arrow navigation keeps focus on the visible stepper button");
+await q1Radio.focus();
+await p.waitForTimeout(200);
+await swipe(1, [[-60]]);
+ok(await ov.locator("h1").evaluate((el) => document.activeElement === el), "swipe focuses the incoming heading when it hides the focused radio");
 await p.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
 
 ok(errs.length === 0, "no console errors" + (errs.length ? ": " + JSON.stringify(errs) : ""));
