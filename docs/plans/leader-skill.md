@@ -189,18 +189,27 @@ its home is the Codex text. The unit is a sentence or a bullet, not a section.
 
 **Option A** (branch `leader-one-skill`): option B, then the fold. `codex-workers/SKILL.md` moves to
 `leader/references/codex.md`; one `GUIDE.md`; no `/codex-workers`, no second `agents/openai.yaml`,
-no second link in `.claude/skills/`, and one index row. The lead agent reads the Codex text at the
-build stage, so a task with no build loads only `leader/SKILL.md`.
+no second link in `.claude/skills/`, and one index row. The command `/codex-workers` goes away. The
+lead agent reads the Codex text before it picks a worker or a reviewer, so a task that needs neither
+(for example a question) loads only `leader/SKILL.md`.
 
-Both candidates come from one split, so only their files and folders are different. The owner compares them with the same numbers. The numbers are: the lines that load at `/leader` and at the build stage, the pointers between files, the skill validator, the security scan, and the files changed against `main`.
+Both candidates come from one split, so only their files and folders are different. The owner
+compares them with the same numbers. The numbers are: the lines that load at `/leader` and at the
+build stage, the pointers between files, the skill validator, the security scan, and the files
+changed against `main`.
 
 **Test strategy of this revision.**
-- A fact map script (`tmp/leader-skill/split/factmap.py`, not in the repository) does four checks:
-  - Each sentence of the two skills at `cf571de` is in the new tree the same number of times, or
-    is on an exceptions list with a reason.
-  - Each code block is the same.
-  - Each relative path resolves.
-  - The line limit of F1 has one home.
+- A fact map script (`tmp/leader-skill/split/factmap.py`, not in the repository) does four checks
+  on the `.md` files of the two skill folders, taken together:
+  - Each sentence at `cf571de` is in the new tree the same number of times, or is on an exceptions
+    list with a reason. The front matter is not in this check.
+  - Each code block is the same. An exceptions line `REPLACE` changes the old text before the
+    compare, so each pointer that the move made false is visible; one is inside a code block of
+    `references/worker-brief.md` (`codex-workers` becomes `leader`).
+  - Each relative path in a Markdown link or a `../x.md` mention resolves. The check does not read
+    the part after `#`, and it does not check a path with no `../` or link.
+  - The line limit of F1 has one home: the phrases `fewer than 5`, `5 changed` and `5 lines` are in
+    one file of the two folders.
 
   It also lists each new sentence for the reviewer. Proof that it can fail: a copy had four breaks
   (a removed rule, a changed code block, a broken path, a copy of the line limit). The script
