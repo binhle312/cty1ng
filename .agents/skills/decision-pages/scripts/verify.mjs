@@ -443,6 +443,47 @@ const guarded = await p.evaluate(() => {
 ok(guarded.cleared, "Ctrl-wheel clears the partial drag at 100 ms");
 ok(guarded.partialStep === 0, "35 px and 15 px stay below the swipe threshold across Ctrl-wheel at 100 and 200 ms");
 ok(guarded.committedStep === 1 && guarded.finalStep === 1, "the step is 1 right after the committed swipe and again after the last sampled wheel event");
+
+const sampleSwipes = (cases) => p.evaluate((cases) => {
+  const originalNow = performance.now;
+  let now = originalNow.call(performance);
+  const main = document.querySelector("main");
+  const shift = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--shift"));
+  performance.now = () => now;
+  try {
+    return cases.map(([start, deltas]) => {
+      now += 200;
+      window.decisionPage.go(start, false);
+      for (const delta of deltas) {
+        const init = typeof delta === "number" ? { deltaX: delta } : delta;
+        main.dispatchEvent(new WheelEvent("wheel", { ...init, bubbles: true }));
+        now += 16;
+      }
+      const wrap = main.querySelector(".step:not([hidden]) > .wrap");
+      return { step: window.decisionPage.state().step, drag: wrap.style.transform,
+        edge: document.querySelector(".edge.live")?.id, shift };
+    });
+  } finally {
+    performance.now = originalNow;
+  }
+}, cases);
+await p.reload();
+const [slowdown, renewed, cancelled, endPull] = await sampleSwipes([
+  [0, [20, 20, 20, 6, 13, 12, 11, 10, 9]],
+  [0, [10, 20, 30, 25, 12, 8, 6, 4, 3, 9, 20, 30, 25]],
+  [0, [50, 3, 9, { ctrlKey: true }, 42]],
+  [N + 1, [25]],
+]);
+ok(slowdown.step === 1, "the uneven slow-down sample ends on step 1");
+ok(renewed.step === 2, "the second swipe sample ends on step 2");
+ok(cancelled.step === 1, "the Ctrl-wheel sample ends on step 1");
+const endOffset = Number(endPull.drag.match(/^translateX\((-?[\d.]+)px\)$/)?.[1]);
+ok(Math.abs(endOffset + endPull.shift / 6) <= 0.1 && !endPull.edge,
+  "the last-step pull has an inline translateX within 0.1 px of -shift/6 and no .edge.live id");
+await p.emulateMedia({ reducedMotion: "reduce" });
+await p.reload();
+const [quietEndPull] = await sampleSwipes([[N + 1, [25]]]);
+ok(quietEndPull.drag === "", "the reduced-motion last-step pull has an empty inline transform");
 await p.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
 
 ok(errs.length === 0, "no console errors" + (errs.length ? ": " + JSON.stringify(errs) : ""));

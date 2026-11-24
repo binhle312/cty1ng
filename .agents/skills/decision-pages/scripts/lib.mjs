@@ -829,9 +829,9 @@ document.addEventListener("keydown",function(ev){if(ev.ctrlKey||ev.metaKey||ev.a
  if(ev.key==="ArrowLeft"){ev.preventDefault();go(st.step-1,false);}
  else if(ev.key==="ArrowRight"){ev.preventDefault();go(st.step+1,false);}
  else if(/^[1-9]$/.test(ev.key)&&st.step>=1&&st.step<=N){var id=C.ids[st.step-1];var r=all('input[name="'+id+'"]')[parseInt(ev.key,10)-1];if(r){ev.preventDefault();choose(id,r.value);r.focus({preventScroll:true});}}});
-// Wheel events from the gesture and its momentum count as one swipe until a pause.
+// After a swipe commits, a new swipe needs a pause or a speed rise that holds for another event.
 var SWIPE_PAUSE=180,SWIPE_DISTANCE=50,SWIPE_START=8,SWIPE_RATIO=1.5;
-var swipe={x:0,y:0,time:0,done:false},swipeTimer,dragged;
+var swipe={x:0,y:0,time:0,last:0,candidate:0,done:false},swipeTimer,dragged;
 var edges=[$("edge-l"),$("edge-r")];
 var shift=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--shift"));
 function currentWrap(){return document.querySelector('.step[data-step="'+st.step+'"] > .wrap');}
@@ -847,34 +847,40 @@ function ownsHorizontalScroll(el){
   if(el.tagName==="TEXTAREA")return true;
   if(el.scrollWidth>el.clientWidth+1&&/^(auto|scroll)$/.test(getComputedStyle(el).overflowX))return true;}
  return false;}
-function showSwipe(dir,progress,committed){
+function showSwipe(dir,progress,committed,inside){
  if(!motion.matches)return;
- var edge=edges[dir>0?1:0],other=edges[dir>0?0:1];
- other.classList.remove("live","pop");other.style.removeProperty("--p");
- edge.classList.add("live");edge.style.setProperty("--p",progress.toFixed(3));
+ var edge=inside?edges[dir>0?1:0]:null;
+ edges.forEach(function(other){if(other!==edge){other.classList.remove("live","pop");other.style.removeProperty("--p");}});
+ if(edge){edge.classList.add("live");edge.style.setProperty("--p",progress.toFixed(3));}
  clearTimeout(swipeTimer);
  if(committed)replay(edge,"pop");
  else {
   dragged=currentWrap();dragged.classList.remove("in-next","in-prev");dragged.classList.add("drag");
-  dragged.style.transform="translateX("+(-dir*progress*shift).toFixed(1)+"px)";
+  dragged.style.transform="translateX("+(-dir*progress*(inside?shift:shift/3)).toFixed(1)+"px)";
  }
  swipeTimer=setTimeout(releaseSwipe,committed?160:SWIPE_PAUSE);}
 document.addEventListener("wheel",function(ev){
  var now=performance.now();
- if(now-swipe.time>=SWIPE_PAUSE){swipe.x=0;swipe.y=0;swipe.done=false;}
+ if(now-swipe.time>=SWIPE_PAUSE){swipe.x=0;swipe.y=0;swipe.candidate=0;swipe.done=false;}
  swipe.time=now;
- if(swipe.done)return;
  if(ev.ctrlKey||ev.metaKey||ownsHorizontalScroll(ev.target)){
+  swipe.candidate=0;
+  if(swipe.done)return;
   swipe.x=0;swipe.y=0;releaseSwipe();return;}
  var unit=ev.deltaMode===1?16:ev.deltaMode===2?innerWidth:1;
- swipe.x+=ev.deltaX*unit;swipe.y+=Math.abs(ev.deltaY*unit);
+ var dx=ev.deltaX*unit,ax=Math.abs(dx),last=swipe.last;swipe.last=ax;
+ if(swipe.done){
+  if(swipe.candidate){
+   if(ax>=Math.abs(swipe.candidate)){swipe.x=swipe.candidate;swipe.y=0;swipe.done=false;}
+   swipe.candidate=0;
+  }else if(ax>2*last&&ax>=SWIPE_START&&last<SWIPE_START){swipe.candidate=dx;}
+  if(swipe.done)return;}
+ swipe.x+=dx;swipe.y+=Math.abs(ev.deltaY*unit);
  var distance=Math.abs(swipe.x),dir=swipe.x>0?1:-1,next=st.step+dir;
  if(distance<SWIPE_START||distance<SWIPE_RATIO*swipe.y)return;
- var committed=distance>=SWIPE_DISTANCE;
- if(committed)swipe.done=true;
- if(next<0||next>N+1){releaseSwipe();return;}
- if(committed)go(next,false);
- showSwipe(dir,Math.min(distance/SWIPE_DISTANCE,1),committed);
+ var committed=distance>=SWIPE_DISTANCE,inside=next>=0&&next<=N+1;
+ if(committed){swipe.done=true;if(!inside){releaseSwipe();return;}go(next,false);}
+ showSwipe(dir,Math.min(distance/SWIPE_DISTANCE,1),committed,inside);
 },{passive:true});
 function copy(){var txt=copyText(),s=$("copy-status");function ok(){s.textContent="Copied.";setTimeout(function(){s.textContent="";},2500);}
  function fail(){s.textContent="The browser blocked the copy. Select the text below and copy it.";var r=document.createRange();r.selectNodeContents($("copytext"));var sel=getSelection();sel.removeAllRanges();sel.addRange(r);}
