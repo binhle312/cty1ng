@@ -4,8 +4,8 @@ Brief: no brief file. The plan of the slice is [leader-skill.md](leader-skill.md
 redesign is [leader-skill-redesign.md](leader-skill-redesign.md). This file is the redesign that
 `AGENTS.md` §9 asks for after review round 1 of that redesign.
 Checkpoint: plan. The owner approves a redesign under `AGENTS.md` §9.
-Approval: waiting for the owner. The owner chose the option on 2026-11-24 (decision page of the
-redesign's round 1, Q1: "B Try the case check in #150").
+Approval: owner, 2026-11-24 ("yes"). The owner chose the option on 2026-11-24 (decision page
+of the redesign's round 1, Q1: "B Try the case check in #150").
 
 ## Why
 

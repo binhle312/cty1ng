@@ -80,7 +80,7 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 | `p3-records-counts.md` | Owner's answers q4 Q3 A and Q6 A: one home for record facts; a records script writes the counts | Plan OK by the lead agent, 2026-11-18, against the owner's answers q4 Q3 A and Q6 A, revision 5; revision 6: owner, 2026-11-19, morning Q4 A, plan OK by the lead agent; owner review pending |
 | `leader-skill.md` | The `leader` skill: the owner starts the lead agent with `/leader <task>` | Owner, 2026-11-24, revision 3 (plan checkpoint) |
 | `leader-skill-redesign.md` | The redesign of the `leader` skill after review round 2 (`AGENTS.md` §9) | Owner, 2026-11-24 (plan checkpoint) |
-| `leader-skill-case-check.md` | The case check of the rule edits of #150 (`AGENTS.md` §9, after the redesign's review round 1) | Waiting for the owner (plan checkpoint) |
+| `leader-skill-case-check.md` | The case check of the rule edits of #150 (`AGENTS.md` §9, after the redesign's review round 1) | Owner, 2026-11-24 (plan checkpoint) |
 
 If the task names a plan, open it. Otherwise, find the slice in [status.md](../status.md), then open its plan.
 For current behaviour, read the owning documents.

@@ -53,7 +53,7 @@ Read each test's setup and assertions. A test name or comment does not establish
 Ask which incorrect behaviour the test would detect.
 Run the affected checks; use [testing.md](testing.md) for test rules and the required gates.
 Run only the tests and breaks of the diff. Do not run the full gates or the full e2e suite again, and do not
-confirm total test counts: the gate run at the reviewed commit and CI give that proof (owner, 2026-11-09).
+confirm total test counts: the gate run of the reviewed code and CI give that proof (owner, 2026-11-09).
 Separate local results from CI results and checks that did not run.
 
 For a race, identify the order the test forces and the state it checks afterward.
@@ -90,7 +90,7 @@ For example, a plan may put all cleanup under a write lock. Check these as separ
 | Staged-file cleanup | Does its own list-and-delete path use the promised lock? What proves that a candidate is no longer active? |
 
 A locked recheck can make early enumeration safe. That does not make it match a plan that requires enumeration inside the lock.
-Record the difference and its rationale. The PR then follows the contract, or gets approval for a documented change.
+Record the difference and its rationale. The change then follows the contract, or gets approval for a documented change.
 An approved change of the design is a revision of the plan ([plans rule 6](plans/README.md#rules)); another difference goes under `Differences from the plan` in the PR description.
 A reviewer's recommendation is not approval of that change.
 
