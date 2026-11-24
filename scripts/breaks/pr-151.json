@@ -200,7 +200,7 @@
     },
     {
       "id": "measure-case-table",
-      "claim": "Quotes complete measures across separators and at line boundaries. Rejects parts of words and malformed number groups.",
+      "claim": "Quotes complete measures across separators and at line boundaries. Rejects parts of words and versions.",
       "test": {
         "kind": "vitest",
         "file": "scripts/check-status.test.ts",
@@ -239,11 +239,21 @@
           ]
         },
         {
-          "id": "allow-after-digit-comma",
+          "id": "block-dot-range",
           "file": "scripts/lib/check-status.ts",
           "edits": [
             {
-              "find": "(?<!\\d,)",
+              "find": "|(?<=\\.\\.)(?=\\d)",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "allow-leading-dot-after-range",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?=\\d)",
               "replace": ""
             }
           ]
