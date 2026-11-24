@@ -25,8 +25,26 @@ const ok = (cond, msg) => { if (cond) pass++; else fail++; console.log((cond ? "
 const info = (msg) => console.log("INFO " + msg);
 const sameText = (actual, expected) => actual.replace(/\s+/g, " ").trim() === stripMarkup(expected).replace(/\s+/g, " ").trim();
 const voteText = (votes) => votes?.length
-  ? votes.map(({ role, name }) => role[0].toUpperCase() + role.slice(1) + ": " + name.trim())
+  ? votes.map(({ role, name }) => role[0].toUpperCase() + role.slice(1) + ": " + name.replace(/\s+/g, " ").trim())
   : ["No votes"];
+async function voteTintsMatch(step, q) {
+  for (const [k, option] of q.options.entries()) {
+    const badges = step.locator(".opt").nth(k).locator(".votes > span");
+    for (const [j, { role }] of (option.votes || []).entries()) {
+      const badge = badges.nth(j);
+      const token = role === "lead agent" ? "lead" : role;
+      if (!(await badge.isVisible()) || !(await badge.evaluate((el, role) => {
+        const actual = getComputedStyle(el);
+        const color = document.createElement("span").style;
+        color.backgroundColor = actual.getPropertyValue(`--${role}-bg`).trim();
+        color.color = actual.getPropertyValue(`--${role}-ink`).trim();
+        return actual.backgroundColor === color.backgroundColor && actual.color === color.color
+          && actual.backgroundColor !== getComputedStyle(el.closest(".opt")).backgroundColor;
+      }, token))) return false;
+    }
+  }
+  return true;
+}
 
 // 1. Content: shape and limits
 const bad = validate(c);
@@ -39,7 +57,7 @@ for (const w of L.warnings) info("lint warning: " + w);
 for (const s of L.stats) info(`${s.id}: context ${s.contextWords} words, options ${s.choiceWords} words, bold ${s.boldPercent}%`);
 
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: "reduce", permissions: ["clipboard-read", "clipboard-write"] });
+const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: "light", reducedMotion: "reduce", permissions: ["clipboard-read", "clipboard-write"] });
 const p = await ctx.newPage();
 const errs = [];
 p.on("console", (m) => { if (m.type() === "error") errs.push(m.text()); });
@@ -137,7 +155,7 @@ for (let i = 0; i < N; i++) {
   const showVotes = q.options.some((o) => o.votes?.length);
   ok(n === q.options.length, `${id}: ${n} options`);
   let allIn = true, allFields = true, allDoes = n === q.options.length, votesMatch = n === q.options.length, bottom = 0;
-  let voteTintsMatch = true, cardsMatch = n === q.options.length;
+  let cardsMatch = n === q.options.length;
   for (let k = 0; k < n; k++) {
     const o = opts.nth(k);
     const option = q.options[k];
@@ -158,18 +176,6 @@ for (let i = 0; i < N; i++) {
       const texts = await badges.allInnerTexts();
       votesMatch &&= texts.length === labels.length && texts.every((text, j) => sameText(text, labels[j]));
       votesMatch &&= await row.count() === 1 && sameText(await row.innerText(), labels.join(" "));
-      for (let j = 0; j < votes.length; j++) {
-        const badge = badges.nth(j);
-        const token = votes[j].role === "lead agent" ? "lead" : votes[j].role;
-        voteTintsMatch &&= await badge.isVisible() && await badge.evaluate((el, role) => {
-          const actual = getComputedStyle(el);
-          const color = document.createElement("span").style;
-          color.backgroundColor = actual.getPropertyValue(`--${role}-bg`).trim();
-          color.color = actual.getPropertyValue(`--${role}-ink`).trim();
-          return actual.backgroundColor === color.backgroundColor && actual.color === color.color
-            && actual.backgroundColor !== getComputedStyle(el.closest(".opt")).backgroundColor;
-        }, token);
-      }
     } else votesMatch &&= (await row.count()) === 0;
     const cardText = [`${option.key}. ${option.label}`];
     if (option.key === q.pick.key) cardText.push("My pick");
@@ -186,8 +192,8 @@ for (let i = 0; i < N; i++) {
   ok(allFields, `${id}: every option shows Gets, Costs, Risk text and a "Risk: level" chip`);
   ok(allDoes, `${id}: every option shows its Does row first`);
   ok(votesMatch, `${id}: ${showVotes ? "vote rows show the expected names or No votes" : "no vote rows when there are no votes"}`);
-  if (showVotes) ok(voteTintsMatch, `${id}: each voter badge shows its role tint`);
-  ok(cardsMatch, `${id}: option cards show only the expected text, with no added scores or tallies`);
+  if (showVotes) ok(await voteTintsMatch(s, q), `${id}: each voter badge shows its role tint in the light theme`);
+  ok(cardsMatch, `${id}: option card innerText matches the expected text`);
   ok(allIn && g.mainScroll === 0, `${id}: all option cards are in the first viewport at 1440x900, no scroll (lowest card bottom ${Math.round(bottom)} px, footer top ${Math.round(g.footerTop)} px)`);
   const measure = await s.evaluate((el) => {
     const probe = document.createElement("span"); probe.textContent = "0000000000"; probe.style.cssText = "position:absolute;visibility:hidden;font:16px/1.5 var(--font)";
@@ -312,6 +318,12 @@ ok((await p.locator('.step[data-step="1"] .yours').innerText()) === "You chose "
 await p.emulateMedia({ colorScheme: "dark" });
 await p.evaluate(() => window.decisionPage.go(1, false));
 await p.screenshot({ path: path.join(outDir, `${name}-q1-dark.png`) });
+for (const [i, q] of c.questions.entries()) {
+  if (!q.options.some((o) => o.votes?.length)) continue;
+  await p.evaluate((k) => window.decisionPage.go(k, false), i + 1);
+  const s = p.locator(`section.step[data-step="${i + 1}"]`);
+  ok(await voteTintsMatch(s, q), `Q${i + 1}: each voter badge shows its role tint in the dark theme`);
+}
 await p.emulateMedia({ colorScheme: "light" });
 
 // 9. Swipe: dispatch the wheel events together so no browser scheduling gap splits a gesture.
@@ -356,14 +368,14 @@ ok(movesLeft, "a partial forward swipe moves the page left");
 await p.waitForTimeout(200);
 const [partial, forward, ...tail] = await swipe(0, [[25, 3], [25, 3], [6], [13], [12], [11], [10], [9]]);
 ok(partial.step === 0 && partial.edge === "edge-r" && Number(partial.progress) === .5, "short horizontal swipe fills the right ring without changing steps");
-ok(forward.step === 1 && forward.slide === "in-next" && forward.overscroll === "none" && tail.every(({ step }) => step === 1), "forward swipe slides one step and ignores momentum");
+ok(forward.step === 1 && forward.slide === "in-next" && forward.overscroll === "none" && tail.every(({ step }) => step === 1), "forward swipe advances one step with animation name in-next and no horizontal overscroll or extra momentum steps");
 await p.waitForTimeout(200);
 const [second] = await swipe(null, [[60]]);
 ok(second.step === 2, "a new swipe after 200 ms advances one more step");
 await p.waitForFunction(() => !document.querySelector(".edge.live, .wrap.drag"));
 await p.waitForTimeout(180);
 const [reverse] = await swipe(1, [[-60]]);
-ok(reverse.step === 0 && reverse.edge === "edge-l" && reverse.slide === "in-prev", "reverse swipe slides one step and shows the left ring");
+ok(reverse.step === 0 && reverse.edge === "edge-l" && reverse.slide === "in-prev", "reverse swipe returns to Overview with animation name in-prev and the left edge ring");
 await p.waitForTimeout(180);
 ok((await swipe(0, [[-60]]))[0].step === 0, "swipe cannot go back from Overview");
 await p.waitForTimeout(180);
@@ -386,6 +398,51 @@ await q1Radio.focus();
 await p.waitForTimeout(200);
 await swipe(1, [[-60]]);
 ok(await ov.locator("h1").evaluate((el) => document.activeElement === el), "swipe focuses the incoming heading when it hides the focused radio");
+await p.evaluate(() => window.decisionPage.go(1, false));
+const backButton = p.locator("#back");
+await backButton.focus();
+await p.keyboard.press("ArrowLeft");
+ok(await backButton.isDisabled() && await ov.locator("h1").evaluate((el) => document.activeElement === el), "arrow navigation focuses the Overview heading when Back becomes disabled");
+
+await p.emulateMedia({ reducedMotion: "no-preference" });
+const guarded = await p.evaluate(() => {
+  const originalNow = performance.now;
+  let now = originalNow.call(performance) + 200;
+  performance.now = () => now;
+  try {
+    const main = document.querySelector("main");
+    const wrap = main.querySelector(".step:not([hidden]) > .wrap");
+    const wheel = (deltaX, ctrlKey = false) => main.dispatchEvent(new WheelEvent("wheel", { deltaX, ctrlKey, bubbles: true }));
+    const step = () => window.decisionPage.state().step;
+    wheel(35);
+    const dragged = wrap.classList.contains("drag") && wrap.style.transform !== "";
+    now += 100;
+    wheel(0, true);
+    const cleared = dragged && !wrap.classList.contains("drag") && wrap.style.transform === "";
+    now += 100;
+    wheel(0, true);
+    now += 60;
+    wheel(15);
+    const partialStep = step();
+
+    window.decisionPage.go(0, false);
+    now += 200;
+    wheel(50);
+    const committedStep = step();
+    now += 100;
+    wheel(0, true);
+    now += 100;
+    wheel(0, true);
+    now += 60;
+    wheel(50);
+    return { cleared, partialStep, committedStep, finalStep: step() };
+  } finally {
+    performance.now = originalNow;
+  }
+});
+ok(guarded.cleared, "Ctrl-wheel clears the partial drag at 100 ms");
+ok(guarded.partialStep === 0, "35 px and 15 px stay below the swipe threshold across Ctrl-wheel at 100 and 200 ms");
+ok(guarded.committedStep === 1 && guarded.finalStep === 1, "Ctrl-wheel keeps a committed swipe locked until a pause");
 await p.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
 
 ok(errs.length === 0, "no console errors" + (errs.length ? ": " + JSON.stringify(errs) : ""));

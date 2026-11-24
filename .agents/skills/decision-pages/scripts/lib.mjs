@@ -106,7 +106,7 @@ const VOTE_ROLES = new Map([
   ["lead agent", "Lead agent"], ["worker", "Worker"], ["consultant", "Consultant"], ["advisor", "Advisor"],
 ]);
 const hasVotes = (q) => q.options.some((o) => o.votes?.length);
-const voteLabel = (vote) => `${VOTE_ROLES.get(vote.role)}: ${vote.name.trim()}`;
+const voteLabel = (vote) => `${VOTE_ROLES.get(vote.role)}: ${vote.name.replace(/\s+/g, " ").trim()}`;
 const voteLabels = (o) => o.votes?.length ? o.votes.map(voteLabel) : ["No votes"];
 
 function questionDetails(q) {
@@ -814,7 +814,7 @@ function refresh(){var a=answered();updateCount($("cA"),a);updateCount($("cR"),N
 function go(k,focus){k=Math.max(0,Math.min(N+1,k));var old=st.step,active=document.activeElement;
  releaseSwipe();st.step=k;save();refresh();var m=document.querySelector("main");if(m)m.scrollTop=0;
  if(k!==old){var wrap=currentWrap();wrap.classList.remove("in-next","in-prev");replay(wrap,k>old?"in-next":"in-prev");}
- if(focus!==false||(k!==old&&active?.closest("[hidden]"))){var h=document.querySelector('.step[data-step="'+k+'"] h1');if(h)h.focus({preventScroll:true});}}
+ if(focus!==false||(k!==old&&active?.closest("[hidden],:disabled"))){var h=document.querySelector('.step[data-step="'+k+'"] h1');if(h)h.focus({preventScroll:true});}}
 function choose(id,key){var old=st.a[id];st.a[id]=key;save();applyForm();refresh();
  if(key!==old){var input=document.getElementById("r-"+id+"-"+key);replay(input&&input.closest(".opt"),"just-picked");}}
 document.addEventListener("click",function(ev){var g=ev.target.closest&&ev.target.closest("[data-go]");if(g)go(parseInt(g.getAttribute("data-go"),10));});
@@ -863,7 +863,9 @@ document.addEventListener("wheel",function(ev){
  var now=performance.now();
  if(now-swipe.time>=SWIPE_PAUSE){swipe.x=0;swipe.y=0;swipe.done=false;}
  swipe.time=now;
- if(swipe.done||ev.ctrlKey||ev.metaKey||ownsHorizontalScroll(ev.target))return;
+ if(swipe.done)return;
+ if(ev.ctrlKey||ev.metaKey||ownsHorizontalScroll(ev.target)){
+  swipe.x=0;swipe.y=0;releaseSwipe();return;}
  var unit=ev.deltaMode===1?16:ev.deltaMode===2?innerWidth:1;
  swipe.x+=ev.deltaX*unit;swipe.y+=Math.abs(ev.deltaY*unit);
  var distance=Math.abs(swipe.x),dir=swipe.x>0?1:-1,next=st.step+dir;

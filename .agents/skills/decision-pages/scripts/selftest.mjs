@@ -128,6 +128,14 @@ assert.equal(copyLines(voteContent, { Q1: "A" }, {}), [
   "  Consultant: GPT-6.2 Astra high", "  Advisor: Jo", "Page clear: (no answer)",
 ].join("\n"));
 assert.equal(copyLines(voteContent, { Q1: "B" }, {}), "Pick a plan, 2026-01-02: my answers (1 of 1)\nQ1: B Big plan\n  No votes\nPage clear: (no answer)");
+const multilineQuestion = { ...q, options: [{ ...q.options[0], votes: [{ role: "worker", name: "Ana\nMaría" }] }, q.options[1]] };
+const multilineContent = { ...content, questions: [multilineQuestion] };
+const multilinePage = pageText(multilineContent), multilineScreen = questionText(multilineQuestion);
+assert.deepEqual({
+  page: multilinePage.slice(multilinePage.indexOf("Small plan") + 1, multilinePage.indexOf("Fix the cache.")),
+  question: multilineScreen.slice(multilineScreen.indexOf("Risk: low") + 1, multilineScreen.indexOf("Does: Fix the cache.")),
+  copy: copyLines(multilineContent, { Q1: "A" }, {}).split("\n").slice(2, -1),
+}, { page: ["Worker: Ana María"], question: ["Worker: Ana María"], copy: ["  Worker: Ana María"] });
 const emptyVotes = { ...q, options: [{ ...q.options[0], votes: [] }, q.options[1]] };
 assert.deepEqual(questionText(emptyVotes), questionText(q));
 assert.equal(lintQuestion(emptyVotes).stats[0].choiceWords, lintQuestion(q).stats[0].choiceWords);
