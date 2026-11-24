@@ -27,7 +27,7 @@ cases each slice tests"). The PR lists the sections checked (lesson
 **Order and list-state checks.** Before the push, check every request on each changed
 screen with locks, live events or late answers. Cover all six cases in
 [Request order and list states](../testing.md#request-order-and-list-states), including requests away from the reported finding.
-Then a fresh reviewer agent, given the code and not the conclusions of its author, tries to
+Then an independent review, given the code and not the conclusions of its author, tries to
 break the screen with forced orders. Point it to [the review workflow](review.md); the author of
 the code does not need to read that file (lesson `check-every-order-before-the-push.md`).
 **Delivery records.** After review or fixes, update [delivery quality](../delivery-quality.md#7-update-and-assess).

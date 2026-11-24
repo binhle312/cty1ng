@@ -96,8 +96,8 @@ across several screens or a new requirement that changes an existing design, the
 one-page code design before any code (owner, 2026-11-04; `principle-design-first`). The design
 names the state owner, the modules, the data flow and the failure paths, and it compares at
 least two options with their costs. For a new requirement in an existing design, one option
-builds as if the requirement always existed. A reviewer who did not write it tries to break
-it. The owner approves it in every such slice, checkpointed or not, from a short form (see
+builds as if the requirement always existed. Before the owner approves it, an independent
+review tries to break it. The owner approves it in every such slice, checkpointed or not, from a short form (see
 [human review](human-review.md)). The state table below is part of this design. A slice that
 stays inside one module skips this step, unless a new requirement changes its design.
 
@@ -134,6 +134,6 @@ becomes the lead agent with the `leader` skill. Type:
    docs/workflows/coordination.md says who does each step. Keep to the brief's scope; list
    anything else under "Follow-ups" in the PR instead of doing it.
 4. Check that every check in AGENTS.md §4 passes on the final head, and fill the PR
-   description per docs/workflows/pull-request.md.
+   description per docs/workflows/pull-request.md, as the Roles table assigns.
 If the docs and the code disagree, or the brief is ambiguous, stop and ask.
 ```
