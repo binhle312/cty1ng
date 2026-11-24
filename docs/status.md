@@ -10,7 +10,7 @@ approvals). Keep it short: link to PRs and briefs instead of describing work.
 
 ## Now
 
-The `codex-workers` skill is in draft [#149](https://github.com/binhle312/cty1ng/pull/149) (owner, 2026-11-24): the lead agent starts Codex workers and talks with them. The owner answered its open points on 2026-11-24. The one Codex review of both skills ran (round 1); its fixes for this skill are in `729c1f1`. Review round 2 ran; its point R2-7 and the scan flags of this skill wait for the owner (the decision page of #150). Then the owner's merge.
+The `codex-workers` skill is in draft [#149](https://github.com/binhle312/cty1ng/pull/149) (owner, 2026-11-24): the lead agent starts Codex workers and talks with them. The owner answered its open points on 2026-11-24. The one Codex review of both skills ran (round 1); its fixes for this skill are in `729c1f1`. Review round 2 ran. Owner, 2026-11-24: R2-7 is fixed by revision 4 of the leader plan (`25ca7f2`), and the scan flags of this skill are recorded in the PR. Waiting on: the review rounds of revision 4, then the owner's merge.
 
 The plan of the `leader` skill is in draft [#150](https://github.com/binhle312/cty1ng/pull/150), on top of #149 (owner, 2026-11-24): the owner starts the lead agent with `/leader <task>`. The owner approved revision 3 of the plan on 2026-11-24; the skill is built. The one Codex review of both skills ran (round 1); its fixes are in `9ec6314`. The owner decided F1, F7 and F11 on 2026-11-24. Review round 2 found 9 P2 points. Waiting on the owner: the plan of the redesign, the design of the role text in the docs, and the scan flags of `codex-workers` (a decision page); then the merge.
 
