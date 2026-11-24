@@ -15,6 +15,11 @@
       "file": "scripts/records-counts.test.ts",
       "name": "reports a missing prevention search file",
       "reason": "Test first. The red run passed the counts check with the prevention file missing."
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports a blank line that splits the prevention table",
+      "reason": "Test first. The red run passed the counts check with the prevention table split."
     }
   ]
 }

@@ -251,7 +251,7 @@ function cellCountProblems(files: readonly LedgerFile[]): string[] {
 
 // A table row after a line that is not a table line starts a new table, and with no header row
 // after it, Markdown shows its rows as text: a blank line split the table.
-function splitTables(files: readonly LedgerFile[]): string[] {
+export function splitTables(files: readonly LedgerFile[]): string[] {
   const problems: string[] = [];
   for (const file of files) {
     const lines = file.text.split("\n");

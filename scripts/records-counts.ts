@@ -7,6 +7,7 @@ import { parseArgs } from "node:util";
 import {
   type LedgerFile,
   checkCounts,
+  splitTables,
   strayLedgerFiles,
   writeCounts,
 } from "./lib/records-counts.ts";
@@ -26,19 +27,20 @@ const files = LEDGER_FILES.map(read);
 const docs = readdirSync("docs", { recursive: true, encoding: "utf8" })
   .filter((name) => name.endsWith(".md"))
   .map((name) => read(join("docs", name)));
+const requiredSearchFiles = docs.filter((file) => REQUIRED_SEARCH_FILES.includes(file.path));
 const missingSearchFiles = REQUIRED_SEARCH_FILES.filter(
-  (path) => !docs.some((file) => file.path === path),
+  (path) => !requiredSearchFiles.some((file) => file.path === path),
 );
 const fileProblems = [
   ...strayLedgerFiles({ docs, list: LEDGER_FILES }),
   ...missingSearchFiles.map((path) => `${path}: required search file is missing.`),
+  ...splitTables(requiredSearchFiles),
 ];
 // The "Same cause?" search also reads the prevention actions and the lessons (AGENTS.md §9).
-const otherSearchFiles = docs.filter(
-  (file) =>
-    REQUIRED_SEARCH_FILES.includes(file.path) ||
-    /^docs\/lessons-learned\/[^/]+\.md$/.test(file.path),
-);
+const otherSearchFiles = [
+  ...requiredSearchFiles,
+  ...docs.filter((file) => /^docs\/lessons-learned\/[^/]+\.md$/.test(file.path)),
+];
 
 if (values.write && fileProblems.length === 0) {
   const written = writeCounts(files);

@@ -215,6 +215,22 @@ describe("records:counts", () => {
       expect(result.stderr).toContain(`${PREVENTION}: required search file is missing.`);
     });
   });
+
+  it("reports a blank line that splits the prevention table", () => {
+    const prevention = [
+      "| Cause / linked issues | Action and owner | Enforcement or review step | Verification | State |",
+      "| --- | --- | --- | --- | --- |",
+      "| Paper jam | Check the tray | Inspect the tray | Clear | done |",
+      "",
+      "| Empty tray | Refill the tray | Check the paper level | Full | done |",
+      "",
+    ].join("\n");
+    withSplitLedger({ fixture: onePr(), prevention }, (dir) => {
+      const result = runCounts(dir);
+      expect(result.status, result.stdout + result.stderr).toBe(1);
+      expect(result.stderr).toContain(`${PREVENTION}:5: a table row with no header row before it`);
+    });
+  });
 });
 
 describe("checkCounts", () => {
