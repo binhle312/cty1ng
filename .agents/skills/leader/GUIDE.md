@@ -11,20 +11,21 @@ skill by itself.
 
 ## Who talks with whom
 
-```
-              YOU  approve, decide, merge
-               │  ▲
-          task │  │ answer, report, questions
-               ▼  │
-           LEAD AGENT ◀── advice ── advisor tool
-            │  ▲   │  ▲
-      brief │  │   │  │ findings
-            │  │   │  │
-            │  │ plan, then report
-            │  │   │ review brief
-            ▼  │   ▼  │
-          WORKER   REVIEWER
-          builds   did not build the code
+```mermaid
+flowchart TB
+  you(["You<br/>approve, decide, merge"])
+  lead["Lead agent<br/>the Claude Code conversation"]
+  advisor["Advisor tool"]
+  worker["Codex worker<br/>builds"]
+  reviewer["Codex reviewer<br/>did not build the code"]
+
+  you -- "task" --> lead
+  lead -- "answer, report, questions" --> you
+  advisor -- "advice" --> lead
+  lead -- "brief" --> worker
+  worker -- "plan, then report" --> lead
+  lead -- "review brief" --> reviewer
+  reviewer -- "findings" --> lead
 ```
 
 A worker and a reviewer send no messages to each other or to you. Each message passes through the
