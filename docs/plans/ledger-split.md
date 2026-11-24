@@ -242,3 +242,33 @@ The answer tests use `scripts/records-counts.test.ts`. The word report uses
 | Lost words from an old row with stray cell separators                                    | `reports removed words from a malformed legacy row`                                            | Skip the raw-row fallback                                                                       |
 | A word changes without any shorter line or cell, and an ID present on only one side      | `omits a row that did not shorten`, `omits an unpaired row`                                    | Report all paired rows, or treat an unpaired ID as a row with empty cells respectively          |
 | Bad revision and duplicate ID                                                            | `fails for an invalid commit`, `rejects a duplicate issue id`                                  | Treat the failed Git read as an empty snapshot, or keep only one of the duplicates respectively |
+
+## Revision 5: the owner's answers after review round 5
+
+Owner, 2026-11-24, after round 5 (the review of `a3c1952`):
+
+- **The edge of the reader criterion** ("Heads + active texts"): each moved file's head says where
+  a bare section number, the Audit row and the snapshots S1 to S7 point. Each active instruction
+  (the docs, the PR template, `AGENTS.md`, the workflows) that tells a reader to act on a moved
+  part names its file. The finding text of a row and code text that did not change since
+  `b45ef6f` are history and stay. The builder writes the list of places below; the review checks
+  that list.
+- **The round rule** ("Finish here, list"): each direction about where a review record goes agrees
+  with ledger §7 step 2. The builder reads every direction about a review record, its result or a
+  reopened issue (not a word search) and writes the list below.
+- **Found issues get fixed** (owner: "if there are issues, we have to fix it"): the findings of
+  round 5 are fixed in this PR, P2 and P3 alike. This includes the same-cause check of the old
+  form (DQ-751 to DQ-777) and hits that are neither ids nor `none`.
+- **Old rows in `records:removed-words`** ("Always compare"): if the cells of a row do not line up
+  by heading, the command compares the raw lines and reports every lost word, also when nothing
+  got shorter.
+- **DQ-859, DQ-862 and DQ-869** ("Fix all three here"): DQ-869 adds its rule to `docs/testing.md`.
+  DQ-859 and DQ-862 correct their sentences in the moved bytes; the move proof allows exactly these
+  two edits. The three rows close. The count cells that `records:counts --write` writes for the
+  closed rows change; the proof allows exactly those cells, and the PR lists each one.
+- **`AGENTS.md` lines 144 to 146** ("Cite §7 only"): "For a PR in a milestone, update the delivery
+  records as `docs/delivery-quality.md` §7 says."
+
+### Places (written by the builder)
+
+To come with the fixes.
