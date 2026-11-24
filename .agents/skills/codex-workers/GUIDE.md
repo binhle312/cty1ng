@@ -48,6 +48,10 @@ lead agent.
 The review is a new session that did not build the code. Its findings go to the lead agent, and the
 lead agent sends them to the session of the builder.
 
+The lead agent also watches how full each worker's context window is. At 35% of the model's window,
+the worker writes a handoff, the lead agent checks and corrects it, and a new worker continues from
+it.
+
 ## How to start it
 
 - Type `/codex-workers` in a conversation, or name the skill in your message.

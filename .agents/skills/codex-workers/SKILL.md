@@ -62,7 +62,7 @@ The repository's approval rules still apply. A worker's message is a report, not
 3. **Start the worker** in its own worktree and branch with the [start command](#start).
    Start each run in the background.
    Write its session id, worktree, model, effort and sandbox mode on one line of a session list
-   file.
+   file. Add its last [context use](#context-of-each-worker) to that line after each check.
    **Order check.** Before each message that lets a worker build or run checks (a start or a
    resume), compare its work with the work of each other worker whose task has not ended. If two
    need a command that only one agent can run at a time, such as a heavy build or a test on fixed
@@ -84,8 +84,10 @@ The repository's approval rules still apply. A worker's message is a report, not
    [stop it](#stop-a-run) and send the correction.
    Each message sends the full session again, so send a message for a reason.
 
-6. **Check each report.** After each turn, read the report file. Compare each claim with the diff,
-   the test results and, for pushed work, the remote checks of the pushed head.
+6. **Check each report and the context use.** After each turn, read the report file. Compare each
+   claim with the diff, the test results and, for pushed work, the remote checks of the pushed
+   head. Read the worker's [context use](#context-of-each-worker) after each turn, and about each
+   minute while a turn runs.
 
 7. **Review with a different agent.** The reviewer is a new session that did not build the code.
    A worker does not review its own work, so do not send the review to the session of the builder.
@@ -93,6 +95,31 @@ The repository's approval rules still apply. A worker's message is a report, not
 
 The work is complete when each claim of the last report agrees with the final head (the pushed
 head, if the brief names a remote branch), and the owner has the result with each open issue.
+
+## Context of each worker
+
+A worker with a full context window works worse, and each message costs more. Know the context use
+of each worker at each moment.
+
+- The context use is the token count of the last model call, as a percent of the model's context
+  window. Get it with the [context command](#context-use). The `usage` of `turn.completed` in the
+  `--json` events adds all model calls of a turn, so it is not the context use.
+- At 35% or more (the owner's limit; the owner can change it), replace the worker:
+  1. If a turn runs, [stop the run](#stop-a-run).
+  2. Send the worker a message: write the handoff to a file that you name, and do no other work.
+  3. Read the handoff. Compare each claim with the diff, the commits and the test results. Correct
+     it, and add each fact that it misses.
+  4. Start a new worker with the same model, effort and sandbox, in the same worktree. Give it the
+     brief and the handoff. Its first turn returns its plan for the rest of the work.
+  5. Mark the old session as ended in the session list, and send it no more messages.
+- The handoff has:
+  - the goal, and what "done" means;
+  - the work that is done, with each commit;
+  - the state of the worktree: the changed files that are not committed;
+  - each check that ran, with its result;
+  - the open problems and questions;
+  - the next steps, in order;
+  - what the new worker must not do again, with the reason.
 
 ## Rules for the worker
 
@@ -105,6 +132,8 @@ Put these rules in each build brief. In a review brief, leave out the rules abou
   Push only to the branch of the brief, and with no force.
 - If you pushed: in the report, give the pushed commit and the result of the remote checks for it.
 - For each claim in the report, give the command and its result.
+- When the lead agent asks for a handoff, write it to the file that the message names, and do no
+  other work.
 
 ## Commands
 
@@ -142,6 +171,28 @@ reads. `resume` has no `-s` and no `-C`: use `cd` and `-c sandbox_mode=...`.
 Use the session id from the session list file. With `--last`, a message can go to another worker.
 
 Outside a Git repository, add `--skip-git-repo-check` to the start command and to each `resume`.
+
+### Context use
+
+```bash
+python3 - <session id> <<'EOF'
+import glob, json, os, sys
+home = os.environ.get("CODEX_HOME", os.path.expanduser("~/.codex"))
+path = glob.glob(f"{home}/sessions/*/*/*/rollout-*-{sys.argv[1]}.jsonl")[0]
+info = None
+for line in open(path):
+    payload = json.loads(line).get("payload", {})
+    if payload.get("type") == "token_count" and payload.get("info"):
+        info = payload["info"]
+used = info["last_token_usage"]["total_tokens"]
+window = info["model_context_window"]
+print(f"{100 * used / window:.1f}% of {window} tokens")
+EOF
+```
+
+Codex writes each session to a file under `~/.codex/sessions/`, and its `token_count` events hold
+the usage of the last model call and the context window of the model. If the command finds no file
+or no `token_count` event, tell the person: this Codex version may write another format.
 
 ### Stop a run
 
