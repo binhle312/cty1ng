@@ -90,7 +90,7 @@ ok((await p.locator("input[type=radio]:checked").count()) === 0, "no option is p
 const counts = await p.locator(".counts").innerText();
 ok(/Total\s*\n?\s*\d+/.test(counts) && /Answered/.test(counts) && /Remaining/.test(counts), "header shows Total, Answered, Remaining");
 ok((await p.locator(".bar img, .bar progress, [role=progressbar]").count()) === 0, "no progress bar (R5.3)");
-ok((await p.locator(".sbtn .no").count()) === N, "the stepper has N number elements (.no), one for each question in total");
+ok((await p.locator(".sbtn .no").count()) === N, "the stepper has N .no elements in total");
 ok((await p.locator('.sbtn[aria-current="step"]').getAttribute("data-go")) === "0", "Overview is the active step");
 
 // 3. Overview
@@ -385,7 +385,7 @@ ok((await swipe(0, [[55, 80]]))[0].step === 0, "vertical scroll leaves the step 
 await p.waitForTimeout(180);
 await p.emulateMedia({ reducedMotion: "reduce" });
 const [quietPartial, quiet] = await swipe(0, [[25], [25]]);
-ok(quiet.step === 1 && quiet.slide === "none" && !quiet.edge && !quietPartial.edge && quietPartial.drag === "", "reduced motion keeps swipe navigation; the samples have the animation name none, an empty inline transform and no .edge.live id");
+ok(quiet.step === 1 && quiet.slide === "none" && !quiet.edge && !quietPartial.edge && quietPartial.drag === "", "reduced motion: the partial sample has an empty inline transform; the committed sample is on step 1 with animation name none; neither sample returns a .edge.live id");
 const q1Radio = p.locator('.step[data-step="1"] .opt input').first();
 await q1Radio.focus();
 await p.keyboard.press("ArrowLeft");
@@ -442,7 +442,7 @@ const guarded = await p.evaluate(() => {
 });
 ok(guarded.cleared, "Ctrl-wheel clears the partial drag at 100 ms");
 ok(guarded.partialStep === 0, "35 px and 15 px stay below the swipe threshold across Ctrl-wheel at 100 and 200 ms");
-ok(guarded.committedStep === 1 && guarded.finalStep === 1, "after a committed swipe, the step stays 1 through the sampled Ctrl-wheel events");
+ok(guarded.committedStep === 1 && guarded.finalStep === 1, "the step is 1 right after the committed swipe and again after the last sampled wheel event");
 await p.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
 
 ok(errs.length === 0, "no console errors" + (errs.length ? ": " + JSON.stringify(errs) : ""));
