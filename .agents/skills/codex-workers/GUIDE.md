@@ -33,7 +33,7 @@ flowchart TB
 ```
 
 A worker and a reviewer send no messages to each other or to you. Each message passes through the
-lead agent. The lead agent can ask the advisor at any step, before it decides.
+lead agent. The lead agent can ask the advisor before it decides.
 
 ## One task, turn by turn
 
@@ -51,12 +51,10 @@ sequenceDiagram
     W->>L: a question
     L->>W: answer
   end
-  W->>L: plan, if the work has a design choice
-  opt your repository asks you to approve the plan
-    L->>Y: the plan
-    Y->>L: your approval
+  opt the work has a design choice
+    W->>L: plan
+    L->>W: "plan OK, build"
   end
-  L->>W: "plan OK, build", or "build" if there is no plan
   Note over W: builds and commits.<br/>Pushes to its branch if the brief names a remote branch.
   opt the work goes in a wrong direction
     L->>W: stops the running turn, sends the correction
@@ -80,9 +78,8 @@ sequenceDiagram
   Note over Y: you decide the merge
 ```
 
-The box "your repository asks you to approve the plan" is one example of an approval point. Your
-repository can ask for your approval at other points too, and the lead agent stops and asks you at
-each of them.
+The diagram does not show the points where you approve, because each repository has its own rules.
+At each of these points, the lead agent stops and asks you.
 
 The review is a new session that did not build the code. Its findings go to the lead agent, and the
 lead agent sends them to the builder's session. After a handoff, that is the new session.
@@ -90,7 +87,7 @@ lead agent sends them to the builder's session. After a handoff, that is the new
 ## Where the worker works
 
 - The lead agent starts each worker in its own Git worktree and branch, which the brief names.
-- A checkpoint is a step of the worker's plan after which it commits its work.
+- A checkpoint is a point that the worker's plan names.
 - A turn is one run of the worker: from a message of the lead agent to the report of the worker.
 - If the brief names a remote branch, the worker pushes its commits to that branch at each
   checkpoint. It pushes to no other branch, and it does not force a push.
@@ -108,15 +105,14 @@ corrects it, and a new worker continues from it.
 The limit applies to a reviewer too. The lead agent splits a large review into parts before it
 starts, so that each part ends under 35%.
 
-35% is your limit. To change it, tell the lead agent, or change the number in `SKILL.md`.
+35% is your limit, and you can change it.
 
 ## How to start it
 
 Before you start:
 
 1. Install the Codex CLI (`codex`) and sign in.
-2. Put the folder of this file, with its `SKILL.md`, where Claude Code finds skills. For example,
-   use `.claude/skills/codex-workers/` in your repository.
+2. Put the folder of this file, with its `SKILL.md`, where Claude Code finds skills.
 
 Each start comes from you. The lead agent does not start this skill on its own. Start it in one of
 these ways:
