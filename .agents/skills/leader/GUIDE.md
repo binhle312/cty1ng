@@ -154,8 +154,9 @@ handoff, that is the new session.
 - If the brief names a remote branch, the worker pushes its commits to that branch at each
   checkpoint. It pushes to no other branch, and it does not force a push.
 - A reviewer makes no commits.
-- The lead agent can run more than one worker at the same time, each on its own task, in its own
-  worktree and branch. The turn diagram shows one of them. For a command that only one agent can
+- The lead agent splits the build into small tasks, so that each worker and each reviewer handles a
+  small piece of work. It can run more than one worker at the same time, each on its own task, in
+  its own worktree and branch. The turn diagram shows one of them. For a command that only one agent can
   run at a time, such as a heavy build, the lead agent tells them the order, or sends the second
   message after the first worker is done with that command.
 
