@@ -9,7 +9,7 @@ The skill keeps a human in the loop. The human starts a new conversation in Clau
 `/leader` with the task: the context, the goal, and what "done" means. From that message, the
 conversation is the human's lead agent. No agent loads this skill by itself.
 To continue in a new conversation, the human types `/leader <folder path>` with the path to
-`tmp/leader/` in the lead agent's worktree.
+the lead agent's folder (default `tmp/leader/`). This is the folder that contains `runs/`.
 
 ## Who talks with whom
 

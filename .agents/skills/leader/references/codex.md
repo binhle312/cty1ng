@@ -43,7 +43,7 @@ Give `start` these options: `--run-dir`, `--workdir`, `--brief`, `--model`, `--e
 and `--limit`. Use the limit from [Context of each worker](../SKILL.md#context-of-each-worker).
 For a worker, use `--sandbox workspace-write`.
 
-Use `tmp/leader/runs/<name>/` in the lead agent's worktree for `--run-dir`.
+Use `runs/<name>/` under the lead agent's folder (default `tmp/leader/`) for `--run-dir`.
 Use a new run folder outside the work folder and each writable root. This protects the saved
 options of the next turn. The run folder holds `args.json`, `state.json`, and `run.log`.
 For turn `n`, the files are `t<n>-events.jsonl`, `t<n>-report.md`, and `t<n>-log.txt`.
@@ -95,7 +95,7 @@ At the end of a turn, `start` or `send` writes `state.json` and prints this last
 | State | Exit code | Meaning | Next step |
 | --- | --- | --- | --- |
 | `done` | 0 | The turn ended with a report and the last count is under the limit. | Read the report. |
-| `limit` | 3 | The count reached the limit during the turn or was at or over it at the end. A handoff turn can end with this state and a saved report. | If this was the handoff turn, read its report. Otherwise, follow the [handoff steps](../SKILL.md#context-of-each-worker). |
+| `limit` | 3 | The count reached the limit during the turn or was at or over it at the end. A handoff turn can end with this state and a saved report. | For a handoff turn, read the report if it has content. If the state note says `handoff report missing`, start a new worker with the brief and the last good report, if one exists. For other turns, follow the [handoff steps](../SKILL.md#context-of-each-worker). |
 | `watch-error` | 4 | The watch could not get a thread in the start wait or a fresh count in the count wait. This includes a clean Codex exit with no fresh count. | Run `context` and see the note below. |
 | `codex-error` | 5 | Codex failed or left an empty or missing report. | Read the log. |
 | `stopped` | 6 | A stop request or a signal to the runner ended the turn. | Follow the reason for the stop. |
@@ -109,14 +109,18 @@ After a resume gets no fresh count, standalone `context` can show an older turn'
 the failed turn in `state.json` and `run.log`. If the watch still cannot read a fresh count,
 tell the owner that Codex may have changed its session format.
 
-When the runner recovers a stale lock with no recorded end, it records `stopped` with the note
-`runner ended with no record`. Check the interrupted work before you resume. If recovery reports
-launch intent without a PID, confirm that every process of that turn has ended. Then follow the
-runner's instructions to clear the intent.
+Repeat the original `start` command with the same run folder to recover a stale lock without a
+launch. If the turn has no end record, the runner records `stopped` with the note
+`runner ended with no record`. The command exits with a usage error because the run folder
+already exists. Check the interrupted work before you run `send`.
+
+If recovery reports launch intent without a PID, confirm that every process of that turn has
+ended. Then follow the runner's instructions to clear the intent.
 
 ### Known limits
 
 - The folder check can miss Codex's writable temporary folder or a broken root symlink. Check the effective writable roots and put the run folder outside them.
+- A child that a worker starts can outlive Codex. If you see it in `ps` or find a port that it still uses, stop it by hand.
 - If `stop` leaves the version probe or Codex running, inspect the turn's processes. Wait for them to end before you retry.
 - A `stop` near the end of a turn can disagree with the final state. Read `state.json` after the runner ends.
 - A `stop` during a refused `send` can stop the next turn before launch. If that happens, wait for the runner to end, read the final state, and retry.

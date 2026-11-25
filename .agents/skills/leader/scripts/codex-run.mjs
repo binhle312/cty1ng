@@ -381,12 +381,11 @@ function atLimit({ used, window }, limit) {
 
 function sampleDescendants(codexPid, descendants) {
   if (!codexPid) return;
-  const list = execFileSync("ps", ["-A", "-o", "pid=,ppid=,pgid="], { encoding: "utf8" });
+  const list = execFileSync("ps", ["-A", "-o", "pid=,ppid="], { encoding: "utf8" });
   const children = new Map();
   for (const line of list.trim().split("\n")) {
-    const [pid, parent, group] = line.trim().split(/\s+/).map(Number);
+    const [pid, parent] = line.trim().split(/\s+/).map(Number);
     if (!pid) continue;
-    if (group === codexPid && pid !== codexPid) descendants.add(pid);
     if (!children.has(parent)) children.set(parent, []);
     children.get(parent).push(pid);
   }
@@ -435,12 +434,7 @@ function launch(dir, lock, args, input, argv) {
     }
     const lockPath = join(dir, "lock");
     writeJson(lockPath, { ...lock, launchPending: true });
-    const child = spawn("codex", argv, {
-      cwd: args.workdir,
-      env: codexEnv,
-      stdio: files,
-      detached: true,
-    });
+    const child = spawn("codex", argv, { cwd: args.workdir, env: codexEnv, stdio: files });
     let error;
     const ended = new Promise((resolve) => {
       child.once("error", (cause) => {
@@ -624,6 +618,9 @@ async function runTurn(dir, lock, args, input, previousThread, handoff) {
     } else if (count && atLimit(count, args.limit)) {
       state = "limit";
       note = codexError ?? note;
+      if (handoff && !fs.statSync(report, { throwIfNoEntry: false })?.size) {
+        note = note ? note + ". handoff report missing" : "handoff report missing";
+      }
     } else if (codexError) {
       state = "codex-error";
       note = codexError;

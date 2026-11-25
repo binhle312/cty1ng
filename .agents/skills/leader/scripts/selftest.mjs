@@ -91,7 +91,7 @@ function fakeCodex() {
         await gate(scenario.orphan);
       } else if (step.finish) {
         if (interrupted) return;
-        fs.writeFileSync(report, step.report ?? "Fake last message\n");
+        if (step.report !== null) fs.writeFileSync(report, step.report ?? "Fake last message\n");
         process.exitCode = step.code ?? 0;
         return;
       }
@@ -234,8 +234,7 @@ function fixture(folder, runner) {
         interval,
         "--start-wait",
         startWait,
-        "--count-wait",
-        countWait,
+        ...(countWait === null ? [] : ["--count-wait", countWait]),
         ...options,
       ],
       scenario,
@@ -990,21 +989,6 @@ fs.renameSync = function (from, to) {
     },
   ],
   [
-    31,
-    "report a late descendant after Codex exits",
-    async (f) => {
-      const orphan = join(f.folder, "late-orphan");
-      const runner = await afterLowCount(f, [{ orphan: true }, finish], { orphan });
-      await expectEnd(f, runner, "cleanup-error", 7, "late descendant");
-      const pid = Number(readFileSync(orphan, "utf8"));
-      assert.ok(alive(pid), "late descendant: still alive");
-      assert.deepEqual(f.state().pids, [pid], "late descendant: state lists PID");
-      await expectUsage(f.send(), "late descendant: cannot resume", /cleanup error/);
-      process.kill(pid, "SIGTERM");
-      await until(() => !alive(pid), "late descendant: stopped by test");
-    },
-  ],
-  [
     32,
     "apply send watch overrides for one turn",
     async (f) => {
@@ -1053,6 +1037,37 @@ fs.renameSync = function (from, to) {
       );
       const hold = { gate: join(f.folder, "hold-without-count") };
       await expectEnd(f, f.send({ steps: [hold] }), "watch-error", 4, "send uses saved wait", 3);
+    },
+  ],
+  [
+    34,
+    "keep the limit when the handoff report is empty or absent",
+    async (f) => {
+      await limitTurn(f);
+      for (const [index, report] of ["", null].entries()) {
+        const turn = index + 2;
+        const runner = f.send({ steps: [3600, { finish: true, report }] }, ["--handoff"]);
+        await expectEnd(f, runner, "limit", 3, "missing handoff report", turn);
+        assert.match(
+          f.state().note ?? "",
+          /handoff report missing/,
+          "missing handoff report: note",
+        );
+        await expectUsage(f.send(), "missing handoff report: refuse normal send", /--handoff/);
+        assert.equal(f.records("exec").length, turn, "missing handoff report: no new exec");
+      }
+    },
+  ],
+  [
+    35,
+    "save the configured count wait when start omits the flag",
+    async (f) => {
+      await expectEnd(f, f.start(undefined, { countWait: null }), "done", 0, "default count wait");
+      assert.equal(
+        read(f.file("args.json")).watch.countWait,
+        read(config).countWait,
+        "default count wait: saved configured value",
+      );
     },
   ],
 ];
@@ -1193,8 +1208,8 @@ const breaks = [
   [
     13,
     "accept an empty report",
-    "!fs.statSync(report, { throwIfNoEntry: false })?.size",
-    "false",
+    "} else if (!fs.statSync(report, { throwIfNoEntry: false })?.size) {",
+    "} else if (false) {",
     /empty report: exit/,
   ],
   [
@@ -1310,18 +1325,25 @@ const breaks = [
     /launch crash: refuse send: usage exit/,
   ],
   [
-    31,
-    "miss descendants reparented before the final sample",
-    "if (group === codexPid && pid !== codexPid) descendants.add(pid);",
-    "void group;",
-    /late descendant: exit/,
-  ],
-  [
     32,
     "refuse watch overrides on send",
     "values: watchFlags,",
     "values: [],",
     /send override: exit/,
+  ],
+  [
+    34,
+    "omit the note for a missing handoff report",
+    "if (handoff && !fs.statSync(report, { throwIfNoEntry: false })?.size) {",
+    "if (false) {",
+    /missing handoff report: note/,
+  ],
+  [
+    35,
+    "use the old count wait instead of the config",
+    'opts["count-wait"] ?? defaults.countWait',
+    'opts["count-wait"] ?? 6',
+    /default count wait: saved configured value/,
   ],
 ];
 
