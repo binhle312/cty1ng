@@ -1338,7 +1338,7 @@
     },
     {
       "id": "counts-table-ledger-cell-count",
-      "claim": "records:counts refuses a cell count in docs/delivery-quality.md with its message (plan revision 11, Q3 A).",
+      "claim": "records:counts refuses a cell count in docs/delivery-quality.md with its whole message: the first cell, the cell count and the header count (plan revisions 11 and 12).",
       "test": {
         "kind": "vitest",
         "file": "scripts/records-counts.test.ts",
@@ -1353,6 +1353,16 @@
             {
               "find": "    ...cellCountProblems(checkedFiles),\n",
               "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "table-ledger-cell-count-wrong-message",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "the row ${row.cells[0] ?? \"\"} has ${row.cells.length} cells",
+              "replace": "the row has a duplicate ID"
             }
           ]
         }
@@ -1470,7 +1480,7 @@
     },
     {
       "id": "counts-table-archive-cell-count",
-      "claim": "records:counts refuses a cell count in docs/delivery-quality-archive.md with its message (plan revision 11, Q3 A).",
+      "claim": "records:counts refuses a cell count in docs/delivery-quality-archive.md with its whole message: the first cell, the cell count and the header count (plan revisions 11 and 12).",
       "test": {
         "kind": "vitest",
         "file": "scripts/records-counts.test.ts",
@@ -1485,6 +1495,16 @@
             {
               "find": "    ...cellCountProblems(checkedFiles),\n",
               "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "table-archive-cell-count-wrong-message",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "the row ${row.cells[0] ?? \"\"} has ${row.cells.length} cells",
+              "replace": "the row has a duplicate ID"
             }
           ]
         }
@@ -1602,7 +1622,7 @@
     },
     {
       "id": "counts-table-register-cell-count",
-      "claim": "records:counts refuses a cell count in docs/delivery-quality-register.md with its message (plan revision 11, Q3 A).",
+      "claim": "records:counts refuses a cell count in docs/delivery-quality-register.md with its whole message: the first cell, the cell count and the header count (plan revisions 11 and 12).",
       "test": {
         "kind": "vitest",
         "file": "scripts/records-counts.test.ts",
@@ -1617,6 +1637,16 @@
             {
               "find": "    ...cellCountProblems(checkedFiles),\n",
               "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "table-register-cell-count-wrong-message",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "the row ${row.cells[0] ?? \"\"} has ${row.cells.length} cells",
+              "replace": "the row has a duplicate ID"
             }
           ]
         }
@@ -1764,7 +1794,7 @@
     },
     {
       "id": "counts-table-prevention-cell-count",
-      "claim": "records:counts refuses a cell count in docs/delivery-quality-prevention.md with its message (plan revision 11, Q3 A).",
+      "claim": "records:counts refuses a cell count in docs/delivery-quality-prevention.md with its whole message: the first cell, the cell count and the header count (plan revisions 11 and 12).",
       "test": {
         "kind": "vitest",
         "file": "scripts/records-counts.test.ts",
@@ -1799,6 +1829,16 @@
             {
               "find": "    PREVENTION_HEADER,\n",
               "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "table-prevention-cell-count-wrong-message",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "the row ${row.cells[0] ?? \"\"} has ${row.cells.length} cells",
+              "replace": "the row has a duplicate ID"
             }
           ]
         }

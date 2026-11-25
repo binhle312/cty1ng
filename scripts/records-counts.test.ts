@@ -279,8 +279,14 @@ describe("records:counts", () => {
       "cell count": (text) => {
         const lines = text.split("\n");
         const index = lines.findIndex((line) => firstRow.test(line));
-        lines[index] = `${lines[index]} extra |`;
-        return { text: lines.join("\n"), message: `:${index + 1}: the row` };
+        const row = lines[index] ?? "";
+        const cells = row.split("|").length - 2;
+        const first = row.split("|")[1]?.trim() ?? "";
+        lines[index] = `${row} extra |`;
+        return {
+          text: lines.join("\n"),
+          message: `:${index + 1}: the row ${first} has ${cells + 1} cells; its header has ${cells}.`,
+        };
       },
     };
     const paths = [MAIN, ARCHIVE, REGISTER, PREVENTION];
