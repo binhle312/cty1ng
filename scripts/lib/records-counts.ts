@@ -83,7 +83,8 @@ export function formatIds(ids: readonly number[]): string {
 const SEPARATOR_ROW = /^\|( *:?-+:? *\|)+$/;
 
 // Extra spaces inside the heading cells do not hide the table.
-function isHeading(line: string, next: string, header: string): boolean {
+function isHeading(input: { line: string; next: string; header: string }): boolean {
+  const { line, next, header } = input;
   return (
     line.startsWith("|") && lineOf(cellsOf(line)).startsWith(header) && SEPARATOR_ROW.test(next)
   );
@@ -94,7 +95,7 @@ function tablesWithHeader(input: { files: readonly LedgerFile[]; header: string 
   for (const file of input.files) {
     const lines = file.text.split("\n");
     lines.forEach((line, index) => {
-      if (!isHeading(line, lines[index + 1] ?? "", input.header)) return;
+      if (!isHeading({ line, next: lines[index + 1] ?? "", header: input.header })) return;
       const rows: Row[] = [];
       for (let next = index + 2; next < lines.length; next++) {
         const row = lines[next] ?? "";

@@ -472,12 +472,11 @@ describe("structure problems", () => {
   });
 
   it("ignores a padded data row that looks like a register heading", () => {
-    const [main, archive] = files(onePr());
     const glossary = "| Field | Group |\n| --- | --- |\n|  PR  | Milestone / slice |\n";
-    const problems = checkCounts([
-      { path: MAIN, text: `${main?.text ?? ""}\n${glossary}` },
-      archive!,
-    ]);
+    const ledger = files(onePr()).map((file) =>
+      file.path === MAIN ? { path: MAIN, text: `${file.text}\n${glossary}` } : file,
+    );
+    const problems = checkCounts(ledger);
     expect(problems, "no second register").toEqual([]);
   });
 
