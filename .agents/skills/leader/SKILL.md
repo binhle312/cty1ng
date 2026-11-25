@@ -64,10 +64,12 @@ Give each other build to a worker, including a simple code change.
 2. **Read** the project's agent instructions and the documents that they name for this task.
 3. **Find the unknowns:** what the task needs and the documents do not say. Ask the owner each
    question in one round.
-4. **Plan:** write the plan and its tests. Split the build into small tasks, each with one outcome
-   and its own checks, so that each worker and each reviewer ends well under the
-   [limit](#context-of-each-worker) (owner, 2026-11-25). Give independent tasks to different
-   workers at the same time, and review each task apart. If the project asks for an approval of the
+4. **Plan:** write the plan and its tests. Break the owner's goal into small tasks, each with one
+   outcome and its own checks, so that each worker and each reviewer ends well under the
+   [limit](#context-of-each-worker) (owner, 2026-11-25). Make the tasks independent: no task
+   changes a file of another task or waits for another task. Give them to different workers at the
+   same time, and review each task apart. A task that needs the result of another task starts after
+   that task is done. If the project asks for an approval of the
    plan, wait for the owner.
 5. **Build:** see [The lead agent's own work](#the-lead-agents-own-work) and [Workers](#workers).
 6. **Check:** after each turn, read the report file. Compare each claim with the plan, the diff,

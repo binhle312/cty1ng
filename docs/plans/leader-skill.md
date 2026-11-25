@@ -260,8 +260,11 @@ as an observation.
 **Small tasks (owner, 2026-11-25):** "yes, thats why should split the work smaller so we can have
 multiple workers and reviewers to handle small work, not a big chucky code at once". Stage 4 of
 `SKILL.md` splits the build into small tasks, each with one outcome and its own checks, gives
-independent tasks to different workers at the same time, and reviews each task apart. The guide
-says the same in one sentence.
+independent tasks to different workers at the same time, and reviews each task apart. Then: "when me (owner) give the goal, you should
+break it into smaller tasks that you can spawn workers who can work in concurrency or parallel which
+not block or touch other's works": no task changes a file of another task or waits for another
+task; a task that needs another task's result starts after it. The guide says the same in one
+sentence.
 
 **Test.** The fact map against `a600a49` lists each sentence that leaves, with its reason. A
 headless continuation test of the #157 text passed on 2026-11-25: a new conversation that got only
