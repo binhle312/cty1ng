@@ -349,7 +349,8 @@ have to fix it") was about severity, not this decision.
   - Test gaps: the break of `rejects blank hits` makes the checker accept blank hits (R6B2-F1). A
     test fails when the answer body treats escaped backticks as a code span (R6B2-F2). A test covers a
     legacy row that loses a word and keeps its byte length (R6C2-F1). The test name and claim of the
-    aligned row say that its cells line up by heading (R6C2-F2).
+    aligned row say that its cells line up by heading (R6C2-F2): the revision 4 test
+    `omits a row that did not shorten` becomes `omits an aligned row that did not shorten`.
   - The four patterns of revision 4 (`a+?`, `a{,3}`, `[a[:digit:]]`, `x[^]`) get a test that the
     checker accepts each, with a break claim (R6D-F1).
   - Limits that stay (owner, Q1 A), each in one Follow-ups row of `docs/status.md`: three backticks
