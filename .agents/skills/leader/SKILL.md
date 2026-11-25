@@ -44,7 +44,10 @@ The **lead agent** is the Claude Code conversation that the owner starts.
 
 ### The lead agent's own work
 
-Keep searches and short reads for yourself.
+Keep short reads for yourself. Give a broad search for the documents and the code that a task
+needs to a Claude Code subagent on Haiku. Ask it for paths, line numbers and short quotes, and read
+each line yourself before your plan depends on it (owner, 2026-11-25). A search subagent changes no
+file and is not a worker, so it can run before the owner's OK.
 
 Do these tasks yourself, and start no worker for them:
 
@@ -88,7 +91,8 @@ Give each other build to a worker, including a simple code change.
 
    After the OK, ask the owner before you change a task, a count, a model or an effort. A new
    session with the same task, model and effort is not a change: one that replaces a worker or a
-   reviewer at the [limit](#context-of-each-worker), or one that reviews the fixes.
+   reviewer at the [limit](#context-of-each-worker), or one that reviews the fixes. A move to the
+   [backup](#when-codex-cannot-run) needs no new OK: tell the owner the cause and the new models.
 
 5. **Build** what the plan says: see [The lead agent's own work](#the-lead-agents-own-work) and
    [Workers](#workers).
@@ -197,6 +201,21 @@ Write its session id, worktree, model, effort and sandbox mode on one line of th
 
 Use a new report file for each turn. For a Codex worker that commits and pushes, use the
 [commit and push options in `references/codex.md`](references/codex.md#commit-and-push).
+
+### When Codex cannot run
+
+If a start or a message fails because of the Codex account, such as an ended plan, a used limit or
+no login, use Claude Code subagents as the workers and reviewers (owner, 2026-11-25). Another
+error, such as a wrong option or a sandbox refusal, is an ordinary obstacle: find its cause.
+
+- Use Claude Opus in place of Astra, and Claude Sonnet in place of Sol or Terra, at the same effort.
+- Start each subagent in the background with the Agent tool, with the same brief, the same first
+  turn and the same worktree rules. Send each next message to the same subagent.
+- A reviewer subagent has no read-only sandbox. Its brief says to change no file, and you check
+  `git status` in its worktree after each turn.
+- You cannot read a subagent's context use. Keep its task small.
+- A subagent ends with this conversation. Start a new subagent, in a new conversation or in place
+  of a Codex worker that was in a task, with the brief, the diff and the commits.
 
 ### Get the plan first
 

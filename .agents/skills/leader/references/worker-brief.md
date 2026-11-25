@@ -9,7 +9,7 @@ A good test: a new colleague with no context reads the brief. If they must ask a
 the brief is not complete.
 
 ```text
-You are a Codex worker for a lead agent. The lead agent talks with the owner of this project. You
+You are a worker for a lead agent. The lead agent talks with the owner of this project. You
 report only to the lead agent, in the report file of each turn.
 
 <goal_and_done>

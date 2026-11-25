@@ -76,6 +76,7 @@ fix, or when an approval is missing. Other work goes on.
 | --- | --- |
 | Plans, briefs, records, messages to the human | The lead agent |
 | [The lead agent's own work](SKILL.md#the-lead-agents-own-work) | The lead agent |
+| A broad search for the documents and the code of a task | A Claude Code subagent on Haiku, before the plan |
 | Each other code change, also a simple one | A Codex worker |
 | Each review | A different agent: a new session that did not build the code |
 
@@ -88,7 +89,8 @@ The [models](references/codex.md#pick-the-models) and the [commands](references/
 
 The human talks with one agent: the lead agent. It is the Claude Code conversation that the human
 starts. The lead agent gives build work and review work to Codex workers, and it talks with them
-when that is needed. The human approves, decides, and merges.
+when that is needed. If Codex cannot run because of its account, Claude Code subagents do that work.
+The human approves, decides, and merges.
 
 A task has two plans. The lead agent's plan goes to the human, and the human gives the OK before a
 worker or a reviewer starts. Each worker then gives the lead agent a plan for its own task. The lead

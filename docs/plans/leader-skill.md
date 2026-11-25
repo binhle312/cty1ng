@@ -328,6 +328,44 @@ other than `--version`: on the text before this revision (`d1690e2`), the lead a
 the plan with the task, the worker, the reviewer and their models, and waited for the OK. A goal
 with gaps does not tell the two texts apart: both asked questions and made no call.
 
+## Revision 8 (2026-11-25): a Haiku search, and Claude Code subagents when Codex cannot run
+
+Approval of this revision: the owner ordered both changes on 2026-11-25. The additions beyond the
+owner's words wait for the owner's review; the PR lists them under `Needs human review`.
+
+The owner's words, 2026-11-25: "for the kind of exploration, you should use haiku". The lead agent
+proposed two sentences for "The lead agent's own work"; the owner answered: "Add it, also remember
+if codex workers are failed to start (maybe due to human subscriptions is over, claude code
+sub-agents (or agents) will be the backup)".
+
+**What changes.**
+- `SKILL.md`, "The lead agent's own work": a broad search for the documents and the code of a task
+  goes to a Claude Code subagent on Haiku. The lead agent asks for paths, line numbers and short
+  quotes, and reads each line itself before its plan depends on it. A search subagent changes no
+  file and is not a worker, so it can run before the owner's OK. "Keep searches and short reads for
+  yourself" becomes "Keep short reads for yourself".
+- `SKILL.md`, a new part "When Codex cannot run" under "Workers": if a start or a message fails
+  because of the Codex account (an ended plan, a used limit, no login), Claude Code subagents are
+  the workers and reviewers, with the same brief, first turn and worktree rules. Another error is an
+  ordinary obstacle.
+- `SKILL.md` stage 4: a move to the backup needs no new OK; the lead agent tells the owner the cause
+  and the new models.
+- `references/worker-brief.md`: "You are a worker for a lead agent" (no longer "a Codex worker").
+- `GUIDE.md`: one row for the search in "Who does which work", and one sentence for the backup.
+
+**Additions beyond the owner's words:**
+- The models of the backup: Claude Opus in place of Astra, Claude Sonnet in place of Sol or Terra,
+  at the same effort. The owner named no Claude model.
+- "Tell the owner, no new OK" for the move to the backup. The lead agent reads "will be the backup"
+  as an order for that case.
+- A reviewer subagent has no read-only sandbox: its brief says to change no file, and the lead agent
+  checks `git status`. The lead agent cannot read a subagent's context use, so it keeps the task
+  small. A subagent ends with the conversation; a new one starts with the brief, the diff and the
+  commits.
+- Only an account error starts the backup; a failed `resume` counts the same as a failed start.
+
+**Test.** The fact map against `a600a49` lists each sentence that leaves, with its reason.
+
 ## Open questions
 
 None. The owner answered each question on 2026-11-24.
