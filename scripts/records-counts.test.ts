@@ -224,8 +224,8 @@ describe("records:counts", () => {
       rmSync(join(dir, PREVENTION));
       const before = readFileSync(join(dir, REGISTER), "utf8");
       const result = runCounts(dir, "--write");
-      expect(result.status, result.stdout + result.stderr).toBe(1);
       expect(readFileSync(join(dir, REGISTER), "utf8"), "the stale register stays").toBe(before);
+      expect(result.status, result.stdout + result.stderr).toBe(1);
     });
   });
 
