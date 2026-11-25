@@ -36,6 +36,12 @@ function dq(id: number): string {
   return `DQ-${String(id).padStart(3, "0")}`;
 }
 
+// One CR line end, on the first line only: the checks must find a single CR.
+function crOnFirstLine(text: string): string {
+  const end = text.indexOf("\n");
+  return `${text.slice(0, end)}\r${text.slice(end)}`;
+}
+
 function lineIn(ledger: { path: string; text: string }[], start: string): number {
   return (ledger[0]?.text ?? "").split("\n").findIndex((line) => line.startsWith(start)) + 1;
 }
@@ -277,7 +283,7 @@ describe("records:counts", () => {
     const firstRow = /^\| (DQ-\d+|M2|Paper jam) \|/;
     const kinds = {
       cr: (text: string) => ({
-        text: text.replace("\n", "\r\n"),
+        text: crOnFirstLine(text),
         message: () => ": the file has CR line ends",
       }),
       "padded id": (text: string) => {
@@ -661,7 +667,7 @@ describe("structure problems", () => {
       registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
     });
     const crlf = files(fixture).map((file) =>
-      file.path === MAIN ? { ...file, text: file.text.replace("\n", "\r\n") } : file,
+      file.path === MAIN ? { ...file, text: crOnFirstLine(file.text) } : file,
     );
     expect(writeCounts(crlf).files, "stale register, one CR").toEqual(crlf);
   });
