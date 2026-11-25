@@ -507,6 +507,65 @@ Runs at `80d5651` (after two rounds of outside review):
 The outside review stopped after two fix checks (AGENTS.md §9); the open findings and the owner's
 options are in the PR.
 
+## Revision 10 (2026-11-26): one home for each rule
+
+Status: plan, waiting for the owner's OK. No code before it.
+
+Why: the outside review of revisions 7 to 9 stopped after two fix checks (AGENTS.md §9). Two causes:
+a rule had copies in 3 to 5 files, and each fix round added rules that brought new gaps. The owner
+chose option A on 2026-11-26, with this condition: "coordination.md is projcet documentation, this
+skill must have enough information to be standalone so people can use it in different projects".
+
+The owner's decisions on the rules that the fix rounds added (2026-11-26, answers to four
+questions):
+- "Drop the count": the plan gives no number of checkpoints, and nothing checks it. The worker's
+  plan still names its checkpoints.
+- "Worker's choice": after each build turn and each fix turn, the worker runs its team checks, with
+  new subagents or the same ones.
+- "Role default": in the backup, the team checkers use the models of the Claude role files.
+- "After checks and fixes": in the backup, the outside reviewers start after the team checks ran
+  and the implementer fixed their findings for that checkpoint.
+
+**The one home of each kind of text:**
+
+| Text | Its one home | Other places |
+| --- | --- | --- |
+| Each rule for the lead agent | `SKILL.md` | None |
+| What the worker reads (its plan turn, its team checks, its report) | `references/worker-brief.md` | `SKILL.md` names the part of the brief; it does not repeat its text |
+| What a reviewer or a backup checker reads, with a `[limits]` slot | `references/reviewer-brief.md` | `SKILL.md` gives the value of the slot for each kind of reviewer |
+| Commands and flags | `references/codex.md` | `SKILL.md` links to them; no rule text in `codex.md` |
+| How it works, for a human | `GUIDE.md`: the sketches and a short text with no rules; it says "The rules are in `SKILL.md`" | Each sketch label is the name of a `SKILL.md` part or step |
+| The project's roles | `docs/workflows/coordination.md` | Its leader rows become one pointer to the skill; the skill never points to project documents |
+
+**Changes:**
+- `SKILL.md`: apply the four decisions; remove each sentence that repeats the worker brief; "Claude
+  Code subagents" gives the model and the effort; stage 7 keeps the read-only rule and "the test
+  results that exist"; the backup uses the reviewer brief with its `[limits]` slot.
+- `references/worker-brief.md` `<your_team>`: "After each build turn and each fix turn, before you
+  report, run your team checks: start the subagents below, or ask the same ones again." Not in the
+  plan turn. The missing-role line stays.
+- `references/reviewer-brief.md`: `<limits>` becomes a slot that the lead agent fills.
+- `references/codex.md`: the review run keeps only the flag `-s read-only`.
+- `GUIDE.md`: keep the three sketches and the short intro; remove the rule text and the tables
+  that repeat `SKILL.md`.
+- `docs/workflows/coordination.md`: the Test verifier row goes; the Builder and Reviewer rows name
+  no leader-skill detail and point to the skill.
+- The rest of the open findings at `80d5651` (R2-1, R2-2, N5, N7, the guide summary, the plan's main
+  text, the backup effort) close with these changes or with the decisions.
+
+**Test strategy:**
+1. The fact map against `a600a49` exits 0, with a reason for each sentence that leaves.
+2. A copy check: a short script lists each rule phrase of revision 9 (the team checks, the
+   checkpoint reports, read-only reviewers, the backup order, the 50% handoff) and the files that
+   hold it. Pass: each phrase is in its one home only. The script and its output go in the PR.
+3. Headless runs on the final head: the clear goal (no worker before the OK), real Codex with two
+   tasks (team checks in build and fix turns, the outside pair at each checkpoint), and the backup
+   (role-default checkers, the outside pair after the checks and fixes, the effort set).
+4. One complete review of the final head by two new outside reviewers (Opus high subagent, Codex
+   `gpt-6.2-astra` high, read-only), not a fix check. Its fixes get checked by the same pair. If
+   that check finds a gap with one of the two causes again, stop and ask the owner.
+5. Lint, check:index, check:status, CI on the pushed head.
+
 ## Open questions
 
 None. The owner answered each question on 2026-11-24.
