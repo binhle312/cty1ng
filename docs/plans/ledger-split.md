@@ -35,6 +35,7 @@ Revision 7, owner, 2026-11-25, after round 8 (Q1 L, Q2 F): the section "Revision
 Revision 8, owner, 2026-11-25, after round 9 (Q1 S, Q2 A, Q3 A, Q4 C): the section "Revision 8" below.
 Revision 9, owner, 2026-11-25, after round 10 ("let goes with your picks": Q1 E, Q2 R, Q3 A): the section "Revision 9" below.
 Revision 10, owner, 2026-11-25, after round 11 ("let go with your picks": Q1 A to Q6 A): the section "Revision 10" below.
+Revision 11, owner, 2026-11-25, after the check of the round 11 fixes ("let goes with your picks": Q1 A, Q2 C, Q3 A, Q4 A, Q5 A): the section "Revision 11" below.
 
 ## Goal
 
@@ -525,3 +526,32 @@ Q3 A, Q4 A, Q5 A, Q6 A). Two consultants (Opus 5.5 and GPT-6.2 Astra) checked th
     each file (a CR, a padded id, a blank line in a table, a row with a wrong cell count, in each
     of the four files); the real files give no problem; `--write` writes nothing on a problem in
     any file.
+
+## Revision 11: the owner's answers after the check of the round 11 fixes
+
+Owner, 2026-11-25, on the round 12 page: "let goes with your picks" (Q1 A, Q2 C, Q3 A, Q4 A,
+Q5 A). Two consultants (Opus 5.5 and GPT-6.2 Astra) checked the questions first.
+
+- **Q1 A, the count source** (R12K-F1). The form, split-table and cell-count checks keep all four
+  files. The counts are read only from the ledger files. The prevention file goes back to the
+  same-cause search list. A count table in the prevention file is not read; it is not refused.
+- **Q2 C, test first for Q6** (R12R-F1, R12B-F1). The Q6 break claim names the table case of the
+  prevention cell count, which `tmp/split-b13-red.log` shows red before the code. The plain test
+  "refuses a prevention row with a wrong cell count" goes.
+- **Q3 A, refusal tests** (§9 redesign of the cause of R11C-F2, R11C-F3, R12K-F3, R12K-F4 and
+  R12K-F5: a refusal test asserts less than its claim says). One `it.each` table with a fixed
+  name ("finds a %s in %s") puts each of four problems (CR, padded id, split table, cell count)
+  into each of the four files and runs `records:counts --write`. Inside the test, three
+  assertions in this order: the refusal message, exit status 1, and all four files unchanged (the
+  damaged file too). The plain prevention tests that the table repeats go, and their claims move
+  to table cases.
+  - Test strategy. The test for Q1 A is red first, with its log saved before the code. The table
+    assertions guard behaviour that already works, so their proof is a break claim for each case:
+    16 claims at the message (each break removes the check of its kind, or the prevention file
+    from the checks), and claims at exit status 1 and at "all files unchanged" for the CR case of
+    each file.
+- **Q4 A, R12K-F2: P3.** `--write` checks the written text again, as on `489bea0`. A line under
+  Differences says why; "once" in Q6 A means one file list.
+- **Q5 A, the end of the review.** One last check reads `cab9726` to the final head. If a P2 is
+  left after it, this PR stays a draft, and the lead agent asks the owner for one focused check.
+- The P3s of the round 12 checks go into the round 11 Follow-ups row of `docs/status.md`.
