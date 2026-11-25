@@ -1074,7 +1074,7 @@
     },
     {
       "id": "counts-refuse-padded-id",
-      "claim": "records:counts refuses an issue row whose id cell has a space too many, before or after the id, and writes nothing then.",
+      "claim": "records:counts reports an issue row whose id cell has a space too many, before or after the id.",
       "test": {
         "kind": "vitest",
         "file": "scripts/records-counts.test.ts",
@@ -1096,7 +1096,7 @@
     },
     {
       "id": "counts-refuse-cr",
-      "claim": "records:counts refuses CR line ends with one problem for the file, and writes nothing then.",
+      "claim": "records:counts reports CR line ends with one problem for the file.",
       "test": {
         "kind": "vitest",
         "file": "scripts/records-counts.test.ts",
@@ -1177,6 +1177,116 @@
             {
               "find": "if (values.write && fileProblems.length === 0) {",
               "replace": "if (values.write) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-no-write-padded-id",
+      "claim": "records:counts --write writes nothing when an issue row has a padded id.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "writes nothing with a padded id and a stale register"
+      },
+      "assertion": "expect(writeCounts(padded).files, \"stale register, padded id\").toEqual(padded);",
+      "breaks": [
+        {
+          "id": "write-despite-loose-id",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "problems.push(...formProblems(files), ",
+              "replace": "problems.push("
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-no-write-cr",
+      "claim": "records:counts --write writes nothing when a ledger file has a CR line end.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "writes nothing with one CR line end and a stale register"
+      },
+      "assertion": "expect(writeCounts(crlf).files, \"stale register, one CR\").toEqual(crlf);",
+      "breaks": [
+        {
+          "id": "write-despite-cr",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "problems.push(...formProblems(files), ",
+              "replace": "problems.push("
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-prevention-cr",
+      "claim": "records:counts refuses CR line ends in the prevention file and writes nothing.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "refuses CR line ends in the prevention file and writes nothing"
+      },
+      "assertion": "expect(readFileSync(join(dir, REGISTER), \"utf8\"), \"prevention CR\").toBe(before);",
+      "breaks": [
+        {
+          "id": "skip-prevention-form-cr",
+          "file": "scripts/records-counts.ts",
+          "edits": [
+            {
+              "find": "  ...formProblems(requiredSearchFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-prevention-padded-id",
+      "claim": "records:counts refuses a padded issue id in the prevention file and writes nothing.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "refuses a padded issue id in the prevention file and writes nothing"
+      },
+      "assertion": "expect(readFileSync(join(dir, REGISTER), \"utf8\"), \"prevention padded id\").toBe(before);",
+      "breaks": [
+        {
+          "id": "skip-prevention-form-id",
+          "file": "scripts/records-counts.ts",
+          "edits": [
+            {
+              "find": "  ...formProblems(requiredSearchFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-real-files-pass",
+      "claim": "The real delivery-quality files give no form problem.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds no form problem in the real delivery-quality files"
+      },
+      "assertion": "expect(formProblems(real), \"real files\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "refuse-real-rows",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "LOOSE_ISSUE_ROW.test(line) && !ISSUE_ROW.test(line)",
+              "replace": "LOOSE_ISSUE_ROW.test(line)"
             }
           ]
         }

@@ -6,7 +6,9 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   type LedgerFile,
+  ISSUE_FILES,
   checkCounts,
+  formProblems,
   formatIds,
   patternProblem,
   searchLines,
@@ -226,6 +228,48 @@ describe("records:counts", () => {
       const result = runCounts(dir, "--write");
       expect(readFileSync(join(dir, REGISTER), "utf8"), "the stale register stays").toBe(before);
       expect(result.status, result.stdout + result.stderr).toBe(1);
+    });
+  });
+
+  it("finds no form problem in the real delivery-quality files", () => {
+    const root = fileURLToPath(new URL("..", import.meta.url));
+    const paths = [...ISSUE_FILES, REGISTER, PREVENTION];
+    const real = paths.map((path) => ({ path, text: readFileSync(join(root, path), "utf8") }));
+    expect(formProblems(real), "real files").toEqual([]);
+  });
+
+  it("refuses CR line ends in the prevention file and writes nothing", () => {
+    const fixture = onePr({
+      registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
+    });
+    withSplitLedger({ fixture, prevention: "An earlier paper jam.\r\n" }, (dir) => {
+      const before = readFileSync(join(dir, REGISTER), "utf8");
+      const result = runCounts(dir, "--write");
+      expect(readFileSync(join(dir, REGISTER), "utf8"), "prevention CR").toBe(before);
+      expect(result.stderr).toContain(
+        `${PREVENTION}: the file has CR line ends; use LF line ends.`,
+      );
+    });
+  });
+
+  it("refuses a padded issue id in the prevention file and writes nothing", () => {
+    const fixture = onePr({
+      registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
+    });
+    const prevention = [
+      "| Cause / linked issues | Action and owner | Enforcement or review step | Verification | State |",
+      "| --- | --- | --- | --- | --- |",
+      "| Paper jam | Check the tray | Inspect the tray | Clear | done |",
+      "|  DQ-001 | Check the tray | Inspect the tray | Clear | done |",
+      "",
+    ].join("\n");
+    withSplitLedger({ fixture, prevention }, (dir) => {
+      const before = readFileSync(join(dir, REGISTER), "utf8");
+      const result = runCounts(dir, "--write");
+      expect(readFileSync(join(dir, REGISTER), "utf8"), "prevention padded id").toBe(before);
+      expect(result.stderr).toContain(
+        `${PREVENTION}:4: write the first cell of an issue row as "| DQ-n |"`,
+      );
     });
   });
 
@@ -511,6 +555,26 @@ describe("structure problems", () => {
       `${MAIN}:${lineIn(padded, "| DQ-002  |")}: write the first cell of an issue row as "| DQ-n |", with one space on each side.`,
     ]);
     expect(writeCounts(padded).files, "no write with a padded id").toEqual(padded);
+  });
+
+  it("writes nothing with a padded id and a stale register", () => {
+    const fixture = onePr({
+      registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
+    });
+    const padded = files(fixture).map((file) =>
+      file.path === MAIN ? { ...file, text: file.text.replace("| DQ-001 |", "|  DQ-001 |") } : file,
+    );
+    expect(writeCounts(padded).files, "stale register, padded id").toEqual(padded);
+  });
+
+  it("writes nothing with one CR line end and a stale register", () => {
+    const fixture = onePr({
+      registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
+    });
+    const crlf = files(fixture).map((file) =>
+      file.path === MAIN ? { ...file, text: file.text.replace("\n", "\r\n") } : file,
+    );
+    expect(writeCounts(crlf).files, "stale register, one CR").toEqual(crlf);
   });
 
   it("refuses CR line ends once for each file", () => {

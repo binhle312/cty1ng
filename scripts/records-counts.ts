@@ -8,6 +8,7 @@ import {
   ISSUE_FILES,
   type LedgerFile,
   checkCounts,
+  formProblems,
   splitTables,
   strayLedgerFiles,
   writeCounts,
@@ -31,6 +32,7 @@ const missingSearchFiles = REQUIRED_SEARCH_FILES.filter(
 const fileProblems = [
   ...strayLedgerFiles({ docs, list: LEDGER_FILES }),
   ...missingSearchFiles.map((path) => `${path}: required search file is missing.`),
+  ...formProblems(requiredSearchFiles),
   ...splitTables(requiredSearchFiles),
 ];
 // The "Same cause?" search (AGENTS.md §9) also reads docs/delivery-quality-prevention.md and the lessons.
