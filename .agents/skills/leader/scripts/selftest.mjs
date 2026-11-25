@@ -19,6 +19,7 @@ const script = fileURLToPath(new URL("./codex-run.mjs", import.meta.url));
 const config = fileURLToPath(new URL("./codex-run.config.json", import.meta.url));
 const temporary = realpathSync(mkdtempSync(join(tmpdir(), "leader-selftest-")));
 const finish = { finish: true };
+const caseDeadline = 12_000;
 
 function fakeCodex() {
   const fs = require("node:fs");
@@ -61,6 +62,8 @@ function fakeCodex() {
       cwd: process.cwd(),
       input: fs.readFileSync(0).toString("base64"),
     });
+    if (scenario.threadGate) await gate(scenario.threadGate);
+    if (scenario.warning) console.log(JSON.stringify({ type: "warning" }));
     if (scenario.threadEvent !== false) {
       console.log(JSON.stringify({ type: "thread.started", thread_id: scenario.thread }));
     }
@@ -148,6 +151,7 @@ function fixture(folder, runner) {
   const secondThread = "bf595a54-b628-4a26-9509-64658135be27";
   const jobs = [];
   let sequence = 0;
+  let closed = false;
   mkdirSync(bin);
   mkdirSync(work);
   writeFileSync(join(bin, "codex"), "#!/usr/bin/env node\n(" + fakeCodex.toString() + ")();\n", {
@@ -160,6 +164,7 @@ function fixture(folder, runner) {
   writeFileSync(image, "");
 
   function call(args, scenario = {}, preload) {
+    assert.ok(!closed, "test fixture is closed");
     const file = join(folder, "scenario-" + ++sequence + ".json");
     writeFileSync(file, JSON.stringify({ thread, calls, steps: [1200, finish], ...scenario }));
     const env = {
@@ -238,8 +243,8 @@ function fixture(folder, runner) {
     );
   }
 
-  const send = (scenario, options = []) =>
-    call(["send", "--run-dir", run, "--message", message, ...options], scenario);
+  const send = (scenario, options = [], preload) =>
+    call(["send", "--run-dir", run, "--message", message, ...options], scenario, preload);
   const stop = (turn) => call(["stop", "--run-dir", run, "--turn", String(turn)]);
   const records = (kind) =>
     existsSync(calls)
@@ -259,6 +264,9 @@ function fixture(folder, runner) {
     ].filter((pid) => pid && alive(pid));
 
   async function cleanup() {
+    closed = true;
+    for (const { child } of jobs) child.kill("SIGKILL");
+    await Promise.allSettled(jobs.map(({ end }) => end));
     for (const pid of live()) {
       try {
         process.kill(pid, "SIGKILL");
@@ -266,7 +274,6 @@ function fixture(folder, runner) {
         if (error.code !== "ESRCH") throw error;
       }
     }
-    await Promise.allSettled(jobs.map(({ end }) => end));
     await until(() => live().length === 0, "test processes stopped");
   }
 
@@ -330,9 +337,24 @@ async function expectUsage(job, label, message) {
   if (message) assert.match(result.stderr, message, label + ": usage reason");
 }
 
-const limitScenario = { steps: [1200, { wait: 180 }, 3500, finish] };
-const limitTurn = (f) =>
-  expectEnd(f, f.start(limitScenario, { interval: "1" }), "limit", 3, "final count");
+const watchLog = (f) => {
+  const log = f.file("run.log");
+  return existsSync(log) ? readFileSync(log, "utf8") : "";
+};
+
+async function afterLowCount(f, steps, settings = {}) {
+  const release = join(f.folder, "release-low-count");
+  const runner = f.start(
+    { ...settings, steps: [1200, { gate: release }, ...steps] },
+    { interval: "2" },
+  );
+  await until(() => watchLog(f).includes("turn 1 context: 1200"), "low count observed", runner);
+  writeFileSync(release, "");
+  return runner;
+}
+
+const limitTurn = async (f) =>
+  expectEnd(f, await afterLowCount(f, [3500, finish]), "limit", 3, "final count");
 
 const cases = [
   [
@@ -534,13 +556,22 @@ const cases = [
     11,
     "late count arrives in time",
     async (f) => {
-      await expectEnd(
-        f,
-        f.start({ steps: [{ wait: 170 }, 1200, { wait: 70 }, finish] }, { countWait: "12" }),
-        "done",
-        0,
-        "late count",
+      const release = join(f.folder, "release-missed-count");
+      const runner = f.start({ steps: [{ gate: release }, 1200, finish] }, { countWait: "24" });
+      const events = f.file("t1-events.jsonl");
+      await until(
+        () => existsSync(events) && readFileSync(events, "utf8").includes("thread.started"),
+        "late count: thread event written",
+        runner,
       );
+      const offset = watchLog(f).length;
+      // The first watch line could come from a check that started before the thread event.
+      await until(
+        () => runner.result || watchLog(f).slice(offset).split("no fresh context count").length > 2,
+        "late count: missed count observed",
+      );
+      writeFileSync(release, "");
+      await expectEnd(f, runner, "done", 0, "late count");
       assert.equal(f.records("interrupt").length, 0, "late count: no SIGINT");
     },
   ],
@@ -899,13 +930,145 @@ const cases = [
       );
     },
   ],
+  [
+    28,
+    "find the thread after a warning",
+    async (f) => {
+      await expectEnd(f, f.start({ warning: true }), "done", 0, "thread after warning");
+      assert.equal(f.state().thread, f.thread, "thread after warning: correct thread");
+    },
+  ],
+  [
+    29,
+    "keep the final limit when Codex exits nonzero",
+    async (f) => {
+      const runner = await afterLowCount(f, [3600, { finish: true, code: 1 }]);
+      await expectEnd(f, runner, "limit", 3, "final limit with Codex error");
+      assert.match(f.state().note, /Codex ended with exit 1/, "final limit: state note");
+      assert.match(watchLog(f), /state=limit.*Codex ended with exit 1/, "final limit: run log");
+      assert.equal(f.records("interrupt").length, 0, "final limit: natural exit");
+    },
+  ],
+  [
+    30,
+    "refuse recovery after a crash before the PID write",
+    async (f) => {
+      await expectEnd(f, f.start(), "done", 0, "setup launch crash");
+      const gate = join(f.folder, "pid-write");
+      const preload = join(f.folder, "crash.cjs");
+      writeFileSync(
+        preload,
+        `const fs = require("node:fs");
+const rename = fs.renameSync;
+fs.renameSync = function (from, to) {
+  if (to === ${JSON.stringify(f.file("lock"))} && JSON.parse(fs.readFileSync(from)).codexPid) {
+    fs.writeFileSync(${JSON.stringify(gate)}, "");
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5000);
+  }
+  return rename(from, to);
+};`,
+      );
+      const runner = f.send(
+        { steps: [{ gate: join(f.folder, "hold-crashed-codex") }] },
+        [],
+        preload,
+      );
+      const invocation = await f.entered(runner, 2);
+      await until(() => existsSync(gate), "launch crash: before PID write", runner);
+      assert.equal(read(f.file("lock")).codexPid, null, "launch crash: PID is absent");
+      assert.ok(runner.child.kill("SIGKILL"), "launch crash: kill test runner");
+      assert.equal((await runner.end).signal, "SIGKILL", "launch crash: runner killed");
+      assert.ok(alive(invocation.pid), "launch crash: fake Codex is still alive");
+      await expectUsage(f.send(), "launch crash: refuse send", /confirm.*launchPending/i);
+      assert.equal(f.records("exec").length, 2, "launch crash: no second Codex");
+      process.kill(invocation.pid, "SIGTERM");
+      await until(() => !alive(invocation.pid), "launch crash: fake Codex stopped");
+      const lock = read(f.file("lock"));
+      delete lock.launchPending;
+      writeFileSync(f.file("lock"), JSON.stringify(lock));
+      await expectEnd(f, f.send(), "done", 0, "launch crash: send after manual check", 3);
+    },
+  ],
+  [
+    31,
+    "report a late descendant after Codex exits",
+    async (f) => {
+      const orphan = join(f.folder, "late-orphan");
+      const runner = await afterLowCount(f, [{ orphan: true }, finish], { orphan });
+      await expectEnd(f, runner, "cleanup-error", 7, "late descendant");
+      const pid = Number(readFileSync(orphan, "utf8"));
+      assert.ok(alive(pid), "late descendant: still alive");
+      assert.deepEqual(f.state().pids, [pid], "late descendant: state lists PID");
+      await expectUsage(f.send(), "late descendant: cannot resume", /cleanup error/);
+      process.kill(pid, "SIGTERM");
+      await until(() => !alive(pid), "late descendant: stopped by test");
+    },
+  ],
+  [
+    32,
+    "apply send watch overrides for one turn",
+    async (f) => {
+      await expectEnd(
+        f,
+        f.start(undefined, { interval: "4", startWait: "0.12", countWait: "2" }),
+        "done",
+        0,
+        "setup overrides",
+      );
+      const saved = readFileSync(f.file("args.json"));
+      const threadGate = join(f.folder, "release-thread");
+      const release = join(f.folder, "release-override");
+      const runner = f.send({ threadGate, steps: [{ gate: release }, 1200, finish] }, [
+        "--check-interval",
+        "0.04",
+        "--start-wait",
+        "0.65",
+        "--count-wait",
+        "24",
+      ]);
+      const missed = "turn 2 context: no fresh context count";
+      await until(
+        () => runner.result || watchLog(f).split(missed).length > 5,
+        "send override: thread wait extended",
+      );
+      writeFileSync(threadGate, "");
+      const events = f.file("t2-events.jsonl");
+      await until(
+        () =>
+          runner.result ||
+          (existsSync(events) && readFileSync(events, "utf8").includes("thread.started")),
+        "send override: thread event written",
+      );
+      const offset = watchLog(f).length;
+      await until(
+        () => runner.result || watchLog(f).slice(offset).split(missed).length > 3,
+        "send override: missed count observed",
+      );
+      writeFileSync(release, "");
+      await expectEnd(f, runner, "done", 0, "send override", 2);
+      assert.deepEqual(
+        readFileSync(f.file("args.json")),
+        saved,
+        "send override: saved options unchanged",
+      );
+      const hold = { gate: join(f.folder, "hold-without-count") };
+      await expectEnd(f, f.send({ steps: [hold] }), "watch-error", 4, "send uses saved wait", 3);
+    },
+  ],
 ];
 
-async function runCase([number, , test], runner = script) {
+async function runCase([number, , test], runner = script, deadline = caseDeadline) {
   const folder = mkdtempSync(join(temporary, "case-" + number + "-"));
-  const f = fixture(folder, runner);
+  let f;
+  let timer;
   try {
-    await test(f);
+    f = fixture(folder, runner);
+    await Promise.race([
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error("case deadline exceeded")), deadline);
+      }),
+      test(f),
+    ]);
     const listing = execFileSync("ps", ["-A", "-o", "pid=,ppid="], { encoding: "utf8" });
     const listed = new Set(
       listing
@@ -919,8 +1082,12 @@ async function runCase([number, , test], runner = script) {
       "test left a live process",
     );
   } finally {
-    await f.cleanup();
-    rmSync(folder, { recursive: true, force: true });
+    clearTimeout(timer);
+    try {
+      await f?.cleanup();
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
   }
 }
 
@@ -951,7 +1118,7 @@ const breaks = [
     "skip the in-turn limit stop",
     'interrupt("limit", "context limit reached");',
     "void count;",
-    /crossed limit: exit/,
+    /crossed limit: (exit|one SIGINT)/,
   ],
   [
     3,
@@ -970,8 +1137,8 @@ const breaks = [
   [
     5,
     "omit the final limit decision",
-    'state = atLimit(count, args.limit) ? "limit" : "done";',
-    'state = "done";',
+    "} else if (count && atLimit(count, args.limit)) {",
+    "} else if (false) {",
     /final count: exit/,
   ],
   [
@@ -1096,8 +1263,8 @@ const breaks = [
   [
     23,
     "share one lock across run folders",
-    'const lockPath = join(dir, "lock");',
-    'const lockPath = join(dirname(dir), "lock");',
+    'const lockPath = join(dir, "lock");\n  const statePath',
+    'const lockPath = join(dirname(dir), "lock");\n  const statePath',
     /second independent run:/,
   ],
   [
@@ -1120,6 +1287,41 @@ const breaks = [
     "if (running(lock.codexPid))",
     "if (false)",
     /recovery: live Codex blocks send: usage exit/,
+  ],
+  [
+    28,
+    "stop reading at the first event",
+    'if (event?.type !== "thread.started" || !validThread(event.thread_id)) return;',
+    'if (event?.type !== "thread.started" || !validThread(event.thread_id)) return false;',
+    /thread after warning: exit/,
+  ],
+  [
+    29,
+    "prefer a Codex error to the final limit",
+    "} else if (count && atLimit(count, args.limit)) {",
+    "} else if (count && !codexError && atLimit(count, args.limit)) {",
+    /final limit with Codex error: exit/,
+  ],
+  [
+    30,
+    "recover the lock without a recorded Codex PID",
+    "if (lock.launchPending && lock.codexPid == null)",
+    "if (false)",
+    /launch crash: refuse send: usage exit/,
+  ],
+  [
+    31,
+    "miss descendants reparented before the final sample",
+    "if (group === codexPid && pid !== codexPid) descendants.add(pid);",
+    "void group;",
+    /late descendant: exit/,
+  ],
+  [
+    32,
+    "refuse watch overrides on send",
+    "values: watchFlags,",
+    "values: [],",
+    /send override: exit/,
   ],
 ];
 
@@ -1151,6 +1353,42 @@ async function proveCases() {
   await assert.rejects(proveBreak(cases[0], target, /normal/), /case 1 survived the break/);
 }
 
+async function proveDeadline() {
+  let fixture;
+  let pids;
+  let release;
+  try {
+    await assert.rejects(
+      runCase(
+        [
+          33,
+          "deadline cleanup",
+          async (f) => {
+            fixture = f;
+            const gate = join(f.folder, "held-open");
+            const runner = f.start({ steps: [1200, { gate }, finish] });
+            const invocation = await f.entered(runner);
+            pids = [runner.child.pid, invocation.pid];
+            // Release the fake even if the case deadline is broken.
+            release = setTimeout(() => writeFileSync(gate, ""), 2500);
+            await runner.end;
+          },
+        ],
+        script,
+        1500,
+      ),
+      /case deadline exceeded/,
+    );
+  } finally {
+    clearTimeout(release);
+  }
+  assert.ok(
+    pids?.every((pid) => !alive(pid)),
+    "deadline: runner and fake Codex stopped",
+  );
+  assert.ok(!existsSync(fixture.folder), "deadline: fixture removed");
+}
+
 let failures = 0;
 try {
   for (const entry of cases) {
@@ -1170,7 +1408,14 @@ try {
     failures += 1;
     console.error("case 26: fail — " + error.message);
   }
-  console.log("selftest: " + (cases.length + 1 - failures) + "/" + (cases.length + 1) + " passed");
+  try {
+    await proveDeadline();
+    console.log("case 33: pass — a deadline stops its processes and removes its files");
+  } catch (error) {
+    failures += 1;
+    console.error("case 33: fail — " + error.message);
+  }
+  console.log("selftest: " + (cases.length + 2 - failures) + "/" + (cases.length + 2) + " passed");
   process.exitCode = failures ? 1 : 0;
 } finally {
   rmSync(temporary, { recursive: true, force: true });

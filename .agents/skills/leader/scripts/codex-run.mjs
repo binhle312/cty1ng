@@ -13,13 +13,14 @@ const exits = {
   stopped: 6,
   "cleanup-error": 7,
 };
+const watchFlags = ["check-interval", "start-wait", "count-wait"];
 const options = {
   start: {
     required: ["run-dir", "workdir", "brief", "model", "effort", "sandbox", "limit"],
-    values: ["writable-root", "image", "check-interval", "start-wait", "count-wait"],
+    values: ["writable-root", "image", ...watchFlags],
     flags: ["network", "skip-git-check"],
   },
-  send: { required: ["run-dir", "message"], values: [], flags: ["handoff"] },
+  send: { required: ["run-dir", "message"], values: watchFlags, flags: ["handoff"] },
   context: { required: [], values: ["run-dir", "thread"], flags: [] },
   stop: { required: ["run-dir", "turn"], values: [], flags: [] },
 };
@@ -178,17 +179,27 @@ function running(pid) {
   }
 }
 
-function rejectRunning(lock) {
+function rejectRunning(lock, path) {
   if (running(lock.pid)) fail("Turn " + lock.turn + " is active (runner PID " + lock.pid + ").");
   if (running(lock.codexPid))
     fail("Turn " + lock.turn + " still has Codex PID " + lock.codexPid + ".");
+  if (lock.launchPending && lock.codexPid == null)
+    fail(
+      "Turn " +
+        lock.turn +
+        " may still have Codex processes. " +
+        "Confirm they have all ended before removing the launchPending field from " +
+        path +
+        ". " +
+        "Keep the lock file so the next command can record the interrupted turn.",
+    );
 }
 
 function recoverLock(dir) {
   const path = join(dir, "lock");
   const old = readJson(path);
   if (!old) return;
-  rejectRunning(old);
+  rejectRunning(old, path);
   const claims = [];
   let acquired = false;
   try {
@@ -210,7 +221,7 @@ function recoverLock(dir) {
     }
     const current = readJson(path);
     if (!current || current.pid !== old.pid || current.turn !== old.turn) return;
-    rejectRunning(current);
+    rejectRunning(current, path);
     const previous = readJson(join(dir, "state.json"));
     if (!previous || previous.turn < old.turn) {
       const thread = threadFrom(turnFile(dir, old.turn, "events.jsonl")) ?? previous?.thread;
@@ -324,8 +335,8 @@ function threadFrom(path) {
   try {
     readLines(path, cursor(), (line) => {
       const event = parseLine(line);
-      if (event?.type === "thread.started" && validThread(event.thread_id))
-        thread = event.thread_id;
+      if (event?.type !== "thread.started" || !validThread(event.thread_id)) return;
+      thread = event.thread_id;
       return false;
     });
   } catch (error) {
@@ -370,11 +381,12 @@ function atLimit({ used, window }, limit) {
 
 function sampleDescendants(codexPid, descendants) {
   if (!codexPid) return;
-  const list = execFileSync("ps", ["-A", "-o", "pid=,ppid="], { encoding: "utf8" });
+  const list = execFileSync("ps", ["-A", "-o", "pid=,ppid=,pgid="], { encoding: "utf8" });
   const children = new Map();
   for (const line of list.trim().split("\n")) {
-    const [pid, parent] = line.trim().split(/\s+/).map(Number);
+    const [pid, parent, group] = line.trim().split(/\s+/).map(Number);
     if (!pid) continue;
+    if (group === codexPid && pid !== codexPid) descendants.add(pid);
     if (!children.has(parent)) children.set(parent, []);
     children.get(parent).push(pid);
   }
@@ -421,7 +433,14 @@ function launch(dir, lock, args, input, argv) {
     ]) {
       files.push(fs.openSync(path, flags, 0o600));
     }
-    const child = spawn("codex", argv, { cwd: args.workdir, env: codexEnv, stdio: files });
+    const lockPath = join(dir, "lock");
+    writeJson(lockPath, { ...lock, launchPending: true });
+    const child = spawn("codex", argv, {
+      cwd: args.workdir,
+      env: codexEnv,
+      stdio: files,
+      detached: true,
+    });
     let error;
     const ended = new Promise((resolve) => {
       child.once("error", (cause) => {
@@ -431,8 +450,7 @@ function launch(dir, lock, args, input, argv) {
     });
     let lockError;
     try {
-      // SIGKILL between spawn and this synchronous lock write can leave an unrecorded Codex PID.
-      writeJson(join(dir, "lock"), { ...lock, codexPid: child.pid ?? null });
+      if (child.pid) writeJson(lockPath, { ...lock, codexPid: child.pid });
     } catch (cause) {
       lockError = cause;
     }
@@ -590,6 +608,11 @@ async function runTurn(dir, lock, args, input, previousThread, handoff) {
       descendantError = error.message;
     }
 
+    const codexError =
+      outcome.error?.message ??
+      (outcome.code === 0
+        ? null
+        : "Codex ended with " + (outcome.signal ?? "exit " + outcome.code));
     let state;
     if (pids.length || descendantError) {
       state = "cleanup-error";
@@ -598,10 +621,12 @@ async function runTurn(dir, lock, args, input, previousThread, handoff) {
         : "could not check descendants: " + descendantError;
     } else if (cause) {
       state = cause;
-    } else if (outcome.error || outcome.code !== 0) {
+    } else if (count && atLimit(count, args.limit)) {
+      state = "limit";
+      note = codexError ?? note;
+    } else if (codexError) {
       state = "codex-error";
-      note =
-        outcome.error?.message ?? "Codex ended with " + (outcome.signal ?? "exit " + outcome.code);
+      note = codexError;
     } else if (!count) {
       state = "watch-error";
       note ??= "Codex ended with no fresh readable context count";
@@ -609,7 +634,7 @@ async function runTurn(dir, lock, args, input, previousThread, handoff) {
       state = "codex-error";
       note = "Codex left an empty or missing report";
     } else {
-      state = atLimit(count, args.limit) ? "limit" : "done";
+      state = "done";
     }
     return makeState(dir, turn, state, {
       thread: previousThread ?? thread,
@@ -624,9 +649,20 @@ async function runTurn(dir, lock, args, input, previousThread, handoff) {
   }
 }
 
+function watchOptions(opts, defaults) {
+  const maxDelay = (2 ** 31 - 1) / 1000;
+  return {
+    checkInterval:
+      number(opts["check-interval"] ?? defaults.checkInterval, "check-interval", 0.001, maxDelay) *
+      1000,
+    startWait:
+      number(opts["start-wait"] ?? defaults.startWait, "start-wait", 0.001, maxDelay) * 1000,
+    countWait: positiveInteger(opts["count-wait"] ?? defaults.countWait, "count-wait"),
+  };
+}
+
 function startArgs(opts) {
   const config = readJson(new URL("./codex-run.config.json", import.meta.url));
-  const maxDelay = (2 ** 31 - 1) / 1000;
   if (!["read-only", "workspace-write"].includes(opts.sandbox))
     fail("Use read-only or workspace-write for --sandbox.");
   const workdir = canonical(opts.workdir);
@@ -643,14 +679,7 @@ function startArgs(opts) {
     network: Boolean(opts.network),
     image: opts.image ? canonical(opts.image) : null,
     skipGitCheck: Boolean(opts["skip-git-check"]),
-    watch: {
-      checkInterval:
-        number(opts["check-interval"] ?? config.checkInterval, "check-interval", 0.001, maxDelay) *
-        1000,
-      startWait:
-        number(opts["start-wait"] ?? config.startWait, "start-wait", 0.001, maxDelay) * 1000,
-      countWait: positiveInteger(opts["count-wait"] ?? config.countWait, "count-wait"),
-    },
+    watch: watchOptions(opts, config),
   };
 }
 
@@ -676,6 +705,11 @@ async function execute(command, opts, dir) {
     args = readJson(argsPath);
     if (!args) fail("No saved options in run folder: " + dir);
     validateFolder(dir, args);
+    args.watch = watchOptions(opts, {
+      checkInterval: args.watch.checkInterval / 1000,
+      startWait: args.watch.startWait / 1000,
+      countWait: args.watch.countWait,
+    });
   }
 
   const lock = { turn: (readJson(statePath)?.turn ?? 0) + 1, pid: process.pid, codexPid: null };
