@@ -16,7 +16,7 @@ Read the table from the top, and use the first row that fits.
 | --- | --- | --- |
 | P1 | Data loss, a security failure, or a normal action that cannot complete | Blocks the merge |
 | P2 | A broken required acceptance criterion or its missing proof, or a wrong result in the scope below with harm that is not small and recoverable | Blocks the merge |
-| P3 | A small, recoverable wrong result, a case outside the scope below, or a code quality point | Record it in one place: its row in the ledger of `docs/delivery-quality.md`, or, for an item with no DQ id, the follow-up list in `docs/status.md` |
+| P3 | A small, recoverable wrong result, a case outside the scope below, or a code quality point | Record it in one place: its row in the ledger of `docs/delivery-quality.md`, or, for an item with no DQ id, the follow-up list in `docs/status.md` (also an open finding of a PR with no milestone, [ledger §7 step 2](../delivery-quality.md#7-update-and-assess)) |
 
 Harm is small and recoverable when all of these are true:
 
@@ -93,7 +93,8 @@ owner answer is new work and goes into the next PR.
 
    Each round 2 correction gets its own issue row with the state `fixed`. The cell "Fix and
    verification" starts with the fixed words "Round 2 correction:". In a PR with no milestone, the
-   row is a line of the `Defect and review fixes` table
+   row is a line of the `Defect and review fixes` table: its Fix cell starts with the same words,
+   and its finding id stands for the DQ id below
    ([ledger §7 step 2](../delivery-quality.md#7-update-and-assess)).
 
    Measure: the check of step 5 reads each row of the PR that starts with "Round 2 correction:". It

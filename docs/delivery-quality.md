@@ -181,9 +181,12 @@ If the head changes after review, the row still describes the original reviewed 
 2. For a PR in a milestone or an audit, add the round after each review. Reconcile its findings
    with existing issue IDs. A PR with no milestone keeps its review rounds in its description
    (owner, 2026-11-24). It also keeps there each review finding, with its fix and its "Same cause"
-   answer and search, in the `Defect and review fixes` table, and the finding gets no issue row.
+   answer and search, in the `Defect and review fixes` table (columns Id, Severity, Finding, Fix
+   and Same cause), and the finding gets no issue row.
    Where a rule names an issue row for a review finding, such a PR uses its line in that table
-   (owner, 2026-11-25).
+   (owner, 2026-11-25): a cell of the row is the same cell of the line, and the DQ id is the
+   finding id. A finding that the PR leaves open also gets a row in the follow-up list of
+   `docs/status.md` (merge bar, P3); its line in the table names that row.
 3. After a fix, add the verification result and change the issue state only when evidence supports it.
 4. After a new discovery, check whether it escaped a merge, repeats a cause, or came from a repair. Record the general rule and the search of old fixes ([bug fix, step 2](workflows/bug-fix.md)).
 5. At PR handoff, after the merge of `origin/main`, run `pnpm records:counts --write`. It writes

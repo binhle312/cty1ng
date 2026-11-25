@@ -617,6 +617,36 @@
               "replace": "if (pattern.includes(\"(?\")) return 'it has \"(?\"';\n  if (pattern.includes(\"+?\")) return 'it has \"+?\"';"
             }
           ]
+        },
+        {
+          "id": "reject-open-lower-bound",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (pattern.includes(\"(?\")) return 'it has \"(?\"';",
+              "replace": "if (pattern.includes(\"(?\")) return 'it has \"(?\"';\n  if (pattern.includes(\"{,\")) return 'it has \"{,\"';"
+            }
+          ]
+        },
+        {
+          "id": "reject-class-in-brackets",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (pattern.includes(\"(?\")) return 'it has \"(?\"';",
+              "replace": "if (pattern.includes(\"(?\")) return 'it has \"(?\"';\n  if (pattern.includes(\"[:\")) return 'it has \"[:\"';"
+            }
+          ]
+        },
+        {
+          "id": "reject-caret-close-bracket",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (pattern.includes(\"(?\")) return 'it has \"(?\"';",
+              "replace": "if (pattern.includes(\"(?\")) return 'it has \"(?\"';\n  if (pattern.includes(\"[^]\")) return 'it has \"[^]\"';"
+            }
+          ]
         }
       ]
     },
