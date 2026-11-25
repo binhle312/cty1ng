@@ -319,14 +319,14 @@ Line numbers below refer to `ba40948`. To repeat the search, run
 
 Revision 6 adds these places. Their line numbers refer to the commit that fixes the round 7 findings (R7W-F1 to R7W-F3).
 
-- `docs/delivery-quality.md:183–189` — fixed. Step 2 now also gives the home of the review findings of a PR with no milestone (Q2 A): a cell of a row is the same cell of its line, the DQ id is the finding id, and an open finding also gets a follow-up row. Step 2 also names the columns of the table.
+- `docs/delivery-quality.md:181–188` — fixed. Step 2 gives the home of the review findings of a PR with no milestone (Q2 A), and limits the row rules to a PR in a milestone or an audit (revision 7).
 - `docs/delivery-quality.md:65–66` — fixed (R6W-F3). A delivery PR does not move closed rows to the archive; a reopened row comes back from the archive, as the archive head says.
 - `docs/delivery-quality.md:156` and `:172` — right. A duplicate report keeps one issue row and links each source; a round row names its source. Step 2 covers a PR with no milestone.
 - `AGENTS.md:154–155` — fixed. The answer goes to the place that step 2 gives (Q2 A).
 - `.github/pull_request_template.md:46–48` and `:52–53` — fixed. The description holds no state, count or fix commit of a ledger row; for its review findings, a PR with no milestone follows step 2, which is the one home of that rule (Q2 A, R7W-F1, R7L-F3).
 - `docs/workflows/pull-request.md:46–47` and `:51–53` — fixed. For its review findings, a PR with no milestone follows step 2 (Q2 A, R7L-F3).
-- `docs/workflows/merge-bar.md:19` — fixed (R7W-F2). An open finding of a PR with no milestone goes to the follow-up list, as step 2 says.
-- `docs/workflows/merge-bar.md:90`, `:94–98` and `:105–106` — fixed (R6W-F1, R7W-F3). A round 2 correction of a PR with no milestone is a line of that table; its Fix cell starts with the same words, and its finding id stands for the DQ id. Step 2 covers the ledger row and the last cell that lines 90 and 105 name.
+- `docs/workflows/merge-bar.md:19` — right (revision 7). Its P3 home is for a PR in a milestone or an audit; step 2 gives the home for a PR with no milestone.
+- `docs/workflows/merge-bar.md:70`, `:90`, `:94–95` and `:97–102` — right (revision 7). These rules give a review finding a ledger row or an issue row, so they are for a PR in a milestone or an audit; step 2 says so.
 - `docs/review-guide.md:94` — right. A plan difference goes under `Differences from the plan`; it is not a review record.
 
 ## Revision 6: the owner's answers after review round 6
@@ -378,3 +378,42 @@ have to fix it") was about severity, not this decision.
   Audit row in §2 and S1 to S7 in §4 (R6R-F1, R6L-F1); DQ-862 says "Old home:" (R6R-F2); the plan
   index gives this plan revisions 1 to 6 and #151's plan revisions 1 to 4 (R6L-F2); the Reader
   places line of DQ-862 (R6L-F3).
+
+## Revision 7: the owner's answers after review round 8
+
+Owner, 2026-11-25, after round 8 (the review of `e3df058..c1efeee`), on the round 8 page: Q1 L and
+Q2 F. The page told the owner that the cause of the Q2 A rule-text findings repeated in rounds 6, 7
+and 8 (`AGENTS.md` §9), and that the round 6 page gave a wrong origin for R6C1-F2. Two consultants
+(Opus 5.5 and GPT-6.2 Astra) checked the lead agent's first pick before the page; both rejected more
+mapping words.
+
+- **Q1 L, the row rules** (R8L-F1 to F3, R8W-F1 to F5, R8D-F2, R8D-F3): step 2 keeps each review
+  finding of a PR with no milestone, open or fixed, in the `Defect and review fixes` table; an open
+  finding is also a follow-up row. A rule that gives a review finding a ledger row or issue row is
+  for a PR in a milestone or an audit. The review guide checks the "Same cause" answer of each line
+  of that table. The mapping words of `c1efeee` go: the cell and id mapping, the columns, and the
+  follow-up name in the line. The merge bar goes back to `main` at line 19 and at the round 2
+  correction. The template says that its table is for ledger rows. This replaces the Q2 A sentence
+  "Where a rule names an issue row for a review finding, such a PR uses its line in that table" of
+  revision 6, and the Q3 A verdicts of the merge-bar places in "Round places".
+  - Rules that L turns off for a review finding of such a PR: merge bar 19, 70, 90, 94–95 and the
+    measure at 97–102; implementation 50 and 52; review guide 109. A PR with no milestone has no
+    round 2 measure; #153 has 0 round 2 corrections.
+  - Rules that stay on: the row size and removed-words rules of the PR workflow (lines 94, 118 and
+    128), merge bar 28, and the defect rows of the template.
+- **Q2 F, R6C1-F2** (an extra space in the `Issue ID` heading): `tablesWithHeader` compares the
+  trimmed cells of a heading line that starts with `|`. The heading lookup itself is from
+  `95e830e`; `b76a015` of #153 uses it for issue rows. The fix also lets `records:counts` find a
+  padded heading of its own tables. R6C1-F1 (an extra space after the issue id) stays a limit.
+- **Test strategy.** Test first: `finds the issue heading with extra spaces` failed on `c1efeee`
+  with `[raw row]` in place of `[Source]`. Break claim `removed-words-padded-heading` restores the
+  exact heading match. The rule text has no code test. The round 9 brief replays three findings of
+  #153 against step 2 and the merge bar: R7L-F5 (fixed: one table line, no follow-up row), R6B1-F1
+  (open: one table line and one follow-up row), and a round 2 correction (a table line that the
+  measure does not read).
+- **Round 9** reviews `c1efeee..` the final head and the PR description. Check D is split in two.
+  Its brief says that the limit of L is known and tracked; reviewers report each issue that they
+  find.
+- **Fixes with no question:** the description facts of round 8 (R8D-F1, R8D-F4 to F9, R8L-F4) and
+  the plan line R8W-F6. The line numbers of the round places that revision 7 changes refer to the
+  revision 7 commit.

@@ -55,6 +55,8 @@ general rule, the fix, the test, and `Same cause: yes|no (search: `<pattern>`: <
 ([bug fix, step 2](https://github.com/binhle312/cty1ng/blob/main/docs/workflows/bug-fix.md);
 `AGENTS.md` §9). Search `docs/delivery-quality-prevention.md` and the lessons for earlier fixes.
 
+This table is for ledger rows:
+
 | Row | Finding |
 | --- | --- |
 | | |
