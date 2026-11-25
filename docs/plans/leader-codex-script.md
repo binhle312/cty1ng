@@ -15,6 +15,11 @@ Approval: owner, 2026-11-25, revision 3 (the lead agent's files for the next con
 software engineer, don't complicate thing that shouldn't be". Review round 1 (RSA, RSB): the owner
 chose option 3, "3": fix RSA-7, RSA-9, RSA-10, RSA-11, RSA-1 and RSA-3, and write RSA-2, RSA-4,
 RSA-5, RSA-6 and RSA-8 as known limits (see "Revision 3").
+Fix check FC (2026-11-25): FC-1, FC-2 and FC-3 came from the RSA-3 fix (Codex in its own process
+group), the same cause as an earlier fix. The owner chose the redesign "let do as your suggestions,
+we shouldn't limit the skill to can only run on Linux, someone may use it on Windows or MacOS":
+remove the process-group change, keep the RSA-1 fix, and write RSA-3 as a known limit. FC-4 to FC-7
+are fixed.
 
 Base: this branch starts from the head of #156 (`a600a49`), because the script changes files that
 only #156 adds. It merges after #156.
@@ -274,12 +279,14 @@ not name is added: the second run must report it before it acts.
 **Review round 1 (owner option 3).** Fixed: RSA-7 (the thread is read from any event line), RSA-9 (a
 final count over the limit wins over a Codex error), RSA-10 (each self-test case has a deadline),
 RSA-11 (cases 5 and 11 test what they claim), RSA-1 (no second Codex after a crash between the start
-and the process id), RSA-3 (no `done` while a child of Codex still runs), all RSB findings, and the
+and the process id), all RSB findings, and the
 count wait: the default goes from 6 to 30 checks, because a healthy Astra turn sent its first count
 after more than 2 minutes on 2026-11-25. Known limits, written in `references/codex.md`: RSA-2 (the
 check does not cover the temporary folder of Codex or a broken symlink), RSA-4, RSA-5 and RSA-6 (a
 `stop` at the same moment as a start, an end or a refused `send`), RSA-8 (a session file that is
-deleted and restored gives an old count).
+deleted and restored gives an old count). After the fix check: RSA-3 is a known limit (a child that a worker starts can outlive Codex;
+the lead agent sees it in `ps` or as a busy port and stops it by hand), because the fix needed a
+Linux-only design and broke the stop of the enclosing command (FC-1 to FC-3).
 
 ## Open questions
 
