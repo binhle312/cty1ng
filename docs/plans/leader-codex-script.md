@@ -7,7 +7,9 @@ Will that reduce the token consumption and still keep the quality of the communi
 "Yes, i want that script, the sooner we have the better".
 Checkpoint: plan. The script is a new tool, and it starts billed models (`AGENTS.md` §7), so the
 owner approves this plan and its code design before the build.
-Approval: waiting.
+Approval: owner, 2026-11-25, revision 2 (the plan after review RP, `87ee1c1`). The owner's answers
+to the open questions: "1. Yes 2. Yes 3. Yes 4. Yes. Meaning you can measure with real runs 5. Yes
+6. Yes".
 
 Base: this branch starts from the head of #156 (`a600a49`), because the script changes files that
 only #156 adds. It merges after #156.
@@ -203,6 +205,13 @@ leaves `references/codex.md` and `SKILL.md`, with a reason, so that no other rul
 run with Sol at low effort checks `start`, `send`, `context` and `stop` end to end. The full set of
 `AGENTS.md` §4 on the final head.
 
+**Measurement** (owner, question 4). After the build, one small task runs twice from a new
+`claude -p "/leader <task>"` session in a scratch Git project: once with the skill of #156 (the raw
+commands) and once with the skill of this PR (the script). Same task, same brief, same models. The
+numbers: the input and output tokens of the lead agent from the session's usage report, the number
+of its tool calls, the errors and retries, and the Codex credits. The result goes in the PR
+description, with what one pair of runs can and cannot show.
+
 Review: one complete review of the final head by a new Codex `gpt-6.2-astra` session (high,
 read-only), in parts if it would pass 35%, then one narrow fix check, then the lead agent stops and
 reports to the owner.
@@ -217,8 +226,8 @@ reports to the owner.
 3. Should CI run `scripts/selftest.mjs`? That is one new step in the CI workflow. The `decision-pages`
    self-test runs by hand. I recommend the CI step, because the script starts billed models.
 4. Should I measure the tokens of the lead agent on one small task with the script and one without
-   it? Each run costs credits. I recommend no: the consultants and the lead agent agree that the
-   saving is small, and the reason for the script is reliability.
+   it? Each run costs credits. I recommended no. Owner: "Yes. Meaning you can measure with real
+   runs" (see "Measurement").
 5. F1B-1 of #156 (the sentence "a full review of a large change reaches 35% first" lost "before it
    reports") is in the same file. Should I fix it here? I recommend yes.
 6. Should the handoff be the last message of the handoff turn for each worker, in place of a file
