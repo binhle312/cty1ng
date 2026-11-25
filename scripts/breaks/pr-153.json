@@ -1291,6 +1291,28 @@
           ]
         }
       ]
+    },
+    {
+      "id": "counts-no-write-split-prevention",
+      "claim": "records:counts --write writes nothing when a blank line splits the prevention table.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "writes nothing when a blank line splits the prevention table"
+      },
+      "assertion": "expect(readFileSync(join(dir, REGISTER), \"utf8\"), \"split prevention table\").toBe(before);",
+      "breaks": [
+        {
+          "id": "write-despite-split-prevention",
+          "file": "scripts/records-counts.ts",
+          "edits": [
+            {
+              "find": "  ...splitTables(requiredSearchFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
     }
   ],
   "exempt": [

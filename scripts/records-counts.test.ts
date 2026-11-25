@@ -231,6 +231,25 @@ describe("records:counts", () => {
     });
   });
 
+  it("writes nothing when a blank line splits the prevention table", () => {
+    const fixture = onePr({
+      registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
+    });
+    const prevention = [
+      "| Cause / linked issues | Action and owner | Enforcement or review step | Verification | State |",
+      "| --- | --- | --- | --- | --- |",
+      "| Paper jam | Check the tray | Inspect the tray | Clear | done |",
+      "",
+      "| Empty tray | Refill the tray | Check the paper level | Full | done |",
+      "",
+    ].join("\n");
+    withSplitLedger({ fixture, prevention }, (dir) => {
+      const before = readFileSync(join(dir, REGISTER), "utf8");
+      runCounts(dir, "--write");
+      expect(readFileSync(join(dir, REGISTER), "utf8"), "split prevention table").toBe(before);
+    });
+  });
+
   it("finds no form problem in the real delivery-quality files", () => {
     const root = fileURLToPath(new URL("..", import.meta.url));
     const paths = [...ISSUE_FILES, REGISTER, PREVENTION];
