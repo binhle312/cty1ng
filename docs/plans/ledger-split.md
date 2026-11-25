@@ -28,6 +28,11 @@ Revision 3, owner, 2026-11-24, after round 4 of the review of #153:
 - S4-F6: "Take them into #153". DQ-854, DQ-855, DQ-856, DQ-863, DQ-868 and DQ-870 are fixed in
   this PR, with the owner's answers of 2026-11-19 (#135 page Q3 A, Q4 A, Q6 A). Their code design
   and test strategy come in a section of this plan, for the owner's approval, before the code.
+Revision 4, owner, 2026-11-24 ("Approve as written"): the section "Revision 4" below.
+Revision 5, owner, 2026-11-24, after round 5: the section "Revision 5" below.
+Revision 6, owner, 2026-11-25, after round 6 ("All your picks"): the section "Revision 6" below.
+Revision 7, owner, 2026-11-25, after round 8 (Q1 L, Q2 F): the section "Revision 7" below.
+Revision 8, owner, 2026-11-25, after round 9 (Q1 S, Q2 A, Q3 A, Q4 C): the section "Revision 8" below.
 
 ## Goal
 
@@ -446,5 +451,4 @@ L, and that the Q2 F fix changed a shared function, wider than the Q2 F page sai
   line, and a padded data row in another table (no second register).
 - **Fixes with no question:** the description facts of round 9 (R9D1-F1 to F5, R9D2-F4, R9D2-F5),
   each "yes" answer of the description names its §9 step, and the plan lines R9W-F3, R9W-F4 and
-  R9L-F4. R9L-F5: the revision 7 record came in `dc23e78`, after its code commit `f5c7f9a`; this
-  revision comes before its code.
+  R9L-F4.
