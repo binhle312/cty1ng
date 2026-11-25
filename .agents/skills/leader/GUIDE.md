@@ -15,22 +15,25 @@ types `/leader` with that path.
 
 ## Who talks with whom
 
-```mermaid
-flowchart TB
-  human(["Human<br/>approves, decides, merges"])
-  lead["Lead agent<br/>the Claude Code conversation"]
-  advisor["Advisor tool<br/>built into Claude Code"]
-  worker["Codex workers<br/>one or more, each builds its own task"]
-  reviewer["Codex reviewer<br/>reviews code that it did not build"]
-
-  human -- "task, answers, OK of the plan" --> lead
-  lead -- "questions, plan, report" --> human
-  lead -- "asks" --> advisor
-  advisor -- "advice" --> lead
-  lead -- "brief, answers" --> worker
-  worker -- "plan, questions, reports" --> lead
-  lead -- "review brief" --> reviewer
-  reviewer -- "findings" --> lead
+```
+                       ┌──────────────────────────────┐
+                       │ Human                        │
+                       │ approves, decides, merges    │
+                       └──────────────────────────────┘
+     task, answers, OK of the plan   ▼    ▲   questions, plan, report
+                       ┌──────────────────────────────┐
+ ┌──────────────┐ asks │ Lead agent                   │
+ │ Advisor tool │ ◀─── │ the Claude Code conversation │
+ │ built into   │ ───▶ │                              │
+ │ Claude Code  │advice└──────────────────────────────┘
+ └──────────────┘
+      brief, answers   ▼    ▲   plan, questions,   review brief   ▼    ▲   findings
+                                reports
+       ┌──────────────────────────┐                ┌──────────────────────────┐
+       │ Codex workers            │                │ Codex reviewer           │
+       │ one or more, each builds │                │ reviews code that it     │
+       │ its own task             │                │ did not build            │
+       └──────────────────────────┘                └──────────────────────────┘
 ```
 
 A worker and a reviewer send no messages to each other or to the human. Each message passes through
@@ -99,50 +102,41 @@ the human's approval, the lead agent stops and asks the human.
 
 ## One task, turn by turn
 
-```mermaid
-sequenceDiagram
-  participant H as Human
-  participant L as Lead agent
-  participant W as Codex worker
-  participant R as Codex reviewer (a new session)
-
-  H->>L: task
-  loop while a question is open
-    L->>H: all the open questions
-    H->>L: answers
-  end
-  L->>H: the plan with the tasks, the workers, the reviewers, and the model and effort of each
-  H->>L: OK
-  L->>W: brief
-  Note over W: reads, changes no file
-  W->>L: the plan in its own words, with its questions
-  loop while the plan needs answers or corrections
-    L->>W: answers or corrections
-    W->>L: the new plan
-  end
-  L->>W: "plan OK, build"
-  Note over W: builds and commits.<br/>Pushes to its branch if the brief names a remote branch.
-  opt the work goes in a wrong direction
-    L->>W: stops the running turn, sends the correction
-    Note over W: same session, context kept
-  end
-  opt the context use reaches 50%, during or after a turn
-    L->>W: stops the turn if one runs, asks for a handoff
-    W->>L: the handoff
-    Note over L: checks and corrects the handoff
-    Note over W: a new worker session gets the brief and the handoff,<br/>and sends its plan for the rest of the work
-  end
-  W->>L: report of the turn: the commits, the push if any, and the checks
-  W->>L: final report: each claim with its command and result
-  Note over L: compares each claim with the diff, the test results,<br/>and the remote checks if the worker pushed
-  L->>R: review brief
-  R->>L: findings
-  L->>W: review findings
-  Note over W: the builder's session fixes them
-  W->>L: report of the fixes
-  Note over L: compares each claim with the diff, the test results,<br/>and the remote checks if the worker pushed
-  L->>H: the result, with each open issue
-  Note over H: decides the merge
+```
+ Human            Lead agent                   Codex worker             Codex reviewer
+   │                  │                        (one session)            (a new session)
+   │── task ─────────▶│                              │                         │
+   │◀─ questions ─────│ all the open questions; again while one is open        │
+   │── answers ──────▶│                              │                         │
+   │◀─ the plan ──────│ tasks, workers, reviewers, model and effort of each    │
+   │── OK ───────────▶│                              │                         │
+   │                  │── brief ────────────────────▶│ reads, changes no file  │
+   │                  │◀─ its plan, with questions ──│                         │
+   │                  │── answers or corrections ───▶│ (while the plan needs   │
+   │                  │◀─ the new plan ──────────────│  them)                  │
+   │                  │── "plan OK, build" ─────────▶│ builds and commits;     │
+   │                  │                              │ pushes if the brief     │
+   │                  │                              │ names a remote branch   │
+   │                  │── stop + correction ────────▶│ (if the work goes in a  │
+   │                  │                              │  wrong direction; same  │
+   │                  │                              │  session, context kept) │
+   │                  │── at 50%: stop, ask for ────▶│                         │
+   │                  │   the handoff                │                         │
+   │                  │◀─ the handoff ───────────────│                         │
+   │                  │ checks and corrects it; a new worker session gets the  │
+   │                  │ brief and the handoff, and sends its plan for the rest │
+   │                  │◀─ report of each turn ───────│ commits, push, checks   │
+   │                  │◀─ final report ──────────────│ each claim, with its    │
+   │                  │                              │ command and its result  │
+   │                  │ compares each claim with the diff, the test results,   │
+   │                  │ and the remote checks if the worker pushed             │
+   │                  │── review brief ───────────────────────────────────────▶│
+   │                  │◀─ findings ────────────────────────────────────────────│
+   │                  │── the findings ─────────────▶│ the builder's session   │
+   │                  │◀─ report of the fixes ───────│ fixes them              │
+   │                  │ compares each claim again    │                         │
+   │◀─ the result ────│ with each open issue         │                         │
+   │ decides the merge│                              │                         │
 ```
 
 The diagram uses [Talk with the worker](SKILL.md#talk-with-the-worker) for the send command.
