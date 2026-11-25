@@ -364,7 +364,14 @@ sub-agents (or agents) will be the backup)".
   commits.
 - Only an account error starts the backup; a failed `resume` counts the same as a failed start.
 
-**Test.** The fact map against `a600a49` lists each sentence that leaves, with its reason.
+**Test.** The fact map against `a600a49` lists each sentence that leaves, with its reason. Two
+headless runs of `/leader` on `98d41be`, the owner away, with a stub `codex`. With a clear goal and
+no OK, the lead agent made no `codex exec` call and waited for the OK on its plan. With the OK in
+the task and a stub that fails each call with an account error ("You've hit your usage limit. Your
+plan has ended"), the lead agent made one `codex exec` call, told the owner the cause, and used a
+Claude Sonnet worker (high) and a Claude Opus reviewer (high): the worker's plan first, the build,
+one review finding, the fix, and the check of the fix; it used no other `codex` program. The test
+project has two files, so no run needed a broad search: the Haiku search did not run.
 
 ## Open questions
 
