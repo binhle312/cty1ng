@@ -1,10 +1,12 @@
 // Pure: compare Git snapshots that the CLI reads for the reviewer.
-import { type IssueRow, type LedgerFile, issueRows } from "./records-counts.ts";
+import { type IssueRow, type LedgerFile, formProblems, issueRows } from "./records-counts.ts";
 
 type CellPair = { heading: string; before: string; after: string };
 type WordPair = { before: string[]; after: string[] };
 
 function rowsById(files: readonly LedgerFile[]): Map<string, IssueRow> {
+  const problems = formProblems(files);
+  if (problems.length > 0) throw new Error(problems.join(" "));
   const rows = new Map<string, IssueRow>();
   for (const row of issueRows(files)) {
     const previous = rows.get(row.id);

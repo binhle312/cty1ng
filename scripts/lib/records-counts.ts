@@ -13,6 +13,8 @@ export const ISSUE_FILES = ["docs/delivery-quality.md", "docs/delivery-quality-a
 
 const PULL_LINK = "https://github.com/binhle312/cty1ng/pull";
 const ISSUE_ROW = /^\| DQ-(\d+) \|/;
+// A line that starts like an issue row, with other spaces or tabs around the id.
+const LOOSE_ISSUE_ROW = /^\|[ \t]*DQ-\d+[ \t]*\|/;
 const STATES = ["open", "partial", "fixed", "dropped", "withdrawn", "unknown"] as const;
 type State = (typeof STATES)[number];
 
@@ -170,6 +172,24 @@ function registerPr(row: Row): number | undefined {
   return numberOf(/^\[#(\d+)\]/.exec(row.cells[0] ?? "")?.[1]);
 }
 
+// The readers match an issue row by its exact first cell and split lines at LF, so they refuse
+// other forms: a missed row would hide its words (owner, 2026-11-25, plan revision 9, Q2 R).
+export function formProblems(files: readonly LedgerFile[]): string[] {
+  return files.flatMap((file) => {
+    if (file.text.includes("\r"))
+      return [`${file.path}: the file has CR line ends; use LF line ends.`];
+    return file.text
+      .split("\n")
+      .flatMap((line, index) =>
+        LOOSE_ISSUE_ROW.test(line) && !ISSUE_ROW.test(line)
+          ? [
+              `${file.path}:${index + 1}: write the first cell of an issue row as "| DQ-n |", with one space on each side.`,
+            ]
+          : [],
+      );
+  });
+}
+
 function readLedger(files: readonly LedgerFile[]): { ledger?: Ledger; problems: string[] } {
   const problems: string[] = [];
   const found = Object.values(TABLES).map((table) => {
@@ -184,7 +204,7 @@ function readLedger(files: readonly LedgerFile[]): { ledger?: Ledger; problems: 
       );
     return tables[0];
   });
-  problems.push(...splitTables(files), ...cellCountProblems(files));
+  problems.push(...formProblems(files), ...splitTables(files), ...cellCountProblems(files));
   const [milestones, register] = found;
   if (problems.length > 0 || milestones === undefined || register === undefined)
     return { problems };

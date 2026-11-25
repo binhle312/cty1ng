@@ -1071,6 +1071,94 @@
           ]
         }
       ]
+    },
+    {
+      "id": "counts-refuse-padded-id",
+      "claim": "records:counts refuses an issue row whose id cell has a space too many, before or after the id, and writes nothing then.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "refuses an issue row whose id cell has extra spaces"
+      },
+      "assertion": "expect(problems, \"padded id cells\").toEqual([",
+      "breaks": [
+        {
+          "id": "accept-loose-id-cell",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "LOOSE_ISSUE_ROW.test(line) && !ISSUE_ROW.test(line)",
+              "replace": "false"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-refuse-cr",
+      "claim": "records:counts refuses CR line ends with one problem for the file, and writes nothing then.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "refuses CR line ends once for each file"
+      },
+      "assertion": "expect(problems, \"one CR problem\").toEqual([",
+      "breaks": [
+        {
+          "id": "accept-cr-line-ends",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (file.text.includes(\"\\r\"))",
+              "replace": "if (false)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-refuse-padded-id",
+      "claim": "records:removed-words refuses a snapshot with a padded issue id.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "refuses a snapshot with a padded issue id"
+      },
+      "assertion": "expect(run, \"padded id refusal\").toThrow(",
+      "breaks": [
+        {
+          "id": "read-snapshot-with-loose-id",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "if (problems.length > 0) throw new Error(problems.join(\" \"));",
+              "replace": "void problems;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-refuse-cr",
+      "claim": "records:removed-words refuses a snapshot with CR line ends.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "refuses a snapshot with CR line ends"
+      },
+      "assertion": "expect(run, \"CR refusal\").toThrow(",
+      "breaks": [
+        {
+          "id": "read-snapshot-with-cr",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "if (problems.length > 0) throw new Error(problems.join(\" \"));",
+              "replace": "void problems;"
+            }
+          ]
+        }
+      ]
     }
   ],
   "exempt": [

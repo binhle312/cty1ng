@@ -106,6 +106,26 @@ describe("records:removed-words", () => {
     ]);
   });
 
+  it("refuses a snapshot with a padded issue id", () => {
+    const run = () =>
+      removedWords({
+        base: [ledger(["| DQ-001 | review | old words |"])],
+        head: [ledger(["|  DQ-001 | review | old |"])],
+      });
+    expect(run, "padded id refusal").toThrow(
+      `${LIVE}:3: write the first cell of an issue row as "| DQ-n |", with one space on each side.`,
+    );
+  });
+
+  it("refuses a snapshot with CR line ends", () => {
+    const crlf = {
+      path: LIVE,
+      text: ledger(["| DQ-001 | review | old words |"]).text.replace(/\n/g, "\r\n"),
+    };
+    const run = () => removedWords({ base: [crlf], head: [ledger(["| DQ-001 | review | old |"])] });
+    expect(run, "CR refusal").toThrow(`${LIVE}: the file has CR line ends; use LF line ends.`);
+  });
+
   it("reports removed words when only the raw line shrinks", () => {
     const report = reportRows({
       before: ["| DQ-001 | old     | proof   |"],

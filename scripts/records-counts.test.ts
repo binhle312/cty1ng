@@ -480,6 +480,37 @@ describe("structure problems", () => {
     expect(problems, "no second register").toEqual([]);
   });
 
+  it("refuses an issue row whose id cell has extra spaces", () => {
+    const fixture = onePr();
+    const padded = files(fixture).map((file) =>
+      file.path === MAIN
+        ? {
+            path: MAIN,
+            text: file.text
+              .replace("| DQ-001 |", "|  DQ-001 |")
+              .replace("| DQ-002 |", "| DQ-002  |"),
+          }
+        : file,
+    );
+    const problems = checkCounts(padded).filter((p) => p.includes("first cell"));
+    expect(problems, "padded id cells").toEqual([
+      `${MAIN}:${lineIn(padded, "|  DQ-001 |")}: write the first cell of an issue row as "| DQ-n |", with one space on each side.`,
+      `${MAIN}:${lineIn(padded, "| DQ-002  |")}: write the first cell of an issue row as "| DQ-n |", with one space on each side.`,
+    ]);
+    expect(writeCounts(padded).files, "no write with a padded id").toEqual(padded);
+  });
+
+  it("refuses CR line ends once for each file", () => {
+    const crlf = files(onePr()).map((file) =>
+      file.path === ARCHIVE ? { ...file, text: file.text.replace(/\n/g, "\r\n") } : file,
+    );
+    const problems = checkCounts(crlf).filter((p) => p.includes("CR"));
+    expect(problems, "one CR problem").toEqual([
+      `${ARCHIVE}: the file has CR line ends; use LF line ends.`,
+    ]);
+    expect(writeCounts(crlf).files, "no write with CR line ends").toEqual(crlf);
+  });
+
   it("reports a milestone view row with more cells than its header", () => {
     const fixture = onePr({ audit: [...onePr().audit, "stray"] });
     const problems = checkCounts(files(fixture)).filter((p) => p.includes("cells"));
