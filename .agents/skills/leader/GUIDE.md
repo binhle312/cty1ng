@@ -76,7 +76,7 @@ fix, or when an approval is missing. Other work goes on.
 | --- | --- |
 | Plans, briefs, records, messages to the human | The lead agent |
 | [The lead agent's own work](SKILL.md#the-lead-agents-own-work) | The lead agent |
-| A broad search for the documents and the code of a task | A Claude Code subagent on Haiku, before the plan |
+| A broad search for the documents and the code of a task | The `Explore` subagent of Claude Code on Haiku, before the plan |
 | Each other code change, also a simple one | A Codex worker |
 | Each review | A different agent: a new session that did not build the code |
 

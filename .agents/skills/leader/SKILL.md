@@ -45,9 +45,10 @@ The **lead agent** is the Claude Code conversation that the owner starts.
 ### The lead agent's own work
 
 Keep short reads for yourself. Give a broad search for the documents and the code that a task
-needs to a Claude Code subagent on Haiku. Ask it for paths, line numbers and short quotes, and read
-each line yourself before your plan depends on it (owner, 2026-11-25). A search subagent changes no
-file and is not a worker, so it can run before the owner's OK.
+needs to the built-in `Explore` subagent of Claude Code, with the model Haiku. Ask it for paths,
+line numbers and short quotes, and read each line yourself before your plan depends on it (owner,
+2026-11-25). A search subagent changes no file and is not a worker, so it can run before the
+owner's OK.
 
 Do these tasks yourself, and start no worker for them:
 
@@ -209,6 +210,9 @@ no login, use Claude Code subagents as the workers and reviewers (owner, 2026-11
 error, such as a wrong option or a sandbox refusal, is an ordinary obstacle: find its cause.
 
 - Use Claude Opus in place of Astra, and Claude Sonnet in place of Sol or Terra, at the same effort.
+- If Claude Code has agent roles for this work, use them: a building role, such as `implementer`,
+  for a worker, and a review role that cannot edit files, such as `reviewer`, for a reviewer.
+  Otherwise use a general subagent with the model above.
 - Start each subagent in the background with the Agent tool, with the same brief, the same first
   turn and the same worktree rules. Send each next message to the same subagent.
 - A reviewer subagent has no read-only sandbox. Its brief says to change no file, and you check

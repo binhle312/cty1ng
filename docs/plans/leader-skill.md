@@ -352,6 +352,11 @@ sub-agents (or agents) will be the backup)".
   and the new models.
 - `references/worker-brief.md`: "You are a worker for a lead agent" (no longer "a Codex worker").
 - `GUIDE.md`: one row for the search in "Who does which work", and one sentence for the backup.
+- The owner's agent roles (owner, 2026-11-25, "Agree with your suggestion"): the search uses the
+  built-in `Explore` subagent with the model Haiku; in the backup, a building role such as
+  `implementer` is the worker and a review role that cannot edit files such as `reviewer` is the
+  reviewer, if Claude Code has them, else a general subagent. `test-verifier` is not used: the
+  worker runs the tests and the reviewer checks the evidence.
 
 **Additions beyond the owner's words:**
 - The models of the backup: Claude Opus in place of Astra, Claude Sonnet in place of Sol or Terra,
