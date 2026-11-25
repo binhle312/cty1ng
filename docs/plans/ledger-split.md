@@ -309,7 +309,8 @@ Line numbers below refer to `ba40948`. To repeat the search, run
 - `AGENTS.md:154`, `:156–166` — right. These rules cover skill citations, issue evidence, redesign review scope, and the PR claim that needs owner review.
 - `docs/workflows/pull-request.md:42–46` and `:90–92` — right. These lines name the issue row and the sources of evidence, and point to step 2 for the result.
 - `docs/workflows/pull-request.md:113–114` — fixed. A later review follows step 2.
-- `docs/workflows/implementation.md:32–33` and `:45–53` — right. The workflow points to step 2 and links the rules for issue rows and their evidence.
+- `docs/workflows/implementation.md:32–33` — fixed (revision 8, R9W-F1). At handoff the PR reconciles its issue rows there; step 2 says where review rounds and review findings go.
+- `docs/workflows/implementation.md:45–53` — right. The workflow links the rules for issue rows and their evidence.
 - `docs/workflows/review.md:5–6` and `:27` — right. The workflow points to §7 for the review and uses the requested destination for the findings report.
 - `docs/review-guide.md:13`, `:23`, `:101–105`, and `:109–122` — right. The guide tells the reviewer what to report and points to step 2 for its home.
 - `docs/workflows/merge-bar.md:19`, `:51–55`, and `:68–93` — right. The bar points to step 2 for each check and gives the rules for issue rows and follow-ups.

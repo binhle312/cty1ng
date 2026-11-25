@@ -181,11 +181,12 @@ If the head changes after review, the row still describes the original reviewed 
 2. For a PR in a milestone or an audit, add the round after each review. Reconcile its findings
    with existing issue IDs. A PR with no milestone keeps its review rounds in its description
    (owner, 2026-11-24). It also keeps each review finding there, open or fixed, in the
-   `Defect and review fixes` table. The line holds the fix and the "Same cause" answer with its
-   search; the finding gets no issue row (owner, 2026-11-25). A finding that the PR leaves open is
-   also a row in the follow-up list of `docs/status.md`. A rule that gives a review finding a ledger
-   row or issue row is for a PR in a milestone or an audit. The review guide checks the "Same cause"
-   answer of each line of that table, as of a row.
+   `Defect and review fixes` table. The line holds the fix, or the decision that leaves the finding
+   open, and the "Same cause" answer with its search; the finding gets no issue row (owner,
+   2026-11-25). A finding that the PR leaves open is also a row in the follow-up list of
+   `docs/status.md`. A rule that gives a review finding a ledger row or issue row is for a PR in a
+   milestone or an audit. The review guide checks the "Same cause" answer of each line of that
+   table, as of a row.
 3. After a fix, add the verification result and change the issue state only when evidence supports it.
 4. After a new discovery, check whether it escaped a merge, repeats a cause, or came from a repair. Record the general rule and the search of old fixes ([bug fix, step 2](workflows/bug-fix.md)).
 5. At PR handoff, after the merge of `origin/main`, run `pnpm records:counts --write`. It writes

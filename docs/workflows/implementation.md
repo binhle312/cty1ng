@@ -30,7 +30,7 @@ Then a fresh reviewer agent, given the code and not the builder's conclusions, t
 break the screen with forced orders. Point it to [the review workflow](review.md); the builder
 does not need to read that file (lesson `check-every-order-before-the-push.md`).
 **Delivery records.** After review or fixes, update [delivery quality](../delivery-quality.md#7-update-and-assess).
-At handoff, reconcile the PR's issues and verification evidence there. Follow step 2 for review rounds.
+At handoff, reconcile the PR's issue rows and their evidence there. Step 2 says where review rounds and review findings go.
 [Status](../status.md) owns milestone state and next work.
 **Evidence.** Fill the [PR template](../../.github/pull_request_template.md) by the rules of [pull-request.md](pull-request.md), using [testing.md §5](../testing.md#5-evidence-in-prs).
 Before each push, also after a review fix, do [the records check](pull-request.md#before-each-push-check-the-records).
