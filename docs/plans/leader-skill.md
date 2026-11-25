@@ -402,12 +402,13 @@ text replaces it.
 
 **What changes.**
 - `SKILL.md`, "Teams" under "Workers": each task gets a worker team, one worker session. For a
-  coding task, the implementer builds; after the build, it starts its own `test-verifier` and
+  coding task, the implementer builds; after each build turn and each fix turn, it starts its own `test-verifier` and
   `reviewer` subagents at the same time, by role name, and fixes their findings before it reports.
   A task that is not code gets a default worker, with the `reviewer` subagent only. At most 2 worker
   teams run at the same time (owner, 2026-11-25).
-- `SKILL.md`, a new part "Outside reviewers": at each report of a worker team (a checkpoint, the
-  final report, a report of fixes), the lead agent starts two reviewers at the same time: a Claude
+- `SKILL.md`, a new part "Outside reviewers": at each checkpoint report and the final report of a
+  worker team, the lead agent starts two new reviewers at the same time (the same pair checks the
+  fixes of its findings): a Claude
   Code subagent on Opus at `high` (with a review role that cannot edit files, such as `reviewer`),
   and a new Codex session on `gpt-6.2-astra` at `high`, read-only. Stages 4 and 7 follow.
 - The explorer (`Explore` on Haiku) only gathers facts for the lead agent's plan; it is not in a
@@ -444,8 +445,18 @@ text replaces it.
 - The team's subagents run on the models of the owner's Codex role files (`gpt-6.2-sol` at `high`),
   which can be weaker than an Astra worker; the outside reviewers are never weaker (the owner
   agreed).
-- A code change that the lead agent makes itself gets no team: a different agent reviews it in the
-  next review round, as before.
+- A code change that the lead agent makes itself gets no team; the two outside reviewers review it
+  after the commit (review round 1 of the final head found that no reviewer was named for it).
+- From review round 1 of the final head (Opus and Astra, `5e598eb..3d491a7`): the worker's plan
+  names its checkpoints (a small task can have one); the plan to the owner names the subagents and
+  the reviewer pairs; the outside reviewers run read-only, with the test results of the worker
+  (the writable review sandbox is removed); the session list holds the outside reviewers too; a
+  missing Codex role becomes a subagent with no role; the team subagents get the limits of the
+  brief; in the backup, the lead agent starts the team checks after each build and fix turn, the
+  test verifier only for a coding task, on a model not weaker than the implementer (the lead
+  agent's pick); a commit needs only the Git-folder option, a push also the network option; a
+  change of the lead agent's own that grows to 5 lines needs the owner's OK after the plan's OK.
+  "At any effort" in `codex.md` claimed more than the runs show; it now says `high`.
 
 **Test.** The fact map against `a600a49` lists each sentence that leaves, with its reason.
 Headless runs of the skill at `fca7a7e` (`tmp/leader-skill/measure/gate-test.sh`):
@@ -456,9 +467,22 @@ Headless runs of the skill at `fca7a7e` (`tmp/leader-skill/measure/gate-test.sh`
   session reviewed the report, and the same pair checked the fixes. Gap: the worker started its
   subagents in the plan turn, not after the build or the fix. The brief now says when.
 - Backup (account error): Claude `implementer` (Sonnet), then the lead agent started the
-  `test-verifier` and team `reviewer` (Sonnet), then only one Opus outside reviewer. Gap: two were
-  needed. "Outside reviewers" now says it.
-Both fixes were run again on the next head; the results are in the PR.
+  `test-verifier` and team `reviewer` (Sonnet), then one Opus outside reviewer. This was not a gap
+  of the skill: the test task itself said "one worker and one reviewer" (a text left from the
+  revision 8 test). `3d491a7` still names the two Opus reviewers of the backup in "Outside
+  reviewers".
+
+Runs at `3d491a7`:
+- Real Codex: no subagent in the plan turn; `test-verifier` and `reviewer` after the build; in the
+  fix turn, the fix, the commit, then a follow-up to the same two subagents. Both outside reviewers
+  checked the build and the fix.
+- Backup with the corrected task ("the worker team and the reviewers that your skill gives"):
+  the lead agent started the team checks after each build and fix turn, and two Opus outside
+  reviewers ("A (Anthropic)", "B (OpenAI stand-in)"); both checked the fixes.
+- Continuation (`/leader <folder>` only, after a commit that the handoff does not name): it found
+  and reported the commit, started no worker, kept the gate closed.
+- Two tasks, real Codex: the lead agent made the 4-line README task itself (own work) and had the
+  outside reviewers check it with the worker's task.
 
 ## Open questions
 

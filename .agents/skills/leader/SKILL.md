@@ -1,6 +1,6 @@
 ---
 name: leader
-description: Use when the owner runs /leader with a task. The conversation becomes the lead agent. It talks with the owner, plans the work, briefs Codex workers and a different reviewer, and stops at the owner's gates.
+description: Use when the owner runs /leader with a task. The conversation becomes the lead agent. It talks with the owner, plans the work, briefs a Codex worker team for each task and two outside reviewers, and stops at the owner's gates.
 disable-model-invocation: true
 metadata:
   author: binhle312
@@ -63,7 +63,8 @@ Give each other build to a worker, including a simple code change.
   gives nothing. If it gives a line, give the change to a worker.
 - To count the changed lines, mark each new file of the change with `git add -N <file>`, then
   run `git diff --numstat HEAD`. Add the larger of the added and the removed lines of each code
-  file. If your change grows to 5 lines or more, stop, and give it to a worker.
+  file. If your change grows to 5 lines or more, stop, and give it to a worker. After the OK, that
+  is a change of the plan: ask the owner first.
 
 ## Stages of a task
 
@@ -82,10 +83,11 @@ Give each other build to a worker, including a simple code change.
      changes a file of another task or waits for another task. Give them to different
      [worker teams](#teams), and check each task apart. A task that needs the result of another task
      starts after that task is done. Name the files of each task, and the order if one exists.
-   - **The workers:** the worker team of each task, and each task that you do
-     [yourself](#the-lead-agents-own-work).
-   - **The reviewers:** the [two outside reviewers](#outside-reviewers) of each team. A big review
-     has [more than one part](#context-of-each-worker), and each part has its own reviewers.
+   - **The workers:** the worker team of each task, with the subagents that its worker starts, and
+     each task that you do [yourself](#the-lead-agents-own-work).
+   - **The reviewers:** the [two outside reviewers](#outside-reviewers), a new pair at each
+     checkpoint report of a team and at the final report, and for your own code change. A big
+     review has [more than one part](#context-of-each-worker), and each part has its own reviewers.
    - **The models:** the model and the effort of each worker, with one reason from its task. See
      [Workers](#workers).
 
@@ -94,24 +96,23 @@ Give each other build to a worker, including a simple code change.
 
    After the OK, ask the owner before you change a task, a count, a model or an effort. A new
    session with the same task, model and effort is not a change: one that replaces a worker or a
-   reviewer at the [limit](#context-of-each-worker), or one that checks the fixes. A move to the
+   reviewer at the [limit](#context-of-each-worker) or one that ended, and the new pair of outside
+   reviewers at the next report. A move to the
    [backup](#when-codex-cannot-run) needs no new OK: tell the owner the cause and the new models.
 
 5. **Build** what the plan says: see [The lead agent's own work](#the-lead-agents-own-work) and
    [Workers](#workers).
 6. **Check:** after each turn, read the report file. Compare each claim with your plan, the
    worker's plan, the diff, the project's check results, including the test results, and, for
-   pushed work, the remote checks of the pushed head. Read the worker's [context use](#context-of-each-worker) after each turn, and
-   about each minute while a turn runs.
-7. **Review:** at each report of a worker team, start the
-   [two outside reviewers](#outside-reviewers) at the same time. Send the findings that you accept
-   to the worker session. The reviewers check the fixes again. A different agent also reviews each
-   code change that you made yourself, in the next review round.
+   pushed work, the remote checks of the pushed head. Read the [context use](#context-of-each-worker)
+   of each Codex session after each turn, and about each minute while a turn runs.
+7. **Review:** start the [two outside reviewers](#outside-reviewers) as that part says. Send the
+   findings that you accept to the worker session, or fix them in your own change. The same
+   reviewers check the fixes.
 
-   If the review message lets the reviewer run checks, do the [order check](#order-check).
-   For Codex, use the [review run in `references/codex.md`](references/codex.md#review-run). If a
-   test tool needs to write files, give the reviewer the test results of the builder, or start it in
-   a worktree of its own with the [writable sandbox in `references/codex.md`](references/codex.md#review-run).
+   If the review message lets the reviewer run checks, do the [order check](#order-check). An
+   outside reviewer runs read-only: give it the test results of the worker and its test verifier.
+   For Codex, use the [review run in `references/codex.md`](references/codex.md#review-run).
 
 8. **Report** to the owner. Merge only when the owner asks for the merge of that work.
 
@@ -141,7 +142,7 @@ as `tmp/leader/<task>/`. The write rules below apply to your task's own folder.
 | File | What it holds | When to write it |
 | --- | --- | --- |
 | `goal.md` | The goal in the owner's words, the completion criteria, the scope, and the owner's constraints and standing instructions | At the start, and after each owner decision that changes it |
-| `handoff.md` | The worktree, the branch and the PR, if one exists; the plan of stage 4, and the owner's OK of it or "no OK yet"; the current state with commits; the checks and their results; the owner's decisions in the owner's words, each with the question that it answers; the failed attempts with their reasons; the session list of your workers; the next action; the open questions. Give the commit where you checked each claim. | Write it in full each time, not as a patch: at the start, at the end of each stage, after each owner decision, and before you stop to wait for the owner |
+| `handoff.md` | The worktree, the branch and the PR, if one exists; the plan of stage 4, and the owner's OK of it or "no OK yet"; the current state with commits; the checks and their results; the owner's decisions in the owner's words, each with the question that it answers; the failed attempts with their reasons; the session list of your workers and reviewers; the next action; the open questions. Give the commit where you checked each claim. | Write it in full each time, not as a patch: at the start, at the end of each stage, after each owner decision, and before you stop to wait for the owner |
 
 Give the owner the absolute folder path in each report. Never give your folder to a worker as a writable
 folder.
@@ -157,35 +158,40 @@ Before you decide who builds or who reviews, read `references/codex.md`, relativ
 base directory of this skill. It holds the models and the commands. If the file is missing, stop
 and tell the owner.
 
-Pick the worker by the task. The [outside reviewers](#outside-reviewers) have fixed models, and a
-reviewer is never a weaker model than the worker. For Codex, use the
+Pick the worker by the task. The [outside reviewers](#outside-reviewers) have fixed models, and an
+outside reviewer is never a weaker model than the worker. The subagents of a Codex worker keep the
+models of their Codex roles, which can be weaker (owner, 2026-11-25). For Codex, use the
 [model table in `references/codex.md`](references/codex.md#pick-the-models). Give each pick to the
 owner in the plan of [stage 4](#stages-of-a-task), with its effort and one reason. Keep the model
 of a session until its task ends.
 
 ### Teams
 
-Each task of your plan gets a worker team: one worker session that builds, and checks its own
-work with subagents that it starts (owner, 2026-11-25).
+Each task that you give to a worker gets a worker team: one worker session that builds, and checks
+its own work with subagents that it starts (owner, 2026-11-25).
 
 | Member | Its job | Codex | When Codex cannot run |
 | --- | --- | --- | --- |
 | Implementer | The worker session of a coding task: its plan first, then the code, the tests and the commits; it fixes the findings | The worker column of the model table | A building role, such as `implementer` |
-| Test verifier | A subagent of the worker: tests each acceptance criterion, PASS, FAIL or NOT VERIFIED, with evidence | The worker starts a subagent with the role `test-verifier` | You start a test role, such as `test-verifier`, after the build |
-| Team reviewer | A subagent of the worker: reviews the change and its evidence, and changes no file | The worker starts a subagent with the role `reviewer` | You start a review role that cannot edit files, such as `reviewer`, after the build |
+| Test verifier | A subagent of the worker: tests each acceptance criterion, PASS, FAIL or NOT VERIFIED, with evidence | The worker starts a subagent with the role `test-verifier` | You start a test role, such as `test-verifier`, after each build turn and each fix turn |
+| Team reviewer | A subagent of the worker: reviews the change and its evidence, and changes no file | The worker starts a subagent with the role `reviewer` | You start a review role that cannot edit files, such as `reviewer`, after each build turn and each fix turn |
 | Default worker | The worker session of a task that is not code and is not [your own work](#the-lead-agents-own-work), such as documents, research or a measurement; its only subagent is the team reviewer | The worker column of the model table | A general subagent |
 
 - The worker ends its turn with a report at each checkpoint of its plan. After each build turn and
   each fix turn, before it reports, it starts its test verifier and its team reviewer at the same
-  time, by role name, and fixes their findings. Not in the plan turn. The worker brief says so.
+  time, by role name, and fixes their findings. Not in the plan turn. The worker brief says so. If
+  the Codex configuration has no such role, the worker gives the same job to a subagent with no
+  role.
 - Run at most 2 worker teams at the same time (owner, 2026-11-25; the owner can change it). A new
   session at the limit adds no team. Your plan gives the order of the tasks that wait.
 
 ### Outside reviewers
 
-At each report of a worker team (a checkpoint or the final report), start two new reviewers at the
-same time, so that the worker stays on the right track (owner, 2026-11-25). The same two check the
-fixes of their findings. Neither built the work. Each reads, changes no file and makes no commit.
+At each checkpoint report of a worker team and at its final report, start two new reviewers at the
+same time, so that the worker stays on the right track (owner, 2026-11-25). Not for a plan, a
+handoff or a report of fixes: the same two check the fixes of their findings. A code change that
+you make yourself gets the same two reviewers after you commit it. Neither built the work. Each
+reads, changes no file and makes no commit.
 
 - **From Anthropic:** a [Claude Code subagent](#claude-code-subagents) on Opus, at `high`, with a
   review role that cannot edit files, such as `reviewer`, if Claude Code has one.
@@ -246,9 +252,10 @@ If the start message lets the worker build or run checks, do the [order check](#
 Start the worker in its own worktree and branch. For Codex, use the
 [start command in `references/codex.md`](references/codex.md#start). Start each run in the background.
 Write its role, session id, worktree, model, effort and sandbox mode on one line of the session
-list in `handoff.md`, with its last [context use](#context-of-each-worker).
+list in `handoff.md`, with its last [context use](#context-of-each-worker). Write a line for each
+outside reviewer too.
 
-Use a new report file for each turn. For a Codex worker that commits and pushes, use the
+Use a new report file for each turn. For a Codex worker that commits, use the
 [commit and push options in `references/codex.md`](references/codex.md#commit-and-push).
 
 ### When Codex cannot run
@@ -261,10 +268,11 @@ error, such as a wrong option or a sandbox refusal, is an ordinary obstacle: fin
 - Use the roles of the [Teams](#teams) table if Claude Code has them, else a general subagent, with
   the rules of [Claude Code subagents](#claude-code-subagents).
 - Give each one the same brief, the same first turn and the same worktree rules, but delete the
-  part "Your team" of the worker brief: a subagent cannot start subagents. So you start the test
-  verifier and the team reviewer yourself before each report is final, on a model that is not
-  weaker than the implementer, with briefs from `references/reviewer-brief.md` (for the test
-  verifier, the checks are the acceptance criteria: PASS, FAIL or NOT VERIFIED). Send their
+  part "Your team" of the worker brief: a subagent cannot start subagents. So after each build
+  turn and each fix turn, not after the plan turn, you start the team reviewer, and for a coding
+  task also the test verifier, on a model that is not weaker than the implementer. Write their
+  briefs from `references/reviewer-brief.md`. For the test verifier, the checks are the acceptance
+  criteria (PASS, FAIL or NOT VERIFIED), it may run the tests, and it commits nothing. Send their
   findings to the implementer.
 - The OpenAI reviewer cannot run: a second new Claude Opus subagent takes its place.
 

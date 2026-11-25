@@ -41,8 +41,8 @@ types `/leader` with that path.
  ║ A task that is not code: a default       ║     │ Neither built the work; neither      │
  ║ worker, with the reviewer subagent only  ║     │ changes a file                       │
  ╚══════════════════════════════════════════╝     └──────────────────────────────────────┘
-  The sessions do not talk with each other. If Codex cannot run, Claude Code subagents
-  take each Codex place.
+  The sessions do not talk with each other. If Codex fails because of its account, Claude
+  Code subagents take each Codex place.
 ```
 
 The sessions send no messages to each other or to the human. Each message passes through
@@ -60,7 +60,7 @@ the lead agent. The lead agent can ask the advisor before it decides.
                                                   │
                                                   ▼
  4 plan: the tasks, the worker team of each,
-         the model and the effort of each ══▶ HUMAN reviews it and gives the OK
+         the reviewers, the model and effort ══▶ HUMAN reviews it and gives the OK
       │
       ▼
  5 worker: plan in its own words ──▶ lead agent accepts ──▶ worker builds, and its
@@ -68,8 +68,8 @@ the lead agent. The lead agent can ask the advisor before it decides.
    (see The lead agent's own work)
       │
       ▼
- 6 lead agent checks each report ──▶ 7 two outside reviewers ──▶ fixes ──▶ lead agent
-                                                                        checks the fixes
+ 6 lead agent checks each report ──▶ 7 two outside reviewers ──▶ fixes ──▶ the same two
+                                                                        check the fixes
       │
       ▼
  8 report ══▶ the merge, only when the HUMAN asks for it
@@ -123,7 +123,7 @@ the human's approval, the lead agent stops and asks the human.
    │◀─ questions ─────│ all the open questions; again while one is open        │
    │── answers ──────▶│                              │                         │
    │                  │ the explorer (Explore on Haiku) gathers facts          │
-   │◀─ the plan ──────│ tasks, worker teams, model and effort of each          │
+   │◀─ the plan ──────│ tasks, worker teams, reviewers, models and efforts     │
    │── OK ───────────▶│                              │                         │
    │                  │── brief ────────────────────▶│ reads, changes no file  │
    │                  │◀─ its plan, with questions ──│                         │
