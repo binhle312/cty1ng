@@ -417,7 +417,7 @@ text replaces it.
 - `references/codex.md`: the table keeps the worker column; the OpenAI outside reviewer is always
   `gpt-6.2-astra` at `high`. The sentence "With `ultra`, Codex starts agents of its own" was false
   (the runs of 2026-11-24 and 2026-11-25 show subagents at `high`); it now says that a Codex session
-  can start subagents at any effort.
+  at `high` starts subagents of its own.
 - The backup: a Claude subagent cannot start subagents, so the lead agent starts the Claude test
   verifier and team reviewer itself, after the build; a second Claude Opus session takes the place
   of the OpenAI reviewer.
@@ -457,6 +457,13 @@ text replaces it.
   agent's pick); a commit needs only the Git-folder option, a push also the network option; a
   change of the lead agent's own that grows to 5 lines needs the owner's OK after the plan's OK.
   "At any effort" in `codex.md` claimed more than the runs show; it now says `high`.
+- From the fix check of round 1 (Opus and Astra, `3d491a7..a123f7a`): the missing-role fallback is
+  a line that the worker reads; the lead agent checks that the worker's plan names its
+  checkpoints, and gives the owner the number of checkpoints that it expects; in a fix turn the
+  worker asks the same subagents again (the real run did that); the outside reviewers get the
+  test results that exist; the backup test verifier may let tests write their output files, and
+  the outside reviewers start only after the backup team checks pass; the context measure and
+  the session-list reading are for Codex sessions; the guide and the coordination rows follow.
 
 **Test.** The fact map against `a600a49` lists each sentence that leaves, with its reason.
 Headless runs of the skill at `fca7a7e` (`tmp/leader-skill/measure/gate-test.sh`):

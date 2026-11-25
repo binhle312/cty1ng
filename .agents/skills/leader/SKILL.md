@@ -1,6 +1,6 @@
 ---
 name: leader
-description: Use when the owner runs /leader with a task. The conversation becomes the lead agent. It talks with the owner, plans the work, briefs a Codex worker team for each task and two outside reviewers, and stops at the owner's gates.
+description: Use when the owner runs /leader with a task. The conversation becomes the lead agent. It talks with the owner, plans the work, briefs a Codex worker team for each task that it gives to a worker and two outside reviewers, and stops at the owner's gates.
 disable-model-invocation: true
 metadata:
   author: binhle312
@@ -86,8 +86,9 @@ Give each other build to a worker, including a simple code change.
    - **The workers:** the worker team of each task, with the subagents that its worker starts, and
      each task that you do [yourself](#the-lead-agents-own-work).
    - **The reviewers:** the [two outside reviewers](#outside-reviewers), a new pair at each
-     checkpoint report of a team and at the final report, and for your own code change. A big
-     review has [more than one part](#context-of-each-worker), and each part has its own reviewers.
+     checkpoint report of a team and at the final report, and for your own code change. Give the
+     number of checkpoints that you expect for each task. A big review has
+     [more than one part](#context-of-each-worker), and each part has its own reviewers.
    - **The models:** the model and the effort of each worker, with one reason from its task. See
      [Workers](#workers).
 
@@ -111,7 +112,8 @@ Give each other build to a worker, including a simple code change.
    reviewers check the fixes.
 
    If the review message lets the reviewer run checks, do the [order check](#order-check). An
-   outside reviewer runs read-only: give it the test results of the worker and its test verifier.
+   outside reviewer runs read-only: give it the test results that exist, from the worker and its
+   test verifier, or from your own checks.
    For Codex, use the [review run in `references/codex.md`](references/codex.md#review-run).
 
 8. **Report** to the owner. Merge only when the owner asks for the merge of that work.
@@ -177,9 +179,10 @@ its own work with subagents that it starts (owner, 2026-11-25).
 | Team reviewer | A subagent of the worker: reviews the change and its evidence, and changes no file | The worker starts a subagent with the role `reviewer` | You start a review role that cannot edit files, such as `reviewer`, after each build turn and each fix turn |
 | Default worker | The worker session of a task that is not code and is not [your own work](#the-lead-agents-own-work), such as documents, research or a measurement; its only subagent is the team reviewer | The worker column of the model table | A general subagent |
 
-- The worker ends its turn with a report at each checkpoint of its plan. After each build turn and
-  each fix turn, before it reports, it starts its test verifier and its team reviewer at the same
-  time, by role name, and fixes their findings. Not in the plan turn. The worker brief says so. If
+- The worker ends its turn with a report at each checkpoint of its plan. After each build turn,
+  before it reports, it starts its test verifier and its team reviewer at the same time, by role
+  name, and fixes their findings; after each fix turn, it asks the same ones again. Not in the plan
+  turn. The worker brief says so. If
   the Codex configuration has no such role, the worker gives the same job to a subagent with no
   role.
 - Run at most 2 worker teams at the same time (owner, 2026-11-25; the owner can change it). A new
@@ -252,8 +255,8 @@ If the start message lets the worker build or run checks, do the [order check](#
 Start the worker in its own worktree and branch. For Codex, use the
 [start command in `references/codex.md`](references/codex.md#start). Start each run in the background.
 Write its role, session id, worktree, model, effort and sandbox mode on one line of the session
-list in `handoff.md`, with its last [context use](#context-of-each-worker). Write a line for each
-outside reviewer too.
+list in `handoff.md`, with its last [context use](#context-of-each-worker) for a Codex session.
+Write a line for each outside reviewer too.
 
 Use a new report file for each turn. For a Codex worker that commits, use the
 [commit and push options in `references/codex.md`](references/codex.md#commit-and-push).
@@ -272,8 +275,9 @@ error, such as a wrong option or a sandbox refusal, is an ordinary obstacle: fin
   turn and each fix turn, not after the plan turn, you start the team reviewer, and for a coding
   task also the test verifier, on a model that is not weaker than the implementer. Write their
   briefs from `references/reviewer-brief.md`. For the test verifier, the checks are the acceptance
-  criteria (PASS, FAIL or NOT VERIFIED), it may run the tests, and it commits nothing. Send their
-  findings to the implementer.
+  criteria (PASS, FAIL or NOT VERIFIED), and its limit is: it may run the tests and let them write
+  their output files, it changes no project file, and it commits nothing. Send their findings to
+  the implementer. Start the outside reviewers of a report only after these checks pass.
 - The OpenAI reviewer cannot run: a second new Claude Opus subagent takes its place.
 
 ### Get the plan first
@@ -283,7 +287,8 @@ when all of these are true:
 
 - each point of the goal has a step;
 - each step is in the scope of its task in your plan;
-- each claim has a check.
+- each claim has a check;
+- it names its checkpoints.
 
 If the worker's plan needs corrections, send them. When you accept it, do the
 [order check](#order-check) before you send the message to build. Your OK is not the owner's
@@ -305,7 +310,8 @@ stop, check that no command of the worker still runs.
 ## Context of each worker
 
 A worker with a full context window works worse, and each message costs more. Know the context use
-of each worker at each moment.
+of each Codex session at each moment. You cannot read it for a
+[Claude Code subagent](#claude-code-subagents): keep its task small.
 
 - The context use is the token count of the last model call, as a percent of the model's context
   window. For Codex, get it with the [context command in `references/codex.md`](references/codex.md#context-use).

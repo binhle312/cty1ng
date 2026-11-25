@@ -30,8 +30,8 @@ types `/leader` with that path.
       briefs, answers, findings   ▼    ▲   plans,     review briefs   ▼    ▲   findings
                                            reports
  ╔══════════════════════════════════════════╗     ┌──────────────────────────────────────┐
- ║ Worker team: one Codex session per task  ║     │ Outside reviewers, at each report of │
- ║ (at most 2 teams at the same time)       ║     │ a team, at the same time:            │
+ ║ Worker team: one Codex session per task  ║     │ Outside reviewers, at each checkpoint│
+ ║ (at most 2 teams at the same time)       ║     │ and final report, at the same time:  │
  ║                                          ║     │                                      │
  ║ Implementer: the session itself; plan    ║     │ From Anthropic: Claude Opus, high,   │
  ║   first, builds, tests, commits, fixes   ║     │   the `reviewer` role                │
@@ -92,7 +92,7 @@ fix, or when an approval is missing. Other work goes on.
 | A broad search for the facts of the plan | The explorer: the `Explore` subagent of Claude Code on Haiku, for the lead agent |
 | Each other code change, also a simple one | A worker team: a Codex implementer, with its own `test-verifier` and `reviewer` subagents |
 | A task that is not code: documents, research, a measurement | A worker team: a Codex default worker, with its own `reviewer` subagent |
-| The review of each report of a team | Two outside reviewers at the same time: Claude Opus and Codex `gpt-6.2-astra`, both at `high` |
+| The review of each checkpoint report and final report of a team, and of the lead agent's own code change | Two outside reviewers at the same time: Claude Opus and Codex `gpt-6.2-astra`, both at `high` |
 
 The rules for the worker are in `SKILL.md`. The templates for the briefs are in `references/`.
 
@@ -104,9 +104,9 @@ The [models](references/codex.md#pick-the-models) and the [commands](references/
 The human talks with one agent: the lead agent. It is the Claude Code conversation that the human
 starts. The lead agent gives each task to a worker team, one Codex session, at most 2 teams at the
 same time, and it talks with each session when that is needed. Two outside reviewers check each
-report of a team. If Codex cannot run because of its
-account, Claude Code subagents do that work.
-The human approves, decides, and merges.
+checkpoint report and final report of a team, and each code change of the lead agent. If Codex
+cannot run because of its account, Claude Code subagents do that work. The human approves, decides,
+and merges.
 
 A task has two plans. The lead agent's plan goes to the human, and the human gives the OK before a
 team starts. Each worker then gives the lead agent a plan for its own task. The lead
@@ -191,7 +191,7 @@ handoff, that is the new session.
 The context window is the text that a model can hold at one time: the brief, the messages, and the
 files that it read.
 
-The lead agent watches how full the context window of each worker is.
+The lead agent watches how full the context window of each Codex session is.
 When 50% of the model's window is used, the worker gives its handoff as its last message. The lead agent checks and
 corrects it, and a new worker continues from it.
 
