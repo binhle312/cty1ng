@@ -841,8 +841,52 @@
           "file": "scripts/lib/records-counts.ts",
           "edits": [
             {
-              "find": "if (!line.startsWith(\"|\") || !lineOf(cellsOf(line)).startsWith(input.header)) return;",
-              "replace": "if (!line.startsWith(input.header)) return;"
+              "find": "line.startsWith(\"|\") && lineOf(cellsOf(line)).startsWith(header) && SEPARATOR_ROW.test(next)",
+              "replace": "line.startsWith(header) && SEPARATOR_ROW.test(next)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-padded-heading-no-separator",
+      "claim": "Compares the raw row when a padded Issue ID heading has no separator line under it.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "compares the raw row under a padded heading with no separator line"
+      },
+      "assertion": "expect(report, \"raw row under a padded loose heading\").toEqual([",
+      "breaks": [
+        {
+          "id": "padded-heading-without-separator",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "line.startsWith(\"|\") && lineOf(cellsOf(line)).startsWith(header) && SEPARATOR_ROW.test(next)",
+              "replace": "line.startsWith(\"|\") && lineOf(cellsOf(line)).startsWith(header)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-heading-no-separator",
+      "claim": "Compares the raw row when an Issue ID heading has no separator line under it.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "compares the raw row under a heading with no separator line"
+      },
+      "assertion": "expect(report, \"raw row under a loose heading\").toEqual([",
+      "breaks": [
+        {
+          "id": "heading-without-separator",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "line.startsWith(\"|\") && lineOf(cellsOf(line)).startsWith(header) && SEPARATOR_ROW.test(next)",
+              "replace": "line.startsWith(\"|\") && lineOf(cellsOf(line)).startsWith(header)"
             }
           ]
         }
@@ -1001,6 +1045,28 @@
             {
               "find": "if (previous !== undefined) {\n      throw new Error(`${row.id} is in both ${previous.path} and ${row.path}`);\n    }",
               "replace": "if (previous !== undefined) continue;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-padded-data-row",
+      "claim": "A padded data row that looks like the PR register heading does not open a second register.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "ignores a padded data row that looks like a register heading"
+      },
+      "assertion": "expect(problems, \"no second register\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "data-row-as-heading",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "line.startsWith(\"|\") && lineOf(cellsOf(line)).startsWith(header) && SEPARATOR_ROW.test(next)",
+              "replace": "line.startsWith(\"|\") && lineOf(cellsOf(line)).startsWith(header)"
             }
           ]
         }

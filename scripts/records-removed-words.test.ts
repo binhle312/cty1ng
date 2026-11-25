@@ -84,6 +84,28 @@ describe("records:removed-words", () => {
     ]);
   });
 
+  it("compares the raw row under a padded heading with no separator line", () => {
+    const loose = (value: string): LedgerFile => ({
+      path: LIVE,
+      text: `|  Issue ID  | Source |\n\n| DQ-001 | ${value} |\n`,
+    });
+    const report = removedWords({ base: [loose("old")], head: [loose("replacement")] });
+    expect(report, "raw row under a padded loose heading").toEqual([
+      `DQ-001 ${LIVE} -> ${LIVE} [raw row]: old`,
+    ]);
+  });
+
+  it("compares the raw row under a heading with no separator line", () => {
+    const loose = (value: string): LedgerFile => ({
+      path: LIVE,
+      text: `| Issue ID | Source |\n\n| DQ-001 | ${value} |\n`,
+    });
+    const report = removedWords({ base: [loose("old")], head: [loose("replacement")] });
+    expect(report, "raw row under a loose heading").toEqual([
+      `DQ-001 ${LIVE} -> ${LIVE} [raw row]: old`,
+    ]);
+  });
+
   it("reports removed words when only the raw line shrinks", () => {
     const report = reportRows({
       before: ["| DQ-001 | old     | proof   |"],

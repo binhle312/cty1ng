@@ -79,13 +79,22 @@ export function formatIds(ids: readonly number[]): string {
   return parts.join(", ");
 }
 
+// A Markdown table starts with a heading line and a separator line under it.
+const SEPARATOR_ROW = /^\|( *:?-+:? *\|)+$/;
+
+// Extra spaces inside the heading cells do not hide the table.
+function isHeading(line: string, next: string, header: string): boolean {
+  return (
+    line.startsWith("|") && lineOf(cellsOf(line)).startsWith(header) && SEPARATOR_ROW.test(next)
+  );
+}
+
 function tablesWithHeader(input: { files: readonly LedgerFile[]; header: string }): Table[] {
   const tables: Table[] = [];
   for (const file of input.files) {
     const lines = file.text.split("\n");
     lines.forEach((line, index) => {
-      // Compare the trimmed cells, so that extra spaces inside a heading do not hide its table.
-      if (!line.startsWith("|") || !lineOf(cellsOf(line)).startsWith(input.header)) return;
+      if (!isHeading(line, lines[index + 1] ?? "", input.header)) return;
       const rows: Row[] = [];
       for (let next = index + 2; next < lines.length; next++) {
         const row = lines[next] ?? "";
@@ -287,7 +296,7 @@ export function splitTables(files: readonly LedgerFile[]): string[] {
     lines.forEach((line, index) => {
       const previous = index === 0 ? "" : (lines[index - 1] ?? "");
       if (!line.startsWith("|") || previous.startsWith("|")) return;
-      if (/^\|( *:?-+:? *\|)+$/.test(lines[index + 1] ?? "")) return;
+      if (SEPARATOR_ROW.test(lines[index + 1] ?? "")) return;
       problems.push(
         `${file.path}:${index + 1}: a table row with no header row before it: a blank line or text split the table, and its rows show as text. Join the table.`,
       );

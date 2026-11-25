@@ -471,6 +471,16 @@ describe("structure problems", () => {
     ]);
   });
 
+  it("ignores a padded data row that looks like a register heading", () => {
+    const [main, archive] = files(onePr());
+    const glossary = "| Field | Group |\n| --- | --- |\n|  PR  | Milestone / slice |\n";
+    const problems = checkCounts([
+      { path: MAIN, text: `${main?.text ?? ""}\n${glossary}` },
+      archive!,
+    ]);
+    expect(problems, "no second register").toEqual([]);
+  });
+
   it("reports a milestone view row with more cells than its header", () => {
     const fixture = onePr({ audit: [...onePr().audit, "stray"] });
     const problems = checkCounts(files(fixture)).filter((p) => p.includes("cells"));
