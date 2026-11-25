@@ -75,7 +75,7 @@ those sections now finds the new file.
      the `grep` command, which gets the new file next to the ledger and the archive.
    - `docs/delivery-quality.md`: the head paragraph ("This file holds the rules, the register…"),
      §7 step 1 (the register), step 5 ("the rows of §2"), step 7 (the prevention action).
-   - `docs/workflows/egm.md` (3 links to §3), `docs/testing.md` (`records:counts` and §2),
+   - `docs/workflows/egm.md` (a link to §3, a plain §3 reference and a link to §7), `docs/testing.md` (`records:counts` and §2),
      `scripts/README.md` and the comment on line 1 of `scripts/records-counts.ts`,
      `docs/README.md` (the map row), `docs/status.md` line 4.
    - Records of history (old plans, archive rows, lessons) do not change. The stubs serve them.
@@ -136,7 +136,7 @@ A break list for the script change follows `docs/testing.md`.
 
 ## Revision 4: the six rows of #135
 
-Approved by the owner on 2026-11-24 ("Approve as written"), with three more answers:
+Approved by the owner on 2026-11-24 ("Approve as written"), with four more answers:
 
 - **The two count cells** ("Allow the 2 cells"): proof step 1 allows exactly the two `Open issues`
   cells below, with the values that `records:counts --write` makes. Every other byte of the
@@ -277,8 +277,7 @@ Owner, 2026-11-24, after round 5 (the review of `a3c1952`):
 
 ### Places (written by the builder)
 
-Line numbers below refer to `ba40948`. To repeat the search, run
-`bash tmp/split-b7-reader-search.sh`. The search output is in `tmp/split-b7-reader-search.log`.
+Line numbers below refer to `ba40948`.
 
 **Reader places**
 
@@ -294,6 +293,7 @@ Line numbers below refer to `ba40948`. To repeat the search, run
 - `docs/delivery-quality.md:176–177`, `:185–187`, and `:200–201` — right. The steps link the register or prevention file at the point of use.
 - `docs/delivery-quality.md:191` — fixed. The close step links the PR population in register §2.
 - `docs/workflows/pull-request.md:34` and `:55` — right. The same-cause search names the prevention file and its command names both moved files.
+- `docs/workflows/pull-request.md:43` — right. The state of a prevention action lives in its row in the prevention file.
 - `docs/workflows/pull-request.md:47` — fixed. The count instruction links the file for the Audit and register rows.
 - `docs/workflows/egm.md:77`, `:81–83`, and `docs/testing.md:361–364` — right. The trial and CI instructions link the sections they use.
 - `scripts/README.md:12`, `scripts/records-counts.ts:1–3`, `:18–19`, and `scripts/lib/records-counts.ts:345` — right. Each names the file by path, link, or the register path in the message.
@@ -334,7 +334,7 @@ Revision 6 adds these places. Their line numbers refer to the commit that fixes 
 - `docs/workflows/pull-request.md:46–47` and `:51–53` — fixed. For its review findings, a PR with no milestone follows step 2 (Q2 A, R7L-F3).
 - `docs/workflows/merge-bar.md:19` — right (revision 7). Its P3 home is for a PR in a milestone or an audit; step 2 gives the home for a PR with no milestone.
 - `docs/workflows/merge-bar.md:70`, `:90`, `:94–95` and `:97–103` — right (revision 7). Lines 70, 90 and 94 give a review finding a ledger row or an issue row, and the measure at 97–103 reads such rows, so they are for a PR in a milestone or an audit; step 2 says so.
-- `docs/review-guide.md:94` — right. A plan difference goes under `Differences from the plan`; it is not a review record.
+- `docs/review-guide.md:94` — right. An approved change of the design is a revision of the plan; another difference goes under `Differences from the plan`. Neither is a review record.
 
 ## Revision 6: the owner's answers after review round 6
 
@@ -405,7 +405,7 @@ mapping words.
   revision 6, and the Q3 A verdicts of the merge-bar places in "Round places".
   - Rules that L turns off for a review finding of such a PR: merge bar 19, 70, 90, 94–95 and the
     measure at 97–103; implementation 50 and 52; review guide 109. A PR with no milestone has no
-    round 2 measure; #153 has 0 round 2 corrections.
+    round 2 measure.
   - Rules that stay on: the row size and removed-words rules of the PR workflow (lines 94, 118 and
     128), merge bar 28, and the defect rows of the template.
 - **Q2 F, R6C1-F2** (an extra space in the `Issue ID` heading): `tablesWithHeader` compares the

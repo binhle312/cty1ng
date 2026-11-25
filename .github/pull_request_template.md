@@ -51,7 +51,8 @@ review findings.
 
 List the ledger row of each defect that this PR repairs and of each review fix (a PR with no
 milestone: [ledger §7 step 2](https://github.com/binhle312/cty1ng/blob/main/docs/delivery-quality.md#7-update-and-assess)). The row holds the
-general rule, the fix, the test, and `Same cause: yes|no (search: `<pattern>`: <hits>)`
+general rule, the fix, the test, and `Same cause: no (search: `<pattern>`: <hits>)` or
+`Same cause: yes (search: `<pattern>`: <hits>; §9: <step>)`
 ([bug fix, step 2](https://github.com/binhle312/cty1ng/blob/main/docs/workflows/bug-fix.md);
 `AGENTS.md` §9). Search `docs/delivery-quality-prevention.md` and the lessons for earlier fixes.
 

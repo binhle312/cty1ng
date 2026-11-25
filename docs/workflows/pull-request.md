@@ -54,7 +54,7 @@ states no state, count or result that a file or a tool owns:
   `` Same cause: no (search: `<pattern>`: <hits>) `` or
   `` Same cause: yes (search: `<pattern>`: <hits>; §9: <step>) ``.
   - Write one pattern. Use `\|` for `|` in the table. Search with
-    `grep -n -i -E '<pattern>' docs/delivery-quality.md docs/delivery-quality-archive.md docs/delivery-quality-register.md docs/delivery-quality-prevention.md docs/lessons-learned/*.md`.
+    `grep -n -i -E -e '<pattern>' docs/delivery-quality.md docs/delivery-quality-archive.md docs/delivery-quality-register.md docs/delivery-quality-prevention.md docs/lessons-learned/*.md`.
     The checker matches each line with a case-insensitive JavaScript regular expression.
     It rejects empty or blank patterns, backticks, backslashes before ASCII letters or digits,
     `[[`, `(?`, and patterns that JavaScript cannot compile. The
