@@ -175,22 +175,37 @@ work with subagents that it starts (owner, 2026-11-25).
 | Team reviewer | A subagent of the worker: reviews the change and its evidence, and changes no file | The worker starts a subagent with the role `reviewer` | You start a review role that cannot edit files, such as `reviewer`, after the build |
 | Default worker | The worker session of a task that is not code and is not [your own work](#the-lead-agents-own-work), such as documents, research or a measurement; its only subagent is the team reviewer | The worker column of the model table | A general subagent |
 
-- After it builds, the worker starts its test verifier and its team reviewer at the same time, by
-  role name, and fixes their findings before it reports. The worker brief says so.
+- The worker ends its turn with a report at each checkpoint of its plan. Before each report, it
+  starts its test verifier and its team reviewer at the same time, by role name, and fixes their
+  findings. The worker brief says so.
 - Run at most 2 worker teams at the same time (owner, 2026-11-25; the owner can change it). A new
   session at the limit adds no team. Your plan gives the order of the tasks that wait.
 
 ### Outside reviewers
 
-At each report of a worker team (a checkpoint, the final report, a report of fixes), start two
-reviewers at the same time, so that the worker stays on the right track (owner, 2026-11-25). Each
-is a new session that did not build the work. It reads, changes no file and makes no commit.
+At each report of a worker team (a checkpoint or the final report), start two new reviewers at the
+same time, so that the worker stays on the right track (owner, 2026-11-25). The same two check the
+fixes of their findings. Neither built the work. Each reads, changes no file and makes no commit.
 
-- **From Anthropic:** a Claude Code subagent on Opus, at `high`, with a review role that cannot edit
-  files, such as `reviewer`, if Claude Code has one.
-- **From OpenAI:** a new Codex session on `gpt-6.2-astra`, at `high`, read-only.
+- **From Anthropic:** a [Claude Code subagent](#claude-code-subagents) on Opus, at `high`, with a
+  review role that cannot edit files, such as `reviewer`, if Claude Code has one.
+- **From OpenAI:** a new read-only Codex session on the
+  [reviewer model in `references/codex.md`](references/codex.md#pick-the-models).
 
 Write both briefs from `references/reviewer-brief.md`.
+
+### Claude Code subagents
+
+These rules apply to each Claude Code subagent that you start: the Anthropic reviewer, and each
+subagent that [takes a Codex place](#when-codex-cannot-run).
+
+- Start it in the background with the Agent tool, and send each next message to the same subagent.
+- Give it its model: a role file can name a weaker one.
+- It has no sandbox. If its brief says to change no file or to commit nothing, check `git status`
+  and the commits after each turn.
+- You cannot read its context use. Keep its task small.
+- It ends with this conversation. Start a new one, in a new conversation or in place of a Codex
+  session that was in a task, with the brief, the diff and the commits.
 
 ### Briefs
 
@@ -242,19 +257,15 @@ no login, use Claude Code subagents in place of the Codex sessions (owner, 2026-
 error, such as a wrong option or a sandbox refusal, is an ordinary obstacle: find its cause.
 
 - Use Claude Opus in place of Astra, and Claude Sonnet in place of Sol or Terra, at the same effort.
-- Use the roles of the [Teams](#teams) table if Claude Code has them, else a general subagent. Give
-  each one its model: a role file can name a weaker one.
-- A subagent cannot start subagents. So you start the test verifier and the team reviewer yourself,
-  after the build, on a model that is not weaker than the implementer, and you send their findings
-  to the implementer.
-- The OpenAI reviewer cannot run: a second new Claude Opus session takes its place.
-- Start each subagent in the background with the Agent tool, with the same brief, the same first
-  turn and the same worktree rules. Send each next message to the same subagent.
-- A test verifier or reviewer subagent has no sandbox. Its brief says to commit nothing, and you
-  check `git status` and the commits after each turn.
-- You cannot read a subagent's context use. Keep its task small.
-- A subagent ends with this conversation. Start a new subagent, in a new conversation or in place
-  of a Codex worker that was in a task, with the brief, the diff and the commits.
+- Use the roles of the [Teams](#teams) table if Claude Code has them, else a general subagent, with
+  the rules of [Claude Code subagents](#claude-code-subagents).
+- Give each one the same brief, the same first turn and the same worktree rules, but delete the
+  part "Your team" of the worker brief: a subagent cannot start subagents. So you start the test
+  verifier and the team reviewer yourself before each report is final, on a model that is not
+  weaker than the implementer, with briefs from `references/reviewer-brief.md` (for the test
+  verifier, the checks are the acceptance criteria: PASS, FAIL or NOT VERIFIED). Send their
+  findings to the implementer.
+- The OpenAI reviewer cannot run: a second new Claude Opus subagent takes its place.
 
 ### Get the plan first
 
@@ -322,6 +333,7 @@ and the push.
 - If a fact is missing, stop and write the question in the report. Do not guess.
 - In the report, name each obstacle, such as a missing file or a tool that did not work.
 - Work only in the worktree and on the branch that the brief names.
+- At each checkpoint of your plan, end your turn with a report.
 - If the brief names a remote branch: at each checkpoint of the plan, push the committed work.
   Push only to the branch of the brief, and with no force.
 - If you pushed: in the report, give the pushed commit and the result of the remote checks for it.

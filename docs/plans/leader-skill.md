@@ -430,8 +430,14 @@ text replaces it.
 
 **Additions beyond the owner's words:**
 - The Anthropic reviewer runs on Opus at `high` (the lead agent's suggestion; the owner agreed).
-- "Each state" read as each report of a worker team: a checkpoint, the final report, a report of
-  fixes.
+- "Each state" read as each report of a worker team: the worker ends its turn with a report at each
+  checkpoint of its plan (a new rule for the worker); its subagents check before each report; a new
+  pair of outside reviewers checks each report, and the same pair checks the fixes of its findings.
+- One part "Claude Code subagents" holds the rules of each Claude subagent (the Anthropic reviewer
+  and the backup): the Agent tool, its model, no sandbox, no context measure, it ends with the
+  conversation.
+- The worker brief names the Codex roles `test-verifier` and `reviewer` (only the roles that the
+  Codex configuration has). The owner said "Leave Codex as it is" for the other subagents.
 - In the backup, the lead agent starts the test verifier and the team reviewer itself, and a second
   Claude Opus session replaces the OpenAI reviewer (the owner agreed).
 - The team's subagents run on the models of the owner's Codex role files (`gpt-6.2-sol` at `high`),

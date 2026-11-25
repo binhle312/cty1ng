@@ -14,8 +14,8 @@ Pick the models from the table.
 | Everyday code and judgment: a bug fix, a feature, a proof, a fix after a review, security | `gpt-6.2-sol` at `high`     |
 | The cause or the design is not known at the start: a bug across modules, open trade-offs  | `gpt-6.2-astra` at `high`   |
 
-The table has no row for the tasks that you do yourself. The OpenAI outside reviewer is always a
-new `gpt-6.2-astra` session at `high` (owner, 2026-11-25).
+The table has no row for the tasks that you do yourself. The reviewer model: the OpenAI outside
+reviewer is always a new `gpt-6.2-astra` session at `high` (owner, 2026-11-25).
 
 - Use the cheapest row that fits. For the same tokens, Terra uses about half the credits of
   Sol, and Astra uses about 4 times the credits of Sol.
