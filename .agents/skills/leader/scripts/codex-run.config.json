@@ -1,0 +1,5 @@
+{
+  "checkInterval": 20,
+  "startWait": 120,
+  "countWait": 6
+}
