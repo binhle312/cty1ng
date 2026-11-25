@@ -147,7 +147,7 @@ watch.
 **The handoff of a read-only reviewer.** `SKILL.md` step 2 says: "write the handoff to a file that
 you name". A reviewer in `read-only` cannot write a file. The plan changes step 2 for each worker:
 the handoff turn asks for the handoff as the last message, and the script saves it as the report of
-that turn (`-o`). This is a rule change, so it is open question 6.
+that turn (`-o`). The owner approved this rule change (question 6).
 
 **What changes in the skill.**
 - `references/codex.md`: "Start", "Send a message", "Context use" and "Stop a run" become the
@@ -155,7 +155,8 @@ that turn (`-o`). This is a rule change, so it is open question 6.
   becomes the windows that Codex reports, with the date and the owner's words. "The sandbox is not
   a hard limit" and "Review run" stay.
 - `SKILL.md`: "Context of each worker" and "Stop a worker's run" point to the script. The 35% rule
-  does not change. Step 2 of the handoff changes only if the owner says yes to question 6.
+  does not change. Step 2 of the handoff becomes: ask for the handoff as the last message of the
+  handoff turn (owner, question 6).
 - `GUIDE.md`, `references/worker-brief.md`, `.agents/skills/README.md`: only the pointers and the
   index row.
 
@@ -209,8 +210,10 @@ run with Sol at low effort checks `start`, `send`, `context` and `stop` end to e
 `claude -p "/leader <task>"` session in a scratch Git project: once with the skill of #156 (the raw
 commands) and once with the skill of this PR (the script). Same task, same brief, same models. The
 numbers: the input and output tokens of the lead agent from the session's usage report, the number
-of its tool calls, the errors and retries, and the Codex credits. The result goes in the PR
-description, with what one pair of runs can and cannot show.
+of its tool calls, the errors and retries, and the Codex credits. The result goes in the PR description, with what one pair of runs can and cannot show. The owner pays
+fixed plans, so the tokens are weighed at API prices, not as a bill. First a probe: a headless
+`claude -p` session must be able to start the script and wait for its end (in #150 no headless run
+started a real Codex worker, because Bash was blocked).
 
 Review: one complete review of the final head by a new Codex `gpt-6.2-astra` session (high,
 read-only), in parts if it would pass 35%, then one narrow fix check, then the lead agent stops and
