@@ -205,7 +205,7 @@ of each worker at each moment.
 
 - The context use is the token count of the last model call, as a percent of the model's context
   window. For Codex, get it with the [context command in `references/codex.md`](references/codex.md#context-use).
-- At 35% or more (the owner's limit; the owner can change it), replace the worker:
+- At 50% or more (the owner's limit, 2026-11-25; the owner can change it), replace the worker:
   1. If a turn runs, [stop the run](#stop-a-workers-run). Do not stop the handoff turn of step 2 at
      the limit: let it finish.
   2. Send the worker a message: give the worker's handoff as your last message, and do no other
@@ -224,7 +224,7 @@ of each worker at each moment.
   - the open problems and questions;
   - the next steps, in order;
   - what the new worker must not do again, with the reason.
-- Split each review before it starts, by files or by checks, so that each part ends under 35%
+- Split each review before it starts, by files or by checks, so that each part ends under the limit
   (owner, 2026-11-24). A worker's handoff does not save a review that is too big: the new reviewer
   reads the brief, the worker's handoff and the files again, and stops at the limit before it reports.
 

@@ -252,6 +252,11 @@ Then: "goal.md and handoff.md are must". The advisor and the Opus consultant fou
 **One change from the design of #157.** That design kept the worker sessions in `runs/`, the run
 folders of the script. Without the script, the session list is a part of `handoff.md`.
 
+**The context limit (owner, 2026-11-25): "Increase the % context window from 35% to 50%".** The
+limit in `SKILL.md`, "Context of each worker", is 50%. The guide and its turn diagram say 50%; the
+review split uses "the limit". The note on 258,000-token models keeps the 35% that reviews reached,
+as an observation.
+
 **Test.** The fact map against `a600a49` lists each sentence that leaves, with its reason. A
 headless continuation test of the #157 text passed on 2026-11-25: a new conversation that got only
 the folder path found a commit that `handoff.md` did not name, reported it before it acted, and did

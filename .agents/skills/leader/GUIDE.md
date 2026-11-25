@@ -114,7 +114,7 @@ sequenceDiagram
     L->>W: stops the running turn, sends the correction
     Note over W: same session, context kept
   end
-  opt the context use reaches 35%, during or after a turn
+  opt the context use reaches 50%, during or after a turn
     L->>W: stops the turn if one runs, asks for a handoff
     W->>L: the handoff
     Note over L: checks and corrects the handoff
@@ -159,16 +159,16 @@ handoff, that is the new session.
   run at a time, such as a heavy build, the lead agent tells them the order, or sends the second
   message after the first worker is done with that command.
 
-## The 35% limit
+## The 50% limit
 
 The context window is the text that a model can hold at one time: the brief, the messages, and the
 files that it read.
 
 The lead agent watches how full the context window of each worker is.
-When 35% of the model's window is used, the worker gives its handoff as its last message. The lead agent checks and
+When 50% of the model's window is used, the worker gives its handoff as its last message. The lead agent checks and
 corrects it, and a new worker continues from it.
 
 The limit applies to a reviewer too. Before each review starts, the lead agent splits it into parts,
-by files or by checks, so that each part ends under 35%.
+by files or by checks, so that each part ends under 50%.
 
-35% is the human's limit, and the human can change it.
+50% is the human's limit, and the human can change it.

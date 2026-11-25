@@ -24,8 +24,8 @@ The table has no row for the tasks that you do yourself.
 - On 2026-11-25, Codex reported windows of 475,000 tokens for Sol and 258,400 for Astra (owner:
   "astra is 258k like you said, sol is 475l as I checked directly in codex session"). Terra: 475,000
   (owner, 2026-11-25: "they reduce it to 475k only"; not measured in a run).
-- On a model with a window of about 258,000 tokens, a full review of a large change reaches 35%
-  before it reports.
+- On a model with a window of about 258,000 tokens, full reviews of large changes reached 35% before
+  they reported (2026-11-24 and 2026-11-25). Split a large review.
 - The table is from 2026-11-24. If Codex lists a newer model, tell the owner before you use it.
 
 ## Commands
