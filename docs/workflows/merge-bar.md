@@ -92,7 +92,9 @@ owner answer is new work and goes into the next PR.
    Steps 2 and 4 do not stop such a correction.
 
    Each round 2 correction gets its own issue row with the state `fixed`. The cell "Fix and
-   verification" starts with the fixed words "Round 2 correction:".
+   verification" starts with the fixed words "Round 2 correction:". In a PR with no milestone, the
+   row is a line of the `Defect and review fixes` table
+   ([ledger §7 step 2](../delivery-quality.md#7-update-and-assess)).
 
    Measure: the check of step 5 reads each row of the PR that starts with "Round 2 correction:". It
    gives one result for each id: correct or wrong.

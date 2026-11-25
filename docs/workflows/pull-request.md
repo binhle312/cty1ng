@@ -43,12 +43,15 @@ states no state, count or result that a file or a tool owns:
   The state of a prevention action lives in its row in `docs/delivery-quality-prevention.md`.
   The PR body names the id in its `Records` section
   and in the `Defect and review fixes` table; it does not repeat them (owner, 2026-11-18, q4 Q3 A).
+  A review finding of a PR with no milestone has no issue row: its fix and test are in that table
+  ([ledger §7 step 2](../delivery-quality.md#7-update-and-assess)).
 - The result of a review round lives where [ledger §7 step 2](../delivery-quality.md#7-update-and-assess) says to record it.
 - `pnpm records:counts --write` writes the counts for the Audit row and each `Ledger` row in the
   [register](../delivery-quality-register.md). CI checks them. Nobody types them in the register or in the body.
 - The "Same cause as an earlier fix?" answer and its search live in the "Fix and verification"
   cell of the ledger row (`AGENTS.md` §9). The `Defect and review fixes` section of the body names
-  the rows. The form (owner, 2026-11-19, morning Q4 A):
+  the rows. A PR with no milestone keeps each review finding, its fix and its answer in that section,
+  with no row ([ledger §7 step 2](../delivery-quality.md#7-update-and-assess)). The form (owner, 2026-11-19, morning Q4 A):
   `` Same cause: no (search: `<pattern>`: <hits>) `` or
   `` Same cause: yes (search: `<pattern>`: <hits>; §9: <step>) ``.
   - Write one pattern. Use `\|` for `|` in the table. Search with

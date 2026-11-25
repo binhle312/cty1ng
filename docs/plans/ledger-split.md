@@ -284,7 +284,7 @@ Line numbers below refer to `ba40948`. To repeat the search, run
 - `docs/README.md:43`, `docs/status.md:4–6`, and `docs/delivery-quality-archive.md:4–6` — right. The entry points link the new files.
 - `docs/delivery-quality.md:11–15`, `:42–52`, and `:208–210` — right. The head and stubs link the moved sections.
 - `docs/delivery-quality.md:57–58`, `:149–152`, and `:156–157` — right. The snapshot notes and backfill instruction link to register §4.
-- `docs/delivery-quality.md:136` and `:139` — right. The fix text links the moved sections. The finding text records the old wording.
+- `docs/delivery-quality.md:136` and `:139` — right. The fix text of DQ-859 and the finding text of DQ-862 link the moved sections (revision 6 corrects this line).
 - `docs/delivery-quality.md:176–177`, `:185–187`, and `:200–201` — right. The steps link the register or prevention file at the point of use.
 - `docs/delivery-quality.md:191` — fixed. The close step links the PR population in register §2.
 - `docs/workflows/pull-request.md:34` and `:55` — right. The same-cause search names the prevention file and its command names both moved files.
@@ -316,3 +316,63 @@ Line numbers below refer to `ba40948`. To repeat the search, run
 - `docs/workflows/merge-bar.md:60`, `:63–65`, and `:106–108` — right. These lines assign owner decisions and work on issues found after merge.
 - `docs/workflows/audit.md:17–30` and `docs/workflows/coordination.md:54` — right. These instructions cover evidence in an audit file, the search in a finding, and feedback about how a slice was built.
 - `scripts/lib/records-counts.ts:1–3` — fixed. The comment points to step 2 for the review destination.
+
+Revision 6 adds these places. Their line numbers refer to the commit that records revision 6.
+
+- `docs/delivery-quality.md:183–186` — fixed. Step 2 now also gives the home of the review findings of a PR with no milestone (Q2 A).
+- `docs/delivery-quality.md:65–66` — fixed (R6W-F3). A delivery PR does not move closed rows to the archive; a reopened row comes back from the archive, as the archive head says.
+- `docs/delivery-quality.md:156` and `:172` — right. A duplicate report keeps one issue row and links each source; a round row names its source. Step 2 covers a PR with no milestone.
+- `AGENTS.md:154–155` — fixed. The answer goes to the place that step 2 gives (Q2 A).
+- `.github/pull_request_template.md:46–47` and `:51–52` — fixed. A PR with no milestone keeps its review findings in the description (Q2 A).
+- `docs/workflows/pull-request.md:46–47` and `:51–54` — fixed. The fix, test and answer of such a finding are in the `Defect and review fixes` table (Q2 A).
+- `docs/workflows/merge-bar.md:90`, `:94–97` and `:104–105` — fixed (R6W-F1). A round 2 correction of a PR with no milestone is a line of that table; step 2 covers the ledger row and the last cell that lines 90 and 104 name.
+- `docs/review-guide.md:94` — right. A plan difference goes under `Differences from the plan`; it is not a review record.
+
+## Revision 6: the owner's answers after review round 6
+
+Owner, 2026-11-25, after round 6 (the review of `bb9e78e`), on the round 6 page: "All your picks"
+(Q1 A, Q2 A, Q3 A). The page told the owner that the cause of the checker findings repeats, so Q1 A
+is the `AGENTS.md` §9 decision for them. The owner's answer of 2026-11-24 ("if there are issues, we
+have to fix it") was about severity, not this decision.
+
+- **Q1 A, the checker findings** (R6B1-F1 to F4, R6B2-F1, R6B2-F2, R6C1-F1 to F3, R6C2-F1, R6C2-F2):
+  - The old answer form (DQ-751 to DQ-777) goes back to the rule on `main`: the regular expression
+    `OLD_ANSWER` tests the whole fix cell. The withdrawn check reads the State cell only (R5B-F2).
+    This replaces the revision 5 bullet "Found issues get fixed" for the old form.
+  - Result of the rule on `main` (lead agent, a probe of the six inputs): it accepts all six. So
+    R6B1-F3 (a search place with parentheses) is fixed. R6B1-F2 (a colon in a quoted search),
+    R6B1-F4 (a blank search) and the old-form part of R5BP-F2 (an answer only in a code span, a bare
+    second marker, blank hits) are accepted as on `main`. The fixes of R5BP-F2 for the old form are
+    withdrawn. The tests and break claims that only `e1f6fb1` added for them go:
+    `rejects an old-form answer inside a code span`, `rejects an incomplete second old-form answer`,
+    `rejects blank hits in an old-form answer` and their breaks. The old-form tests from `main` stay.
+  - Test gaps: the break of `rejects blank hits` makes the checker accept blank hits (R6B2-F1). A
+    test fails when the answer body treats escaped backticks as a code span (R6B2-F2). A test covers a
+    legacy row that loses a word and keeps its byte length (R6C2-F1). The test name and claim of the
+    aligned row say that its cells line up by heading (R6C2-F2).
+  - The four patterns of revision 4 (`a+?`, `a{,3}`, `[a[:digit:]]`, `x[^]`) get a test that the
+    checker accepts each, with a break claim (R6D-F1).
+  - Limits that stay (owner, Q1 A), each in one Follow-ups row of `docs/status.md`: three backticks
+    inside a code span (R6B1-F1); an extra space after the issue id or in the `Issue ID` heading of a
+    row that `records:removed-words` reads (R6C1-F1, R6C1-F2; the code is from `95e830e`, before
+    #153); the place of a repeated phrase in its output (R6C1-F3); and the old-form inputs above.
+    No row of the live ledger or the archive has these inputs today.
+- **Q2 A, review findings of a PR with no milestone** (R6W-F2): ledger §7 step 2 is the one home.
+  A PR with no milestone keeps its review rounds and its review findings in its description. Each
+  finding has its fix and its "Same cause" answer with the search in the `Defect and review fixes`
+  table, and gets no issue row. Where a rule names an issue row for a review finding, such a PR uses
+  its line in that table. `AGENTS.md` §9, the PR template and `docs/workflows/pull-request.md` point
+  to step 2. The new words of `AGENTS.md` §9 (the owner approved the change, Q2 A; the exact words
+  go to the owner in the next report): "Each review fix answers "Same cause as an earlier fix?" with
+  the search, in the place that `docs/delivery-quality.md` §7 step 2 gives."
+- **Q3 A, the round places** (R6W-F1): the list below adds the places that round 6 found, ledger
+  line 65 (R6W-F3), and the texts that revision 6 changes. The claim gets smaller than revision 5:
+  each place in the list agrees with §7 step 2. `Not claimed: every direction about review records
+  outside the list.`
+- **Round 7** (narrower than the revision 3 "complete review", owner, Q1 A): a review of
+  `bb9e78e..` the final head by the merge bar: the checker and test changes, the doc and rule edits,
+  and the PR description. Its brief names the limits above as owner decisions.
+- **Fixes with no question:** DQ-859 loses its quote framing (R6P-F1); the register head names the
+  Audit row in §2 and S1 to S7 in §4 (R6R-F1, R6L-F1); DQ-862 says "Old home:" (R6R-F2); the plan
+  index gives this plan revisions 1 to 6 and #151's plan revisions 1 to 4 (R6L-F2); the Reader
+  places line of DQ-862 (R6L-F3).

@@ -1,6 +1,7 @@
 # Delivery quality register
 
-This file holds the milestone view, the PR register, and historical evidence snapshots.
+This file holds the milestone view and the Audit row (§2), the PR register (§3), and the
+historical evidence snapshots S1 to S7 (§4).
 The [ledger rules](delivery-quality.md) apply.
 Section numbers outside §§2–4, such as §7, refer to the [ledger](delivery-quality.md).
 

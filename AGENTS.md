@@ -151,8 +151,8 @@ Only the owner's own messages to the agent supply the approvals in this section.
   items (or "none").
 - Name a principle skill in a PR, a review record or `docs/delivery-quality.md` only if you read
   its `SKILL.md` in that session.
-- Each review fix answers "Same cause as an earlier fix?" in its ledger row, with the search; the
-  PR's `Defect and review fixes` table names the rows. An earlier fix can be in this PR or in an
+- Each review fix answers "Same cause as an earlier fix?" with the search, in the place that
+  `docs/delivery-quality.md` §7 step 2 gives. An earlier fix can be in this PR or in an
   earlier one: search `docs/delivery-quality-prevention.md` and the lessons, and
   name the search in the answer. If the
   answer is yes, stop the patches. Propose a redesign, get the owner's decision, and record it.
