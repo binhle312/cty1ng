@@ -74,12 +74,13 @@ An agent that works on an M3 or later part checks this table and tells the owner
 For each part, compare these values with the M2 parts (M2a, M2b, M2c):
 
 - Days from the start of step 1 to the merge.
-- Review rounds and unique issues, from [delivery-quality.md §3](../delivery-quality.md#3-pr-register).
+- Review rounds and unique issues, from the [PR register](../delivery-quality-register.md#3-pr-register).
 - Problems that the EGM design found before the plan.
 - The owner's time, as the owner estimates it.
 
-The M2 counts have gaps: some rows are `partial` or `unknown` (delivery-quality.md §3). Fewer
-issues can also mean less review ([delivery-quality.md §7](../delivery-quality.md#7-update-and-assess)).
+The M2 counts have gaps. Some [register rows](../delivery-quality-register.md#3-pr-register)
+have the coverage `Partial` or `Unmeasured`. Fewer issues can also mean
+[less review](../delivery-quality-prevention.md#prevention-actions).
 
 | Part | Step 1 start | Merge date | PR | Owner note |
 | --- | --- | --- | --- | --- |

@@ -40,17 +40,23 @@ say what the proof shows and add `Not claimed: …` (`docs/workflows/pull-reques
 
 ## Records
 
-Ledger rows DQ-… to DQ-…, the round rows of this PR in §6 and its register row, in
-`docs/delivery-quality.md`. `pnpm records:counts` passes (CI). This description holds no state,
-count, fix commit or round result: the rows hold them.
+Issue rows DQ-… to DQ-… are in `docs/delivery-quality.md` §5.
+Follow [ledger §7 step 2](https://github.com/binhle312/cty1ng/blob/main/docs/delivery-quality.md#7-update-and-assess) for where to record review rounds.
+PR register rows are in `docs/delivery-quality-register.md` §3.
+`pnpm records:counts` passes (CI). This description holds no issue state, count or fix
+commit of a ledger row: the rows hold them. A PR with no milestone follows ledger §7 step 2 for its
+review findings.
 
 ## Defect and review fixes (when a review found something)
 
-List the ledger row of each defect that this PR repairs and of each review fix. The row holds the
-general rule, the fix, the test, and `Same cause: yes|no (search: `<pattern>`: <hits>)`
+List the ledger row of each defect that this PR repairs and of each review fix (a PR with no
+milestone: [ledger §7 step 2](https://github.com/binhle312/cty1ng/blob/main/docs/delivery-quality.md#7-update-and-assess)). The row holds the
+general rule, the fix, the test, and `Same cause: no (search: `<pattern>`: <hits>)` or
+`Same cause: yes (search: `<pattern>`: <hits>; §9: <step>)`
 ([bug fix, step 2](https://github.com/binhle312/cty1ng/blob/main/docs/workflows/bug-fix.md);
-`AGENTS.md` §9). The search covers earlier PRs: the prevention actions of
-`docs/delivery-quality.md` §7 and the lessons.
+`AGENTS.md` §9). Search `docs/delivery-quality-prevention.md` and the lessons for earlier fixes.
+
+This table is for ledger rows:
 
 | Row | Finding |
 | --- | --- |

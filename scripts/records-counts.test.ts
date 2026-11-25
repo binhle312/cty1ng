@@ -1,11 +1,14 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   type LedgerFile,
+  ISSUE_FILES,
   checkCounts,
+  formProblems,
   formatIds,
   patternProblem,
   searchLines,
@@ -16,6 +19,8 @@ import {
 const LINK = "https://github.com/binhle312/cty1ng/pull";
 const MAIN = "docs/delivery-quality.md";
 const ARCHIVE = "docs/delivery-quality-archive.md";
+const REGISTER = "docs/delivery-quality-register.md";
+const PREVENTION = "docs/delivery-quality-prevention.md";
 const AUDIT = "Audit 2026-11-05";
 const MARKER = "no lesson source; written by `pnpm records:counts`";
 
@@ -29,6 +34,12 @@ type Issue = {
 
 function dq(id: number): string {
   return `DQ-${String(id).padStart(3, "0")}`;
+}
+
+// One CR line end, on the first line only: the checks must find a single CR.
+function crOnFirstLine(text: string): string {
+  const end = text.indexOf("\n");
+  return `${text.slice(0, end)}\r${text.slice(end)}`;
 }
 
 function lineIn(ledger: { path: string; text: string }[], start: string): number {
@@ -145,6 +156,185 @@ function onePr(overrides: Partial<Fixture> = {}): Fixture {
 function text(all: LedgerFile[], path: string): string {
   return all.find((f) => f.path === path)?.text ?? "";
 }
+
+function withSplitLedger(
+  { fixture, prevention = "" }: { fixture: Fixture; prevention?: string },
+  run: (dir: string) => void,
+): void {
+  const all = files(fixture);
+  const main = text(all, MAIN);
+  const start = main.indexOf("## 2. Milestone view");
+  const end = main.indexOf("## 5. Live issue ledger");
+  const dir = mkdtempSync(join(tmpdir(), "records-cli-"));
+  try {
+    mkdirSync(join(dir, "docs"));
+    writeFileSync(join(dir, MAIN), main.slice(0, start) + main.slice(end));
+    writeFileSync(join(dir, REGISTER), main.slice(start, end));
+    writeFileSync(join(dir, ARCHIVE), text(all, ARCHIVE));
+    writeFileSync(join(dir, PREVENTION), prevention);
+    run(dir);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+function runCounts(dir: string, ...args: string[]) {
+  const script = fileURLToPath(new URL("./records-counts.ts", import.meta.url));
+  return spawnSync(process.execPath, ["--import", import.meta.resolve("tsx"), script, ...args], {
+    cwd: dir,
+    encoding: "utf8",
+  });
+}
+
+describe("records:counts", () => {
+  it("writes counts in the separate register file", () => {
+    const fixture = onePr({
+      registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
+    });
+    withSplitLedger({ fixture }, (dir) => {
+      const result = runCounts(dir, "--write");
+      expect(result.status, result.stderr).toBe(0);
+      expect(readFileSync(join(dir, REGISTER), "utf8"), "the corrected register row").toContain(
+        register({ pr: 10, cells: ["2 (DQ-001, DQ-002)", "1 (DQ-002)", "0", "1"] }),
+      );
+    });
+  });
+
+  it("accepts a Same cause hit in the separate prevention file", () => {
+    const row = issue({ id: 853, pr: 10 }).replace(
+      "| Fix |",
+      "| Same cause: no (search: `paper jam`: DQ-001) |",
+    );
+    const fixture = onePr({
+      registerRows: [register({ pr: 10, cells: ["2 (DQ-002, DQ-853)", "1 (DQ-002)", "0", "1"] })],
+      issues: [row, issue({ id: 2, pr: 10, state: "open" })],
+    });
+    withSplitLedger({ fixture, prevention: "An earlier paper jam (DQ-001).\n" }, (dir) => {
+      const result = runCounts(dir);
+      expect(result.status, result.stderr).toBe(0);
+    });
+  });
+
+  it("reports a missing prevention search file", () => {
+    withSplitLedger({ fixture: onePr() }, (dir) => {
+      rmSync(join(dir, PREVENTION));
+      const result = runCounts(dir);
+      expect(result.status, result.stdout + result.stderr).toBe(1);
+      expect(result.stderr).toContain(`${PREVENTION}: required search file is missing.`);
+    });
+  });
+
+  it("writes nothing when the prevention search file is missing", () => {
+    const fixture = onePr({
+      registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
+    });
+    withSplitLedger({ fixture }, (dir) => {
+      rmSync(join(dir, PREVENTION));
+      const before = readFileSync(join(dir, REGISTER), "utf8");
+      const result = runCounts(dir, "--write");
+      expect(readFileSync(join(dir, REGISTER), "utf8"), "the stale register stays").toBe(before);
+      expect(result.status, result.stdout + result.stderr).toBe(1);
+    });
+  });
+
+  it("does not count a round table in the prevention file", () => {
+    const prevention = ["# Prevention", "", ...ROUND_HEADER, round(10), ""].join("\n");
+    withSplitLedger({ fixture: onePr(), prevention }, (dir) => {
+      const before = readFileSync(join(dir, REGISTER), "utf8");
+      const result = runCounts(dir, "--write");
+      expect(readFileSync(join(dir, REGISTER), "utf8"), "prevention round not counted").toBe(
+        before,
+      );
+      expect(result.status, "counts stay right").toBe(0);
+    });
+  });
+
+  describe("checks each of the four files", () => {
+    const prevention = [
+      "# Prevention",
+      "",
+      "| Cause / linked issues | Action and owner | Enforcement or review step | Verification | State |",
+      "| --- | --- | --- | --- | --- |",
+      "| Paper jam | Check the tray | Inspect the tray | Clear | done |",
+      "",
+    ].join("\n");
+    const firstRow = /^\| (DQ-\d+|M2|Paper jam) \|/;
+    type Damage = (text: string) => { text: string; message: string };
+    const damages: Record<string, Damage> = {
+      cr: (text) => ({ text: crOnFirstLine(text), message: ": the file has CR line ends" }),
+      "padded id": (text) => {
+        const lines = text.replace(/\n$/, "").split("\n");
+        return {
+          text: `${lines.join("\n")}\n|  DQ-999 | padded |\n`,
+          message: `:${lines.length + 1}: write the first cell`,
+        };
+      },
+      "split table": (text) => {
+        const lines = text.replace(/\n$/, "").split("\n");
+        return {
+          text: `${lines.join("\n")}\n\n| stray | row |\n`,
+          message: `:${lines.length + 2}: a table row with no header row before it`,
+        };
+      },
+      "cell count": (text) => {
+        const lines = text.split("\n");
+        const index = lines.findIndex((line) => firstRow.test(line));
+        const row = lines[index] ?? "";
+        const cells = row.split("|").length - 2;
+        const first = row.split("|")[1]?.trim() ?? "";
+        lines[index] = `${row} extra |`;
+        return {
+          text: lines.join("\n"),
+          message: `:${index + 1}: the row ${first} has ${cells + 1} cells; its header has ${cells}.`,
+        };
+      },
+    };
+    const paths = [MAIN, ARCHIVE, REGISTER, PREVENTION];
+    const cases = paths.flatMap((path) => Object.keys(damages).map((kind) => [kind, path]));
+    const allFiles = (dir: string) => paths.map((path) => readFileSync(join(dir, path), "utf8"));
+
+    // A refusal has three parts (plan revision 11, Q3 A): the message, exit status 1, and no
+    // changed file, the damaged file too. Each case has a break claim.
+    it.each(cases)("finds a %s in %s", (kind = "", path = "") => {
+      const fixture = onePr({
+        registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
+        archiveIssues: [issue({ id: 3, pr: 10 })],
+      });
+      withSplitLedger({ fixture, prevention }, (dir) => {
+        const damaged = damages[kind]?.(readFileSync(join(dir, path), "utf8"));
+        writeFileSync(join(dir, path), damaged?.text ?? "");
+        const before = allFiles(dir);
+        const result = runCounts(dir, "--write");
+        expect(result.stderr, "refusal message").toContain(`${path}${damaged?.message ?? ""}`);
+        expect(result.status, "refusal exit").toBe(1);
+        expect(allFiles(dir), "no file written").toEqual(before);
+      });
+    });
+  });
+
+  it("finds no form problem in the real delivery-quality files", () => {
+    const root = fileURLToPath(new URL("..", import.meta.url));
+    const paths = [...ISSUE_FILES, REGISTER, PREVENTION];
+    const real = paths.map((path) => ({ path, text: readFileSync(join(root, path), "utf8") }));
+    expect(formProblems(real), "real files").toEqual([]);
+  });
+
+  it("reports a blank line that splits the prevention table", () => {
+    const prevention = [
+      "| Cause / linked issues | Action and owner | Enforcement or review step | Verification | State |",
+      "| --- | --- | --- | --- | --- |",
+      "| Paper jam | Check the tray | Inspect the tray | Clear | done |",
+      "",
+      "| Empty tray | Refill the tray | Check the paper level | Full | done |",
+      "",
+    ].join("\n");
+    withSplitLedger({ fixture: onePr(), prevention }, (dir) => {
+      const result = runCounts(dir);
+      expect(result.status, result.stdout + result.stderr).toBe(1);
+      expect(result.stderr).toContain(`${PREVENTION}:5: a table row with no header row before it`);
+    });
+  });
+});
 
 describe("checkCounts", () => {
   it("passes when each owned cell is what the rows give", () => {
@@ -384,6 +574,66 @@ describe("structure problems", () => {
     ]);
   });
 
+  it("ignores a padded data row that looks like a register heading", () => {
+    const glossary = "| Field | Group |\n| --- | --- |\n|  PR  | Milestone / slice |\n";
+    const ledger = files(onePr()).map((file) =>
+      file.path === MAIN ? { path: MAIN, text: `${file.text}\n${glossary}` } : file,
+    );
+    const problems = checkCounts(ledger);
+    expect(problems, "no second register").toEqual([]);
+  });
+
+  it("refuses an issue row whose id cell has extra spaces", () => {
+    const fixture = onePr();
+    const padded = files(fixture).map((file) =>
+      file.path === MAIN
+        ? {
+            path: MAIN,
+            text: file.text
+              .replace("| DQ-001 |", "|  DQ-001 |")
+              .replace("| DQ-002 |", "| DQ-002  |"),
+          }
+        : file,
+    );
+    const problems = checkCounts(padded).filter((p) => p.includes("first cell"));
+    expect(problems, "padded id cells").toEqual([
+      `${MAIN}:${lineIn(padded, "|  DQ-001 |")}: write the first cell of an issue row as "| DQ-n |", with one space on each side.`,
+      `${MAIN}:${lineIn(padded, "| DQ-002  |")}: write the first cell of an issue row as "| DQ-n |", with one space on each side.`,
+    ]);
+    expect(writeCounts(padded).files, "no write with a padded id").toEqual(padded);
+  });
+
+  it("writes nothing with a padded id and a stale register", () => {
+    const fixture = onePr({
+      registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
+    });
+    const padded = files(fixture).map((file) =>
+      file.path === MAIN ? { ...file, text: file.text.replace("| DQ-001 |", "|  DQ-001 |") } : file,
+    );
+    expect(writeCounts(padded).files, "stale register, padded id").toEqual(padded);
+  });
+
+  it("writes nothing with one CR line end and a stale register", () => {
+    const fixture = onePr({
+      registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
+    });
+    const crlf = files(fixture).map((file) =>
+      file.path === MAIN ? { ...file, text: crOnFirstLine(file.text) } : file,
+    );
+    expect(writeCounts(crlf).files, "stale register, one CR").toEqual(crlf);
+  });
+
+  it("refuses CR line ends once for each file", () => {
+    const crlf = files(onePr()).map((file) =>
+      file.path === ARCHIVE ? { ...file, text: file.text.replace(/\n/g, "\r\n") } : file,
+    );
+    const problems = checkCounts(crlf).filter((p) => p.includes("CR"));
+    expect(problems, "one CR problem").toEqual([
+      `${ARCHIVE}: the file has CR line ends; use LF line ends.`,
+    ]);
+    expect(writeCounts(crlf).files, "no write with CR line ends").toEqual(crlf);
+  });
+
   it("reports a milestone view row with more cells than its header", () => {
     const fixture = onePr({ audit: [...onePr().audit, "stray"] });
     const problems = checkCounts(files(fixture)).filter((p) => p.includes("cells"));
@@ -467,6 +717,11 @@ describe("the Same cause answer of a row", () => {
     expect(checkCounts(files(rows(fix))), "no hits").toEqual([NO_ANSWER(751)]);
   });
 
+  it("accepts an old-form search place with parentheses", () => {
+    const fix = "Same cause: no (search: review notes (archive): no hit)";
+    expect(checkCounts(files(rows(fix))), "parentheses in the search place").toEqual([]);
+  });
+
   it("reads the answer only in the Fix and verification cell", () => {
     const inRelated = (row: string) =>
       row.replace("Related: none;", "Related: none. Same cause: no (search: `grep -n x`: no hit);");
@@ -545,7 +800,7 @@ describe("the search of a new row (DQ-853 on)", () => {
     );
   }
   const check = (fix: string, change?: (row: string) => string) =>
-    checkCounts(rows(`\`abc1234\`: the fix. ${fix}`, change), [LESSON]);
+    checkCounts(rows(`\`abc1234\`: the fix. ${fix}`, change), { otherSearchFiles: [LESSON] });
   const FORM = `${MAIN}: DQ-853 has no "Same cause: yes|no (search: \`<pattern>\`: <hits>)" in its "Fix and verification" cell (AGENTS.md §9; each row from DQ-853 on).`;
   const MISSING = (pattern: string, id: string) =>
     `${MAIN}: DQ-853: the search \`${pattern}\` finds ${id} in no line other than this row; cite only ids of its hits (owner, 2026-11-19, morning Q4 A).`;
@@ -662,6 +917,150 @@ describe("the search of a new row (DQ-853 on)", () => {
     ]);
   });
 
+  it("accepts an id in parenthesized hits", () => {
+    const fix = "Same cause: yes (search: `kangaroo`: (DQ-004); §9: proposal DQ-002)";
+    expect(check(fix), "parenthesized hits").toEqual([]);
+  });
+
+  it("checks hits after a nested close", () => {
+    const fix = "Same cause: no (search: `a slip`: (DQ-001), DQ-007)";
+    expect(check(fix), "hits after a nested close").toEqual([MISSING("a slip", "DQ-007")]);
+  });
+
+  it("checks hits after a plain semicolon", () => {
+    const fix = "Same cause: no (search: `a slip`: DQ-001; see DQ-007)";
+    expect(check(fix), "hits after a plain semicolon").toEqual([MISSING("a slip", "DQ-007")]);
+  });
+
+  it("accepts two answers in one cell", () => {
+    const fix =
+      "Same cause: no (search: `a slip`: DQ-001). Same cause: no (search: `zebra`: DQ-003)";
+    expect(check(fix), "two valid answers").toEqual([]);
+  });
+
+  it("checks the second answer in a cell", () => {
+    const fix =
+      "Same cause: no (search: `a slip`: DQ-001). Same cause: no (search: `zebra`: DQ-007)";
+    expect(check(fix), "hits of the second answer").toEqual([MISSING("zebra", "DQ-007")]);
+  });
+
+  it("rejects plain text in place of hits in the second answer", () => {
+    const fix =
+      "Same cause: no (search: `a slip`: DQ-001). Same cause: no (search: `zebra`: see review)";
+    expect(check(fix), "second answer without an id or none").toEqual([
+      `${MAIN}: DQ-853: the search \`zebra\` must cite hit ids or use "none".`,
+    ]);
+  });
+
+  it("rejects a malformed second answer", () => {
+    const fix = "Same cause: no (search: `a slip`: DQ-001). Same cause: yes";
+    expect(check(fix), "malformed second answer").toEqual([FORM]);
+  });
+
+  it("ignores a quoted marker", () => {
+    const fix = "The label is `Same cause:`. Same cause: no (search: `a slip`: DQ-001)";
+    expect(check(fix), "quoted marker").toEqual([]);
+  });
+
+  it("checks a marker between escaped backticks", () => {
+    const fix = "Same cause: no (search: `a slip`: DQ-001). \\`Same cause: maybe\\`";
+    expect(check(fix), "marker between escaped backticks").toEqual([FORM]);
+  });
+
+  it("checks hits after escaped backticks in the answer body", () => {
+    const fix = "Same cause: no (search: `a slip`: DQ-001 \\`(label\\`), DQ-007)";
+    expect(check(fix), "hits after escaped backticks").toEqual([MISSING("a slip", "DQ-007")]);
+  });
+
+  it("checks a fixed row whose fix cell says withdrawn", () => {
+    const problems = checkCounts(rows("withdrawn"), { otherSearchFiles: [LESSON] });
+    expect(problems, "withdrawn outside State").toEqual([FORM]);
+  });
+
+  it("rejects a section 9 step for a no", () => {
+    const fix = "Same cause: no (search: `a slip`: DQ-001; §9: proposal DQ-002)";
+    expect(check(fix), "step for a no").toEqual([`${MAIN}: DQ-853: a no has a §9 step.`]);
+  });
+
+  it("rejects blank hits", () => {
+    expect(check("Same cause: no (search: `a slip`:   )"), "blank hits").toEqual([FORM]);
+  });
+
+  it("rejects a colon continuation after an answer", () => {
+    const fix = "Same cause: no (search: `a slip`: none): see DQ-001";
+    expect(check(fix), "colon continuation").toEqual([
+      `${MAIN}: DQ-853: a colon continues the answer after its closing ")". Put hits inside the answer or move the note before it.`,
+    ]);
+  });
+
+  const checkStep = (step: string) =>
+    check(`Same cause: yes (search: \`a slip\`: DQ-001; §9: ${step})`);
+  const BAD_DATE = `${MAIN}: DQ-853: the owner step date is not a real date.`;
+
+  it("rejects an unknown section 9 step", () => {
+    expect(checkStep("someone agreed"), "unknown step").toEqual([NO_STEP]);
+  });
+
+  it("rejects free text in an owner step", () => {
+    expect(
+      checkStep("owner, 2026-11-19, morning Q4 A in the review"),
+      "owner step with free text",
+    ).toEqual([NO_STEP]);
+  });
+
+  it("accepts a leap day on a PR page", () => {
+    expect(checkStep("owner, 2024-02-29, #135 Q3 A"), "leap day on a PR page").toEqual([]);
+  });
+
+  it("rejects a date outside the month", () => {
+    expect(checkStep("owner, 2026-02-30, morning Q4 A"), "date outside the month").toEqual([
+      BAD_DATE,
+    ]);
+  });
+
+  it("rejects a leap day outside a leap year", () => {
+    expect(checkStep("owner, 2026-02-29, morning Q4 A"), "leap day outside a leap year").toEqual([
+      BAD_DATE,
+    ]);
+  });
+
+  it("rejects year zero", () => {
+    expect(checkStep("owner, 0000-01-01, morning Q4 A"), "year zero").toEqual([BAD_DATE]);
+  });
+
+  it("rejects an owner page with spaces", () => {
+    expect(checkStep("owner, 2026-11-19, morning review Q4 A"), "page with spaces").toEqual([
+      NO_STEP,
+    ]);
+  });
+
+  it("rejects question zero", () => {
+    expect(checkStep("owner, 2026-11-19, morning Q0 A"), "question zero").toEqual([NO_STEP]);
+  });
+
+  it("rejects a multi-letter answer", () => {
+    expect(checkStep("owner, 2026-11-19, morning Q4 AB"), "multi-letter answer").toEqual([NO_STEP]);
+  });
+
+  const SELF_PROPOSAL = "Same cause: yes (search: `a slip`: DQ-001; §9: proposal DQ-853)";
+  const SELF_PROPOSAL_PROBLEM = `${MAIN}: DQ-853: the §9 proposal DQ-853 is this row; name the row of the proposal.`;
+
+  it("accepts a self-proposal with its prefix", () => {
+    const problems = checkCounts(rows(`  Proposal: a redesign. ${SELF_PROPOSAL}`));
+    expect(problems, "self-proposal with prefix").toEqual([]);
+  });
+
+  it("rejects a self-proposal without its prefix", () => {
+    expect(check(SELF_PROPOSAL), "self-proposal without prefix").toEqual([SELF_PROPOSAL_PROBLEM]);
+  });
+
+  it("requires the self-proposal prefix at the start", () => {
+    expect(
+      check(`Proposal: a redesign. ${SELF_PROPOSAL}`),
+      "self-proposal with a late prefix",
+    ).toEqual([SELF_PROPOSAL_PROBLEM]);
+  });
+
   it("skips a withdrawn row", () => {
     const withdrawn = (row: string) => row.replace("| fixed |", "| withdrawn |");
     const problems = check("Withdrawn: not a defect", withdrawn);
@@ -691,6 +1090,12 @@ describe("searchLines and grep", () => {
     "^\\| DQ-00[13]",
   ];
   const grep = spawnSync("grep", ["--version"], { encoding: "utf8" });
+
+  it("accepts the search patterns from plan revision 4", () => {
+    for (const pattern of ["a+?", "a{,3}", "[a[:digit:]]", "x[^]"]) {
+      expect(patternProblem(pattern), "revision 4 pattern " + pattern).toBeUndefined();
+    }
+  });
 
   it("gives the hit lines of grep -n -i -E for each pattern", (context) => {
     if (grep.error !== undefined) {

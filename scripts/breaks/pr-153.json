@@ -1,0 +1,1914 @@
+{
+  "claims": [
+    {
+      "id": "old-search-place-parentheses",
+      "claim": "Accepts parentheses in an old-form search place.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "accepts an old-form search place with parentheses"
+      },
+      "assertion": "expect(checkCounts(files(rows(fix))), \"parentheses in the search place\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "reject-close-paren-in-old-search-place",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "const OLD_ANSWER = /Same cause: (yes|no) \\(search: (?:[^|\\\\]|\\\\.)+?: (?:[^|\\\\]|\\\\.)+\\)/;",
+              "replace": "const OLD_ANSWER = /Same cause: (yes|no) \\(search: (?:`[^`]*`|[^`|\\\\)]|\\\\.)+?: (?:[^|\\\\]|\\\\.)+\\)/;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "second-noncitation-hits",
+      "claim": "Rejects plain text in place of hits in a second answer.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects plain text in place of hits in the second answer"
+      },
+      "assertion": "expect(check(fix), \"second answer without an id or none\").toEqual([",
+      "breaks": [
+        {
+          "id": "allow-noncitation-hits",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (citedIds.length === 0 && cited.trim() !== \"none\")",
+              "replace": "if (false)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "escaped-backticks",
+      "claim": "Checks the marker between escaped backticks.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "checks a marker between escaped backticks"
+      },
+      "assertion": "expect(check(fix), \"marker between escaped backticks\").toEqual([FORM]);",
+      "breaks": [
+        {
+          "id": "treat-escaped-backticks-as-span",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "/\\\\[\\\\`]|`[^`]*`|(Same cause:)/g",
+              "replace": "/`[^`]*`|(Same cause:)/g"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "escaped-backticks-in-answer-body",
+      "claim": "Checks a hit id that follows escaped backticks in the answer body.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "checks hits after escaped backticks in the answer body"
+      },
+      "assertion": "expect(check(fix), \"hits after escaped backticks\").toEqual([MISSING(\"a slip\", \"DQ-007\")]);",
+      "breaks": [
+        {
+          "id": "treat-escaped-backticks-in-body-as-span",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "body.matchAll(/\\\\[\\\\`]|`[^`]*`|[();]/g)",
+              "replace": "body.matchAll(/`[^`]*`|[();]/g)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "withdrawn-fix-cell",
+      "claim": "Checks a fixed row whose fix cell says withdrawn.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "checks a fixed row whose fix cell says withdrawn"
+      },
+      "assertion": "expect(problems, \"withdrawn outside State\").toEqual([FORM]);",
+      "breaks": [
+        {
+          "id": "skip-withdrawn-outside-state",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (cells[6] === \"withdrawn\") return [];",
+              "replace": "if (cells.slice(3).includes(\"withdrawn\")) return [];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parenthesized-hit",
+      "claim": "Accepts a whole cited id inside parentheses.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "accepts an id in parenthesized hits"
+      },
+      "assertion": "expect(check(fix), \"parenthesized hits\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "reject-open-paren",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "const cited = body.slice(0, stepAt ?? closeAt);",
+              "replace": "const cited = body.slice(0, stepAt ?? closeAt);\n  if (cited.includes(\"(\")) return undefined;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nested-close",
+      "claim": "Checks ids after an inner closing parenthesis.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "checks hits after a nested close"
+      },
+      "assertion": "expect(check(fix), \"hits after a nested close\").toEqual([MISSING(\"a slip\", \"DQ-007\")]);",
+      "breaks": [
+        {
+          "id": "stop-at-inner-close",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (depth === 0) {",
+              "replace": "if (depth >= 0) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plain-semicolon",
+      "claim": "Checks ids after an ordinary semicolon.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "checks hits after a plain semicolon"
+      },
+      "assertion": "expect(check(fix), \"hits after a plain semicolon\").toEqual([MISSING(\"a slip\", \"DQ-007\")]);",
+      "breaks": [
+        {
+          "id": "stop-at-any-semicolon",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "const cited = body.slice(0, stepAt ?? closeAt);",
+              "replace": "const cited = body.slice(0, stepAt ?? closeAt).split(\";\")[0] ?? \"\";"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "two-answers",
+      "claim": "Accepts two complete answers in a cell.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "accepts two answers in one cell"
+      },
+      "assertion": "expect(check(fix), \"two valid answers\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "reject-second-marker",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (markers.length === 0) return [formProblem];",
+              "replace": "if (markers.length !== 1) return [formProblem];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "second-search",
+      "claim": "Checks cited ids in the second answer.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "checks the second answer in a cell"
+      },
+      "assertion": "expect(check(fix), \"hits of the second answer\").toEqual([MISSING(\"zebra\", \"DQ-007\")]);",
+      "breaks": [
+        {
+          "id": "only-first-marker",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "return markers.flatMap((marker, n) => {",
+              "replace": "return markers.slice(0, 1).flatMap((marker, n) => {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "malformed-answer",
+      "claim": "Reports a malformed second answer after a valid one.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects a malformed second answer"
+      },
+      "assertion": "expect(check(fix), \"malformed second answer\").toEqual([FORM]);",
+      "breaks": [
+        {
+          "id": "skip-malformed-marker",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (answer === undefined) return [formProblem];",
+              "replace": "if (answer === undefined) return markers.some((other, i) => answerParts(cell.slice(other.index, markers[i + 1]?.index)) !== undefined) ? [] : [formProblem];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quoted-marker",
+      "claim": "Ignores the marker inside a single-backtick span.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "ignores a quoted marker"
+      },
+      "assertion": "expect(check(fix), \"quoted marker\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "scan-code-spans",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "/\\\\[\\\\`]|`[^`]*`|(Same cause:)/g",
+              "replace": "/(Same cause:)/g"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "step-for-no",
+      "claim": "Reports a §9 step on a no answer.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects a section 9 step for a no"
+      },
+      "assertion": "expect(check(fix), \"step for a no\").toEqual([`${MAIN}: DQ-853: a no has a §9 step.`]);",
+      "breaks": [
+        {
+          "id": "ignore-step-on-no",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    if (step !== undefined) problems.push(`${where}: a no has a §9 step.`);\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blank-hits",
+      "claim": "Reports a blank hits field.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects blank hits"
+      },
+      "assertion": "expect(check(\"Same cause: no (search: `a slip`:   )\"), \"blank hits\").toEqual([FORM]);",
+      "breaks": [
+        {
+          "id": "allow-blank-hits",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  if (cited.trim() === \"\") return undefined;\n",
+              "replace": ""
+            },
+            {
+              "find": "if (citedIds.length === 0 && cited.trim() !== \"none\")",
+              "replace": "if (citedIds.length === 0 && ![\"\", \"none\"].includes(cited.trim()))"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "colon-continuation",
+      "claim": "Reports a colon continuation after the answer.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects a colon continuation after an answer"
+      },
+      "assertion": "expect(check(fix), \"colon continuation\").toEqual([",
+      "breaks": [
+        {
+          "id": "allow-colon-continuation",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (/^\\s*:/.test(suffix))",
+              "replace": "if (false)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unknown-step",
+      "claim": "Reports an unknown §9 step.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects an unknown section 9 step"
+      },
+      "assertion": "expect(checkStep(\"someone agreed\"), \"unknown step\").toEqual([NO_STEP]);",
+      "breaks": [
+        {
+          "id": "allow-unknown-step",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (ownerDate === undefined && proposal === undefined && step !== FIXED_STEP)",
+              "replace": "if (step === undefined)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "owner-free-text",
+      "claim": "Reports free text after the answer in an owner step.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects free text in an owner step"
+      },
+      "assertion": "    ).toEqual([NO_STEP]);",
+      "breaks": [
+        {
+          "id": "allow-owner-free-text",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "/^owner, (\\d{4}-\\d{2}-\\d{2}), (?:#[1-9]\\d*|[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*) Q[1-9]\\d* [A-Z]$/;",
+              "replace": "/^owner, (\\d{4}-\\d{2}-\\d{2}), (?:#[1-9]\\d*|[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*) Q[1-9]\\d* [A-Z](?: .*)?$/;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "leap-day-pr-page",
+      "claim": "Accepts a valid leap day in an owner step with a PR page.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "accepts a leap day on a PR page"
+      },
+      "assertion": "expect(checkStep(\"owner, 2024-02-29, #135 Q3 A\"), \"leap day on a PR page\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "reject-february-29",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "!value.startsWith(\"0000-\") &&",
+              "replace": "!value.startsWith(\"0000-\") && !value.endsWith(\"-02-29\") &&"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "date-outside-month",
+      "claim": "Reports a day outside the month.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects a date outside the month"
+      },
+      "assertion": "expect(checkStep(\"owner, 2026-02-30, morning Q4 A\"), \"date outside the month\").toEqual([",
+      "breaks": [
+        {
+          "id": "only-date-shape",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "return (\n    !value.startsWith(\"0000-\") &&\n    Number.isFinite(date.valueOf()) &&\n    date.toISOString().slice(0, 10) === value\n  );",
+              "replace": "return /^\\d{4}-\\d{2}-\\d{2}$/.test(value);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "non-leap-year",
+      "claim": "Reports February 29 in a non-leap year.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects a leap day outside a leap year"
+      },
+      "assertion": "expect(checkStep(\"owner, 2026-02-29, morning Q4 A\"), \"leap day outside a leap year\").toEqual([",
+      "breaks": [
+        {
+          "id": "allow-february-29-every-year",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "date.toISOString().slice(0, 10) === value",
+              "replace": "(date.toISOString().slice(0, 10) === value || value.endsWith(\"-02-29\"))"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "year-zero",
+      "claim": "Reports a date with year zero.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects year zero"
+      },
+      "assertion": "expect(checkStep(\"owner, 0000-01-01, morning Q4 A\"), \"year zero\").toEqual([BAD_DATE]);",
+      "breaks": [
+        {
+          "id": "drop-year-floor",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    !value.startsWith(\"0000-\") &&\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "owner-page-spaces",
+      "claim": "Reports spaces in an owner page.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects an owner page with spaces"
+      },
+      "assertion": "expect(checkStep(\"owner, 2026-11-19, morning review Q4 A\"), \"page with spaces\").toEqual([",
+      "breaks": [
+        {
+          "id": "allow-page-spaces",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "/^owner, (\\d{4}-\\d{2}-\\d{2}), (?:#[1-9]\\d*|[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*) Q[1-9]\\d* [A-Z]$/;",
+              "replace": "/^owner, (\\d{4}-\\d{2}-\\d{2}), (?:#[1-9]\\d*|[A-Za-z0-9]+(?:[- ][A-Za-z0-9]+)*) Q[1-9]\\d* [A-Z]$/;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "question-zero",
+      "claim": "Reports question zero in an owner step.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects question zero"
+      },
+      "assertion": "expect(checkStep(\"owner, 2026-11-19, morning Q0 A\"), \"question zero\").toEqual([NO_STEP]);",
+      "breaks": [
+        {
+          "id": "allow-question-zero",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "/^owner, (\\d{4}-\\d{2}-\\d{2}), (?:#[1-9]\\d*|[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*) Q[1-9]\\d* [A-Z]$/;",
+              "replace": "/^owner, (\\d{4}-\\d{2}-\\d{2}), (?:#[1-9]\\d*|[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*) Q(?:0|[1-9]\\d*) [A-Z]$/;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "multi-letter-answer",
+      "claim": "Reports a multi-letter answer in an owner step.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects a multi-letter answer"
+      },
+      "assertion": "expect(checkStep(\"owner, 2026-11-19, morning Q4 AB\"), \"multi-letter answer\").toEqual([NO_STEP]);",
+      "breaks": [
+        {
+          "id": "allow-multi-letter-answer",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "/^owner, (\\d{4}-\\d{2}-\\d{2}), (?:#[1-9]\\d*|[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*) Q[1-9]\\d* [A-Z]$/;",
+              "replace": "/^owner, (\\d{4}-\\d{2}-\\d{2}), (?:#[1-9]\\d*|[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*) Q[1-9]\\d* [A-Z]+$/;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "self-proposal-prefix",
+      "claim": "Accepts a self-proposal when its fix cell starts with the prefix.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "accepts a self-proposal with its prefix"
+      },
+      "assertion": "expect(problems, \"self-proposal with prefix\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "reject-all-self-proposals",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "proposal === row.id && !row.cell.startsWith(\"Proposal:\")",
+              "replace": "proposal === row.id"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "self-proposal-no-prefix",
+      "claim": "Reports a self-proposal with no prefix.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects a self-proposal without its prefix"
+      },
+      "assertion": "expect(check(SELF_PROPOSAL), \"self-proposal without prefix\").toEqual([SELF_PROPOSAL_PROBLEM]);",
+      "breaks": [
+        {
+          "id": "allow-self-proposal-without-prefix",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "row.cell.startsWith(\"Proposal:\")",
+              "replace": "row.cell.startsWith(\"\")"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "self-proposal-late-prefix",
+      "claim": "Reports a self-proposal with a prefix later in the fix cell.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "requires the self-proposal prefix at the start"
+      },
+      "assertion": "    ).toEqual([SELF_PROPOSAL_PROBLEM]);",
+      "breaks": [
+        {
+          "id": "allow-prefix-anywhere",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "row.cell.startsWith(\"Proposal:\")",
+              "replace": "row.cell.includes(\"Proposal:\")"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "revision-4-search-patterns",
+      "claim": "Accepts the four search patterns from plan revision 4.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "accepts the search patterns from plan revision 4"
+      },
+      "assertion": "expect(patternProblem(pattern), \"revision 4 pattern \" + pattern).toBeUndefined();",
+      "breaks": [
+        {
+          "id": "reject-lazy-plus",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (pattern.includes(\"(?\")) return 'it has \"(?\"';",
+              "replace": "if (pattern.includes(\"(?\")) return 'it has \"(?\"';\n  if (pattern.includes(\"+?\")) return 'it has \"+?\"';"
+            }
+          ]
+        },
+        {
+          "id": "reject-open-lower-bound",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (pattern.includes(\"(?\")) return 'it has \"(?\"';",
+              "replace": "if (pattern.includes(\"(?\")) return 'it has \"(?\"';\n  if (pattern.includes(\"{,\")) return 'it has \"{,\"';"
+            }
+          ]
+        },
+        {
+          "id": "reject-class-in-brackets",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (pattern.includes(\"(?\")) return 'it has \"(?\"';",
+              "replace": "if (pattern.includes(\"(?\")) return 'it has \"(?\"';\n  if (pattern.includes(\"[:\")) return 'it has \"[:\"';"
+            }
+          ]
+        },
+        {
+          "id": "reject-caret-close-bracket",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (pattern.includes(\"(?\")) return 'it has \"(?\"';",
+              "replace": "if (pattern.includes(\"(?\")) return 'it has \"(?\"';\n  if (pattern.includes(\"[^]\")) return 'it has \"[^]\"';"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-moved-row",
+      "claim": "Reports a loss for an issue ID that moves to the archive.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "pairs a row moved to the archive"
+      },
+      "assertion": "expect(report, \"loss across ledger files\").toEqual([",
+      "breaks": [
+        {
+          "id": "pair-by-file-and-id",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "const after = head.get(id);\n    if (after === undefined) continue;",
+              "replace": "const after = head.get(id);\n    if (after === undefined || before.path !== after.path) continue;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-repeats",
+      "claim": "Counts removed copies of repeated words.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "counts removed repeated words"
+      },
+      "assertion": "expect(report, \"repeated words in old order\").toEqual([",
+      "breaks": [
+        {
+          "id": "compare-word-sets",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "kept.set(word, count - 1);",
+              "replace": "kept.set(word, count);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-shorter-cell",
+      "claim": "Reports a loss from a shorter cell in a longer row.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "reports removed words when only a cell shrinks"
+      },
+      "assertion": "expect(report, \"a short cell in a longer row\").toEqual([",
+      "breaks": [
+        {
+          "id": "require-shorter-row",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "if (aligned !== undefined && !shrank(raw) && !aligned.some(shrank)) return [];",
+              "replace": "if (aligned !== undefined && !shrank(raw)) return [];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-growing-cell",
+      "claim": "Reports a loss from a growing cell when another cell shrinks.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "reports removals from the growing cell too"
+      },
+      "assertion": "expect(report, \"loss from both cells by heading\").toEqual([",
+      "breaks": [
+        {
+          "id": "compare-only-shorter-cells",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "return cells.flatMap((cell) => {",
+              "replace": "return cells.filter(shrank).flatMap((cell) => {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-utf8",
+      "claim": "Measures the loss of UTF-8 bytes when the JavaScript string length stays the same.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "measures shortening in UTF-8 bytes"
+      },
+      "assertion": "expect(report, \"a loss of bytes at the same string length\").toEqual([",
+      "breaks": [
+        {
+          "id": "measure-string-length",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "Buffer.byteLength(cell.after) < Buffer.byteLength(cell.before)",
+              "replace": "cell.after.length < cell.before.length"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-legacy-row",
+      "claim": "Uses raw text when legacy separators prevent cell alignment.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "reports removed words from a malformed legacy row"
+      },
+      "assertion": "expect(report, \"loss from the raw row\").toEqual([",
+      "breaks": [
+        {
+          "id": "skip-raw-row",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "const cells = aligned ?? [raw];",
+              "replace": "const cells = aligned ?? [];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-equal-byte-legacy-row",
+      "claim": "Reports a lost word from a malformed legacy row of equal byte length.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "reports a removed word from a legacy row of equal byte length"
+      },
+      "assertion": "expect(report, \"loss from a raw row of equal byte length\").toEqual([",
+      "breaks": [
+        {
+          "id": "skip-equal-byte-raw-rows",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "const cells = aligned ?? [raw];",
+              "replace": "const cells = aligned ?? (Buffer.byteLength(raw.before) === Buffer.byteLength(raw.after) ? [] : [raw]);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-no-shortening",
+      "claim": "Omits a paired issue if its cells line up by heading and neither its row nor its cells shorten.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "omits an aligned row that did not shorten"
+      },
+      "assertion": "expect(report, \"only the shorter row\").toEqual([",
+      "breaks": [
+        {
+          "id": "report-all-paired-rows",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "if (aligned !== undefined && !shrank(raw) && !aligned.some(shrank)) return [];",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-padded-heading",
+      "claim": "Reads the cells of an issue row by heading when the Issue ID heading has extra spaces.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "finds the issue heading with extra spaces"
+      },
+      "assertion": "expect(report, \"cells by a padded heading\").toEqual([",
+      "breaks": [
+        {
+          "id": "exact-heading-match",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "line.startsWith(\"|\") && lineOf(cellsOf(line)).startsWith(header) && SEPARATOR_ROW.test(next)",
+              "replace": "line.startsWith(header) && SEPARATOR_ROW.test(next)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-padded-heading-no-separator",
+      "claim": "Compares the raw row when a padded Issue ID heading has no separator line under it.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "compares the raw row under a padded heading with no separator line"
+      },
+      "assertion": "expect(report, \"raw row under a padded loose heading\").toEqual([",
+      "breaks": [
+        {
+          "id": "padded-heading-without-separator",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "line.startsWith(\"|\") && lineOf(cellsOf(line)).startsWith(header) && SEPARATOR_ROW.test(next)",
+              "replace": "line.startsWith(\"|\") && lineOf(cellsOf(line)).startsWith(header)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-heading-no-separator",
+      "claim": "Compares the raw row when an Issue ID heading has no separator line under it.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "compares the raw row under a heading with no separator line"
+      },
+      "assertion": "expect(report, \"raw row under a loose heading\").toEqual([",
+      "breaks": [
+        {
+          "id": "heading-without-separator",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "line.startsWith(\"|\") && lineOf(cellsOf(line)).startsWith(header) && SEPARATOR_ROW.test(next)",
+              "replace": "line.startsWith(\"|\") && lineOf(cellsOf(line)).startsWith(header)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-growing-legacy-row",
+      "claim": "Reports a lost word when a malformed legacy row grows.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "reports removed words from a growing legacy row"
+      },
+      "assertion": "expect(report, \"loss from a growing raw row\").toEqual([",
+      "breaks": [
+        {
+          "id": "require-shorter-legacy-row",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "if (aligned !== undefined && !shrank(raw) && !aligned.some(shrank)) return [];",
+              "replace": "if (!shrank(raw) && !(aligned ?? [raw]).some(shrank)) return [];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-old-order",
+      "claim": "Reports removed words in their old order.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "reports removed words in their old order"
+      },
+      "assertion": "expect(report, \"the order of removed words\").toEqual([",
+      "breaks": [
+        {
+          "id": "reverse-removed-words",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "const words = lostWords(cell);",
+              "replace": "const words = lostWords(cell).reverse();"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-shorter-line",
+      "claim": "Reports a loss when only the raw line shrinks.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "reports removed words when only the raw line shrinks"
+      },
+      "assertion": "expect(report, \"loss when only padding shrinks\").toEqual([",
+      "breaks": [
+        {
+          "id": "skip-raw-line-size-check",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "if (aligned !== undefined && !shrank(raw) && !aligned.some(shrank)) return [];",
+              "replace": "if (aligned !== undefined && !aligned.some(shrank)) return [];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-repeat-position",
+      "claim": "Uses word order to locate the removed phrase when words repeat.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "locates the removed phrase when words repeat"
+      },
+      "assertion": "expect(report, \"loss at the first safety check\").toEqual([",
+      "breaks": [
+        {
+          "id": "ignore-word-positions",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "const unmatched = unmatchedWords({ before, after });",
+              "replace": "const unmatched = { before, after };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-unpaired-row",
+      "claim": "Omits an issue ID that has no row on the other side.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "omits an unpaired row"
+      },
+      "assertion": "expect(report, \"only the paired row\").toEqual([",
+      "breaks": [
+        {
+          "id": "compare-unpaired-to-empty",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "const after = head.get(id);\n    if (after === undefined) continue;",
+              "replace": "const after = head.get(id) ?? { ...before, raw: \"\", cells: before.cells.map(() => \"\") };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-invalid-ref",
+      "claim": "Fails the command for an invalid commit ref.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "fails for an invalid commit"
+      },
+      "assertion": "expect(result, \"invalid commit refusal\").toMatchObject({",
+      "breaks": [
+        {
+          "id": "read-invalid-commit-as-empty",
+          "file": "scripts/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "throw new Error(message);",
+              "replace": "return \"\";"
+            },
+            {
+              "find": "function readSnapshot(commit: string): LedgerFile[] {",
+              "replace": "function readSnapshot(commit: string): LedgerFile[] {\n  if (commit === \"\") return [];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-duplicate-id",
+      "claim": "Rejects a duplicate issue ID across the live ledger and archive.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "rejects a duplicate issue id"
+      },
+      "assertion": "expect(compare, \"duplicate ID across ledger files\").toThrow(",
+      "breaks": [
+        {
+          "id": "keep-first-duplicate",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "if (previous !== undefined) {\n      throw new Error(`${row.id} is in both ${previous.path} and ${row.path}`);\n    }",
+              "replace": "if (previous !== undefined) continue;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-padded-data-row",
+      "claim": "A padded data row that looks like the PR register heading does not open a second register.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "ignores a padded data row that looks like a register heading"
+      },
+      "assertion": "expect(problems, \"no second register\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "data-row-as-heading",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "line.startsWith(\"|\") && lineOf(cellsOf(line)).startsWith(header) && SEPARATOR_ROW.test(next)",
+              "replace": "line.startsWith(\"|\") && lineOf(cellsOf(line)).startsWith(header)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-refuse-padded-id",
+      "claim": "records:counts reports an issue row whose id cell has a space too many, before or after the id.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "refuses an issue row whose id cell has extra spaces"
+      },
+      "assertion": "expect(problems, \"padded id cells\").toEqual([",
+      "breaks": [
+        {
+          "id": "accept-loose-id-cell",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "LOOSE_ISSUE_ROW.test(line) && !ISSUE_ROW.test(line)",
+              "replace": "false"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-refuse-cr",
+      "claim": "records:counts reports CR line ends with one problem for the file.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "refuses CR line ends once for each file"
+      },
+      "assertion": "expect(problems, \"one CR problem\").toEqual([",
+      "breaks": [
+        {
+          "id": "accept-cr-line-ends",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (file.text.includes(\"\\r\"))",
+              "replace": "if (false)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-refuse-padded-id",
+      "claim": "records:removed-words refuses a snapshot with a padded issue id.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "refuses a snapshot with a padded issue id"
+      },
+      "assertion": "expect(run, \"padded id refusal\").toThrow(",
+      "breaks": [
+        {
+          "id": "read-snapshot-with-loose-id",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "if (problems.length > 0) throw new Error(problems.join(\" \"));",
+              "replace": "void problems;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-refuse-cr",
+      "claim": "records:removed-words refuses a snapshot with CR line ends.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "refuses a snapshot with CR line ends"
+      },
+      "assertion": "expect(run, \"CR refusal\").toThrow(",
+      "breaks": [
+        {
+          "id": "read-snapshot-with-cr",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "if (problems.length > 0) throw new Error(problems.join(\" \"));",
+              "replace": "void problems;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-no-write-without-prevention",
+      "claim": "records:counts --write writes nothing when the prevention search file is missing.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "writes nothing when the prevention search file is missing"
+      },
+      "assertion": "expect(readFileSync(join(dir, REGISTER), \"utf8\"), \"the stale register stays\").toBe(before);",
+      "breaks": [
+        {
+          "id": "write-despite-file-problems",
+          "file": "scripts/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (values.write && fileProblems.length === 0) {",
+              "replace": "if (values.write) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-no-write-padded-id",
+      "claim": "records:counts --write writes nothing when an issue row has a padded id.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "writes nothing with a padded id and a stale register"
+      },
+      "assertion": "expect(writeCounts(padded).files, \"stale register, padded id\").toEqual(padded);",
+      "breaks": [
+        {
+          "id": "write-despite-loose-id",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-no-write-cr",
+      "claim": "records:counts --write writes nothing when a ledger file has a CR line end.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "writes nothing with one CR line end and a stale register"
+      },
+      "assertion": "expect(writeCounts(crlf).files, \"stale register, one CR\").toEqual(crlf);",
+      "breaks": [
+        {
+          "id": "write-despite-cr",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-real-files-pass",
+      "claim": "The real delivery-quality files give no form problem.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds no form problem in the real delivery-quality files"
+      },
+      "assertion": "expect(formProblems(real), \"real files\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "refuse-real-rows",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "LOOSE_ISSUE_ROW.test(line) && !ISSUE_ROW.test(line)",
+              "replace": "LOOSE_ISSUE_ROW.test(line)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-prevention-not-count-source",
+      "claim": "records:counts reads no count from the prevention file; a round table there changes no count (plan revision 11, Q1 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "does not count a round table in the prevention file"
+      },
+      "assertion": "expect(readFileSync(join(dir, REGISTER), \"utf8\"), \"prevention round not counted\")",
+      "breaks": [
+        {
+          "id": "count-from-prevention",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  const { ledger, problems } = readLedger(files, checkedOnly);\n  if (ledger === undefined) return { files: [...files], problems };",
+              "replace": "  const { ledger, problems } = readLedger([...files, ...checkedOnly]);\n  if (ledger === undefined) return { files: [...files], problems };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-ledger-cr",
+      "claim": "records:counts refuses a cr in docs/delivery-quality.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-ledger-cr-no-form-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-ledger-padded-id",
+      "claim": "records:counts refuses a padded id in docs/delivery-quality.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a padded id in docs/delivery-quality.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-ledger-padded-id-no-form-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-ledger-split",
+      "claim": "records:counts refuses a split table in docs/delivery-quality.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a split table in docs/delivery-quality.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-ledger-split-no-split-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...splitTables(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-ledger-cell-count",
+      "claim": "records:counts refuses a cell count in docs/delivery-quality.md with its whole message: the first cell, the cell count and the header count (plan revisions 11 and 12).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cell count in docs/delivery-quality.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-ledger-cell-count-no-cell-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...cellCountProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "table-ledger-cell-count-wrong-message",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "the row ${row.cells[0] ?? \"\"} has ${row.cells.length} cells",
+              "replace": "the row has a duplicate ID"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-ledger-exit",
+      "claim": "records:counts exits with status 1 on a CR in docs/delivery-quality.md (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality.md"
+      },
+      "assertion": "expect(result.status, \"refusal exit\").toBe(1);",
+      "breaks": [
+        {
+          "id": "table-ledger-exit-zero",
+          "file": "scripts/lib/report.ts",
+          "edits": [
+            {
+              "find": "  process.exitCode = 1;",
+              "replace": "  process.exitCode = 0;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-ledger-no-write",
+      "claim": "records:counts --write changes no file on a CR in docs/delivery-quality.md, the damaged file too (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality.md"
+      },
+      "assertion": "expect(allFiles(dir), \"no file written\").toEqual(before);",
+      "breaks": [
+        {
+          "id": "table-ledger-write-on-problem",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  if (ledger === undefined) return { files: [...files], problems };",
+              "replace": "  if (ledger === undefined)\n    return { files: files.map((file) => ({ ...file, text: `${file.text}\\n` })), problems };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-archive-cr",
+      "claim": "records:counts refuses a cr in docs/delivery-quality-archive.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-archive.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-archive-cr-no-form-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-archive-padded-id",
+      "claim": "records:counts refuses a padded id in docs/delivery-quality-archive.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a padded id in docs/delivery-quality-archive.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-archive-padded-id-no-form-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-archive-split",
+      "claim": "records:counts refuses a split table in docs/delivery-quality-archive.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a split table in docs/delivery-quality-archive.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-archive-split-no-split-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...splitTables(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-archive-cell-count",
+      "claim": "records:counts refuses a cell count in docs/delivery-quality-archive.md with its whole message: the first cell, the cell count and the header count (plan revisions 11 and 12).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cell count in docs/delivery-quality-archive.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-archive-cell-count-no-cell-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...cellCountProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "table-archive-cell-count-wrong-message",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "the row ${row.cells[0] ?? \"\"} has ${row.cells.length} cells",
+              "replace": "the row has a duplicate ID"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-archive-exit",
+      "claim": "records:counts exits with status 1 on a CR in docs/delivery-quality-archive.md (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-archive.md"
+      },
+      "assertion": "expect(result.status, \"refusal exit\").toBe(1);",
+      "breaks": [
+        {
+          "id": "table-archive-exit-zero",
+          "file": "scripts/lib/report.ts",
+          "edits": [
+            {
+              "find": "  process.exitCode = 1;",
+              "replace": "  process.exitCode = 0;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-archive-no-write",
+      "claim": "records:counts --write changes no file on a CR in docs/delivery-quality-archive.md, the damaged file too (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-archive.md"
+      },
+      "assertion": "expect(allFiles(dir), \"no file written\").toEqual(before);",
+      "breaks": [
+        {
+          "id": "table-archive-write-on-problem",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  if (ledger === undefined) return { files: [...files], problems };",
+              "replace": "  if (ledger === undefined)\n    return { files: files.map((file) => ({ ...file, text: `${file.text}\\n` })), problems };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-register-cr",
+      "claim": "records:counts refuses a cr in docs/delivery-quality-register.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-register.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-register-cr-no-form-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-register-padded-id",
+      "claim": "records:counts refuses a padded id in docs/delivery-quality-register.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a padded id in docs/delivery-quality-register.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-register-padded-id-no-form-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-register-split",
+      "claim": "records:counts refuses a split table in docs/delivery-quality-register.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a split table in docs/delivery-quality-register.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-register-split-no-split-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...splitTables(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-register-cell-count",
+      "claim": "records:counts refuses a cell count in docs/delivery-quality-register.md with its whole message: the first cell, the cell count and the header count (plan revisions 11 and 12).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cell count in docs/delivery-quality-register.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-register-cell-count-no-cell-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...cellCountProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "table-register-cell-count-wrong-message",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "the row ${row.cells[0] ?? \"\"} has ${row.cells.length} cells",
+              "replace": "the row has a duplicate ID"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-register-exit",
+      "claim": "records:counts exits with status 1 on a CR in docs/delivery-quality-register.md (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-register.md"
+      },
+      "assertion": "expect(result.status, \"refusal exit\").toBe(1);",
+      "breaks": [
+        {
+          "id": "table-register-exit-zero",
+          "file": "scripts/lib/report.ts",
+          "edits": [
+            {
+              "find": "  process.exitCode = 1;",
+              "replace": "  process.exitCode = 0;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-register-no-write",
+      "claim": "records:counts --write changes no file on a CR in docs/delivery-quality-register.md, the damaged file too (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-register.md"
+      },
+      "assertion": "expect(allFiles(dir), \"no file written\").toEqual(before);",
+      "breaks": [
+        {
+          "id": "table-register-write-on-problem",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  if (ledger === undefined) return { files: [...files], problems };",
+              "replace": "  if (ledger === undefined)\n    return { files: files.map((file) => ({ ...file, text: `${file.text}\\n` })), problems };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-prevention-cr",
+      "claim": "records:counts refuses a cr in docs/delivery-quality-prevention.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-prevention.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-prevention-cr-no-form-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "table-prevention-cr-ledger-files-only",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  const checkedFiles = [...files, ...checkedOnly];\n",
+              "replace": "  const checkedFiles = [...files];\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-prevention-padded-id",
+      "claim": "records:counts refuses a padded id in docs/delivery-quality-prevention.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a padded id in docs/delivery-quality-prevention.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-prevention-padded-id-no-form-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "table-prevention-padded-id-ledger-files-only",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  const checkedFiles = [...files, ...checkedOnly];\n",
+              "replace": "  const checkedFiles = [...files];\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-prevention-split",
+      "claim": "records:counts refuses a split table in docs/delivery-quality-prevention.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a split table in docs/delivery-quality-prevention.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-prevention-split-no-split-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...splitTables(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "table-prevention-split-ledger-files-only",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  const checkedFiles = [...files, ...checkedOnly];\n",
+              "replace": "  const checkedFiles = [...files];\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-prevention-cell-count",
+      "claim": "records:counts refuses a cell count in docs/delivery-quality-prevention.md with its whole message: the first cell, the cell count and the header count (plan revisions 11 and 12).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cell count in docs/delivery-quality-prevention.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-prevention-cell-count-no-cell-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...cellCountProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "table-prevention-cell-count-ledger-files-only",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  const checkedFiles = [...files, ...checkedOnly];\n",
+              "replace": "  const checkedFiles = [...files];\n"
+            }
+          ]
+        },
+        {
+          "id": "table-prevention-cell-count-no-heading",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    PREVENTION_HEADER,\n",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "table-prevention-cell-count-wrong-message",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "the row ${row.cells[0] ?? \"\"} has ${row.cells.length} cells",
+              "replace": "the row has a duplicate ID"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-prevention-exit",
+      "claim": "records:counts exits with status 1 on a CR in docs/delivery-quality-prevention.md (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-prevention.md"
+      },
+      "assertion": "expect(result.status, \"refusal exit\").toBe(1);",
+      "breaks": [
+        {
+          "id": "table-prevention-exit-zero",
+          "file": "scripts/lib/report.ts",
+          "edits": [
+            {
+              "find": "  process.exitCode = 1;",
+              "replace": "  process.exitCode = 0;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-prevention-no-write",
+      "claim": "records:counts --write changes no file on a CR in docs/delivery-quality-prevention.md, the damaged file too (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-prevention.md"
+      },
+      "assertion": "expect(allFiles(dir), \"no file written\").toEqual(before);",
+      "breaks": [
+        {
+          "id": "table-prevention-write-on-problem",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  if (ledger === undefined) return { files: [...files], problems };",
+              "replace": "  if (ledger === undefined)\n    return { files: files.map((file) => ({ ...file, text: `${file.text}\\n` })), problems };"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "writes counts in the separate register file",
+      "reason": "Test first. The red run reported that the script could not find the register table."
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "accepts a Same cause hit in the separate prevention file",
+      "reason": "Test first. The red run rejected a hit that only the prevention file held."
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports a missing prevention search file",
+      "reason": "Test first. The red run passed the counts check with the prevention file missing."
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports a blank line that splits the prevention table",
+      "reason": "Test first. The red run passed the counts check with the prevention table split."
+    }
+  ]
+}

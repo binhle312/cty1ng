@@ -31,39 +31,54 @@ the proof shows, and add `Not claimed: …` (owner, 2026-11-11;
 first ([review guide §3](../review-guide.md#3-verify-what-the-evidence-proves)).
 
 In a ledger row, "Same cause as an earlier fix?" covers earlier PRs too.
-Name the search of the prevention actions
-([delivery quality §7](../delivery-quality.md#7-update-and-assess)) and of the
-[lessons](../lessons-learned/README.md) in the answer.
+Name the search of the [prevention actions](../delivery-quality-prevention.md#prevention-actions)
+and the [lessons](../lessons-learned/README.md) in the answer.
 
 ## One home for each fact
 
 Each fact has one home, and other records link to it (decided by the builder at the owner's request, 2026-11-09, DQ-152). The PR body
 states no state, count or result that a file or a tool owns:
 
-- The state, the fix commit and the test of an issue, and the state of a prevention action, live
-  only in its row of `docs/delivery-quality.md`. The PR body names the id in its `Records` section
+- The issue state, fix commit and test live in the issue row of the ledger or its archive.
+  The state of a prevention action lives in its row in `docs/delivery-quality-prevention.md`.
+  The PR body names the id in its `Records` section
   and in the `Defect and review fixes` table; it does not repeat them (owner, 2026-11-18, q4 Q3 A).
-- The result of a review round lives only in its row of the round log.
-- The counts of the Audit row and of each `Ledger` row of the register: `pnpm records:counts --write`
-  writes them from the rows, and CI checks them. Nobody types them, in the ledger or in the body.
+  A PR with no milestone follows [ledger §7 step 2](../delivery-quality.md#7-update-and-assess)
+  for its review findings.
+- The result of a review round lives where [ledger §7 step 2](../delivery-quality.md#7-update-and-assess) says to record it.
+- `pnpm records:counts --write` writes the counts for the Audit row and each `Ledger` row in the
+  [register](../delivery-quality-register.md). CI checks them. Nobody types them in the register or in the body.
 - The "Same cause as an earlier fix?" answer and its search live in the "Fix and verification"
   cell of the ledger row (`AGENTS.md` §9). The `Defect and review fixes` section of the body names
-  the rows. The form (owner, 2026-11-19, morning Q4 A):
-  `Same cause: no (search: `<pattern>`: <hits>)` or
-  `Same cause: yes (search: `<pattern>`: <hits>; §9: <step>)`.
-  - The pattern is one `grep -E` pattern; write `\|` for `|` in the table. It stands for
-    `grep -n -i -E '<pattern>' docs/delivery-quality.md docs/delivery-quality-archive.md docs/lessons-learned/*.md`:
-    the ledger, its §7 prevention actions and the lessons. It has no backtick, no backslash
-    before a letter or a digit (`\d`, `\w`, `\b`, `\<`), no `[[` and no `(?`, so that grep and
-    the script read it in one way.
-  - The hits name the ids that the answer rests on (or `none`), with no `;` or `)`. Each cited id
-    is in a line that the pattern finds, other than the row itself.
-  - The §9 step of a yes is `owner, <YYYY-MM-DD>, <page> Q<n> <option>` (the owner's decision),
-    `proposal DQ-<n>` (the row of the redesign proposal, not the row itself) or
-    `fixed answer (AGENTS.md §9, owner 2026-11-11)` (a claim bigger than its proof).
-  - `pnpm records:counts` checks each row from DQ-853 on that is not `withdrawn`, and the form of
-    DQ-751 to DQ-777. It does not check the choice of the words (the reviewer does), that `none`
-    or a no is true, or that a decision named in a step exists.
+  the rows (a PR with no milestone: ledger §7 step 2). The form (owner, 2026-11-19, morning Q4 A):
+  `` Same cause: no (search: `<pattern>`: <hits>) `` or
+  `` Same cause: yes (search: `<pattern>`: <hits>; §9: <step>) ``.
+  - Write one pattern. Use `\|` for `|` in the table. Search with
+    `grep -n -i -E -e '<pattern>' docs/delivery-quality.md docs/delivery-quality-archive.md docs/delivery-quality-register.md docs/delivery-quality-prevention.md docs/lessons-learned/*.md`.
+    The checker matches each line with a case-insensitive JavaScript regular expression.
+    It rejects empty or blank patterns, backticks, backslashes before ASCII letters or digits,
+    `[[`, `(?`, and patterns that JavaScript cannot compile. The
+    [search fixture](../../scripts/records-counts.test.ts) compares the hit lines for its sample
+    patterns.
+  - Each `Same cause:` marker outside a single-backtick span needs a complete answer. Put
+    nonblank hits inside the answer. Cite whole ids on matching lines other than the source row,
+    or write `none`. Hits can contain balanced parentheses and ordinary semicolons. Only
+    `; §9: ` at the outer level starts a step. The checker rejects a colon continuation after the
+    closing parenthesis. Move any such note before the answer.
+  - A yes needs one §9 step. A no takes none. Use one of these steps for a yes.
+    - `owner, YYYY-MM-DD, <page> <question> <answer>` for the owner's decision. Use the exact
+      spacing and a Gregorian date in years 0001–9999. The page uses groups of ASCII letters or
+      digits joined by hyphens, or `#` followed by a positive number. The question is `Q`
+      followed by a positive number. Use decimal digits without leading zeros for both numbers.
+      The answer is one uppercase ASCII letter.
+    - `proposal DQ-<n>` for the ledger row of the redesign proposal. A row can name itself
+      when its trimmed fix cell starts with `Proposal:`.
+    - `fixed answer (AGENTS.md §9, owner 2026-11-11)` for a claim bigger than its proof.
+  - `pnpm records:counts` applies the marker rules above to each row from DQ-853 on that is not
+    `withdrawn`. For DQ-751 to DQ-777, it checks only that the cell holds one
+    `Same cause: yes|no (search: <command or places>: <hits>)` text, as on `main`. It does not check
+    the choice of the words (the reviewer does), that `none` or a no is true, or that a decision
+    named in a step exists.
 - A `docs/status.md` line of a PR has its state, its date and its link. It has no list of files, no
   count and no claim that a test or a row owns.
   `pnpm check:status` fails on a typed measure. Its units are in `scripts/lib/check-status.ts`.
@@ -99,8 +114,7 @@ review fix, check them against the commit that you push (owner, 2026-11-08, DQ-1
    `pnpm check:status` lists each merged PR with no Done row, and gives the row to add; CI runs it.
    Merge `origin/main` into the branch first: the local run reads the merges of `origin/main` but
    the branch's own `docs/status.md`, so on an older branch it asks for rows that `main` already has.
-   For a PR that is ready and has no record turn, the record of a later review goes into the next
-   PR.
+   Follow [ledger §7 step 2](../delivery-quality.md#7-update-and-assess) for where to record a later review.
 7. Measure each ledger row with an id above DQ-202. This command must print nothing:
    `LC_ALL=C awk -F'|' '/^\| DQ-/ { id = substr($2, 5) + 0; if (id > 202 && length($0) > 600) print "DQ-" id, length($0) }' docs/delivery-quality.md`.
    `LC_ALL=C` makes it count bytes, so each machine gives the same result. Make each row that it
@@ -111,6 +125,8 @@ review fix, check them against the commit that you push (owner, 2026-11-08, DQ-1
 9. Run `wc -c < docs/delivery-quality.md`. If the result is larger than the limit in
    [§7 step 6 of the ledger](../delivery-quality.md#7-update-and-assess), write under Follow-ups
    of the PR description that a move of the closed rows is due. The move is a PR of its own.
+10. Before each push that edits issue rows, save the output of `pnpm records:removed-words <base> <head>`.
+    Use the PR merge base and the commit you will push. The reviewer reads the report.
 
 Before you say that a PR is ready: the description has no state line that is older than the head,
 and `docs/status.md` names the PR.
