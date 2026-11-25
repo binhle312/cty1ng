@@ -33,6 +33,7 @@ Revision 5, owner, 2026-11-24, after round 5: the section "Revision 5" below.
 Revision 6, owner, 2026-11-25, after round 6 ("All your picks"): the section "Revision 6" below.
 Revision 7, owner, 2026-11-25, after round 8 (Q1 L, Q2 F): the section "Revision 7" below.
 Revision 8, owner, 2026-11-25, after round 9 (Q1 S, Q2 A, Q3 A, Q4 C): the section "Revision 8" below.
+Revision 9, owner, 2026-11-25, after round 10 ("let goes with your picks": Q1 E, Q2 R, Q3 A): the section "Revision 9" below.
 
 ## Goal
 
@@ -452,3 +453,41 @@ L, and that the Q2 F fix changed a shared function, wider than the Q2 F page sai
 - **Fixes with no question:** the description facts of round 9 (R9D1-F1 to F5, R9D2-F4, R9D2-F5),
   each "yes" answer of the description names its §9 step, and the plan lines R9W-F3, R9W-F4 and
   R9L-F4.
+
+## Revision 9: the owner's answers after review round 10
+
+Owner, 2026-11-25, after round 10 (the complete review of `328ae4c`; 16 of 18 checks stopped at
+35% of their context), on the round 10 page: "let goes with your picks" (Q1 E, Q2 R, Q3 A). Two
+consultants (Opus 5.5 and GPT-6.2 Astra) checked the questions first.
+
+- **Q1 E, the end of the review.** This replaces the bar of revision 3 ("a complete review of the
+  final head") and Q4 C of revision 8.
+  - The builder fixes each issue that round 10 found.
+  - Round 11 reads the diff of the fixes, probes `records:counts` with real inputs, traces each
+    promise of this plan to its build, reads the text written since round 9, and reads the
+    "Same cause" answer and §9 step of each line of the old round tables (rounds 1 to 9 of the
+    PR description). A script lists those answers for the check. Each check is sized to end
+    under 35% of its context.
+  - The other cells of the old table lines are `Not claimed`.
+  - End rule (merge bar steps 4 and 5): after round 11, only a P1 or P2 gets a fix, with one
+    check of that commit and at most one more.
+- **Q2 R, refuse the loose forms** (R10RW-F1, R10RW-F2; the §9 redesign of the cause of R5C-F1,
+  R6C1-F1, R6C1-F2 and R9B-F1). The owner rates them P2.
+  - One function in `scripts/lib/records-counts.ts` finds two forms in the delivery-quality files:
+    a CR character (one problem for each file), and a line that starts like an issue row
+    (`|`, spaces or tabs, `DQ-` and digits, spaces or tabs, `|`) but not exactly as `| DQ-n |`.
+  - `records:counts` reports these problems, in check and in write mode, and writes nothing then.
+    `records:removed-words` refuses a snapshot that has them, with the problems in its error.
+  - The limit R6C1-F1 (a space after the id) closes. R10RW-F3 (an issue row inside a fenced
+    example gives a false duplicate) goes to the limits row of `docs/status.md`.
+- **Q3 A, the lines of this description** (R10D6-F2, R10D6-F3): for #153 only, a defect in a line
+  of the PR description is fixed in place, and review checks it. The Follow-ups row of the
+  script check also names a Differences row with no reason and a finding summary that leaves
+  out a case.
+- **Test strategy for Q2 R.** Test first, each with a break claim: `records:counts` refuses a
+  padded id (a space before, and a space after), and CR line ends (one problem for the file);
+  `records:removed-words` refuses a padded id and CR line ends in a snapshot; the real ledger
+  files give no problem.
+- **Fixes with no question:** the other round 10 findings, in place. R10D5-F1 cites round 8 Q1 L;
+  R10D5-F2, R10D2-F1 and R10D6-F1 cite round 9 Q3 A; R10D2-F2 cites DQ-155 (owner, 2026-11-09,
+  option A).
