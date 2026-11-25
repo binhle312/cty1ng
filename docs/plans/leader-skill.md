@@ -431,7 +431,8 @@ text replaces it.
 **Additions beyond the owner's words:**
 - The Anthropic reviewer runs on Opus at `high` (the lead agent's suggestion; the owner agreed).
 - "Each state" read as each report of a worker team: the worker ends its turn with a report at each
-  checkpoint of its plan (a new rule for the worker); its subagents check before each report; a new
+  checkpoint of its plan (a new rule for the worker); its subagents check after each build turn and
+  each fix turn, not in the plan turn; a new
   pair of outside reviewers checks each report, and the same pair checks the fixes of its findings.
 - One part "Claude Code subagents" holds the rules of each Claude subagent (the Anthropic reviewer
   and the backup): the Agent tool, its model, no sandbox, no context measure, it ends with the
@@ -447,6 +448,17 @@ text replaces it.
   next review round, as before.
 
 **Test.** The fact map against `a600a49` lists each sentence that leaves, with its reason.
+Headless runs of the skill at `fca7a7e` (`tmp/leader-skill/measure/gate-test.sh`):
+- Clear goal, Codex stub: 0 `codex exec` calls and 0 subagents before the OK; the plan names the
+  team, the two outside reviewers and the backup.
+- Real Codex, OK in the task: the worker (Sol, high, `workspace-write`) started subagents with
+  `agent_role` `test-verifier` and `reviewer`; one Opus `reviewer` subagent and one read-only Astra
+  session reviewed the report, and the same pair checked the fixes. Gap: the worker started its
+  subagents in the plan turn, not after the build or the fix. The brief now says when.
+- Backup (account error): Claude `implementer` (Sonnet), then the lead agent started the
+  `test-verifier` and team `reviewer` (Sonnet), then only one Opus outside reviewer. Gap: two were
+  needed. "Outside reviewers" now says it.
+Both fixes were run again on the next head; the results are in the PR.
 
 ## Open questions
 

@@ -175,9 +175,9 @@ work with subagents that it starts (owner, 2026-11-25).
 | Team reviewer | A subagent of the worker: reviews the change and its evidence, and changes no file | The worker starts a subagent with the role `reviewer` | You start a review role that cannot edit files, such as `reviewer`, after the build |
 | Default worker | The worker session of a task that is not code and is not [your own work](#the-lead-agents-own-work), such as documents, research or a measurement; its only subagent is the team reviewer | The worker column of the model table | A general subagent |
 
-- The worker ends its turn with a report at each checkpoint of its plan. Before each report, it
-  starts its test verifier and its team reviewer at the same time, by role name, and fixes their
-  findings. The worker brief says so.
+- The worker ends its turn with a report at each checkpoint of its plan. After each build turn and
+  each fix turn, before it reports, it starts its test verifier and its team reviewer at the same
+  time, by role name, and fixes their findings. Not in the plan turn. The worker brief says so.
 - Run at most 2 worker teams at the same time (owner, 2026-11-25; the owner can change it). A new
   session at the limit adds no team. Your plan gives the order of the tasks that wait.
 
@@ -192,7 +192,8 @@ fixes of their findings. Neither built the work. Each reads, changes no file and
 - **From OpenAI:** a new read-only Codex session on the
   [reviewer model in `references/codex.md`](references/codex.md#pick-the-models).
 
-Write both briefs from `references/reviewer-brief.md`.
+When Codex cannot run, start two new Claude Opus reviewers: the one from Anthropic, and one in
+place of the one from OpenAI. Write both briefs from `references/reviewer-brief.md`.
 
 ### Claude Code subagents
 

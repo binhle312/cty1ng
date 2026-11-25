@@ -65,7 +65,8 @@ Write the report for a reader who did not see your work. Put the key points firs
 <your_team>
 > Delete this part when the worker is a Claude Code subagent: the lead agent starts these checks.
 > Name only the roles that the Codex configuration has.
-Before each report, start two subagents of your own at the same time, and name the role of each:
+After each build turn and each fix turn, before you report, start two subagents of your own at
+the same time, and name the role of each. Do not start them in the plan turn:
 - `test-verifier`: it tests each acceptance criterion of the task, from the requirements, and gives
   PASS, FAIL or NOT VERIFIED with evidence.
 - `reviewer`: it reviews your change and its evidence, and changes no file.
@@ -87,7 +88,7 @@ Now read the files that you need. Then give back your plan in your own words:
 1. The goal, as you understand it.
 2. Each step, with the check that shows that the step is done.
 3. Each question that you need answered before you build.
-Change no file in this turn. The lead agent reads the plan, and then accepts it or sends
-corrections.
+Change no file and start no subagent in this turn. The lead agent reads the plan, and then
+accepts it or sends corrections.
 </first_turn>
 ```
