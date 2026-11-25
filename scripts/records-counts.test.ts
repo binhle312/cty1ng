@@ -804,6 +804,11 @@ describe("the search of a new row (DQ-853 on)", () => {
     expect(check(fix), "marker between escaped backticks").toEqual([FORM]);
   });
 
+  it("checks hits after escaped backticks in the answer body", () => {
+    const fix = "Same cause: no (search: `a slip`: DQ-001 \\`(label\\`), DQ-007)";
+    expect(check(fix), "hits after escaped backticks").toEqual([MISSING("a slip", "DQ-007")]);
+  });
+
   it("checks a fixed row whose fix cell says withdrawn", () => {
     expect(checkCounts(rows("withdrawn"), [LESSON]), "withdrawn outside State").toEqual([FORM]);
   });
@@ -921,6 +926,12 @@ describe("searchLines and grep", () => {
     "^\\| DQ-00[13]",
   ];
   const grep = spawnSync("grep", ["--version"], { encoding: "utf8" });
+
+  it("accepts the search patterns from plan revision 4", () => {
+    for (const pattern of ["a+?", "a{,3}", "[a[:digit:]]", "x[^]"]) {
+      expect(patternProblem(pattern), "revision 4 pattern " + pattern).toBeUndefined();
+    }
+  });
 
   it("gives the hit lines of grep -n -i -E for each pattern", (context) => {
     if (grep.error !== undefined) {

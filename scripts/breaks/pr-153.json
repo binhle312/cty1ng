@@ -67,6 +67,28 @@
       ]
     },
     {
+      "id": "escaped-backticks-in-answer-body",
+      "claim": "Checks a hit id that follows escaped backticks in the answer body.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "checks hits after escaped backticks in the answer body"
+      },
+      "assertion": "expect(check(fix), \"hits after escaped backticks\").toEqual([MISSING(\"a slip\", \"DQ-007\")]);",
+      "breaks": [
+        {
+          "id": "treat-escaped-backticks-in-body-as-span",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "body.matchAll(/\\\\[\\\\`]|`[^`]*`|[();]/g)",
+              "replace": "body.matchAll(/`[^`]*`|[();]/g)"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "withdrawn-fix-cell",
       "claim": "Checks a fixed row whose fix cell says withdrawn.",
       "test": {
@@ -281,6 +303,10 @@
             {
               "find": "  if (cited.trim() === \"\") return undefined;\n",
               "replace": ""
+            },
+            {
+              "find": "if (citedIds.length === 0 && cited.trim() !== \"none\")",
+              "replace": "if (citedIds.length === 0 && ![\"\", \"none\"].includes(cited.trim()))"
             }
           ]
         }
@@ -573,6 +599,28 @@
       ]
     },
     {
+      "id": "revision-4-search-patterns",
+      "claim": "Accepts the four search patterns from plan revision 4.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "accepts the search patterns from plan revision 4"
+      },
+      "assertion": "expect(patternProblem(pattern), \"revision 4 pattern \" + pattern).toBeUndefined();",
+      "breaks": [
+        {
+          "id": "reject-lazy-plus",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (pattern.includes(\"(?\")) return 'it has \"(?\"';",
+              "replace": "if (pattern.includes(\"(?\")) return 'it has \"(?\"';\n  if (pattern.includes(\"+?\")) return 'it has \"+?\"';"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "removed-words-moved-row",
       "claim": "Reports a loss for an issue ID that moves to the archive.",
       "test": {
@@ -705,12 +753,34 @@
       ]
     },
     {
-      "id": "removed-words-no-shortening",
-      "claim": "Omits a paired issue with no shorter row or cell.",
+      "id": "removed-words-equal-byte-legacy-row",
+      "claim": "Reports a lost word from a malformed legacy row of equal byte length.",
       "test": {
         "kind": "vitest",
         "file": "scripts/records-removed-words.test.ts",
-        "name": "omits a row that did not shorten"
+        "name": "reports a removed word from a legacy row of equal byte length"
+      },
+      "assertion": "expect(report, \"loss from a raw row of equal byte length\").toEqual([",
+      "breaks": [
+        {
+          "id": "skip-equal-byte-raw-rows",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "const cells = aligned ?? [raw];",
+              "replace": "const cells = aligned ?? (Buffer.byteLength(raw.before) === Buffer.byteLength(raw.after) ? [] : [raw]);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-no-shortening",
+      "claim": "Omits a paired issue if its cells line up by heading and neither its row nor its cells shorten.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "omits an aligned row that did not shorten"
       },
       "assertion": "expect(report, \"only the shorter row\").toEqual([",
       "breaks": [

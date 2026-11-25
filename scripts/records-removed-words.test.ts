@@ -124,7 +124,17 @@ describe("records:removed-words", () => {
     ]);
   });
 
-  it("omits a row that did not shorten", () => {
+  it("reports a removed word from a legacy row of equal byte length", () => {
+    const report = reportRows({
+      before: ["| DQ-001 | old | stray | tail |"],
+      after: ["| DQ-001 | new | stray | tail |"],
+    });
+    expect(report, "loss from a raw row of equal byte length").toEqual([
+      `DQ-001 ${LIVE} -> ${LIVE} [raw row]: old`,
+    ]);
+  });
+
+  it("omits an aligned row that did not shorten", () => {
     const report = reportRows({
       before: ["| DQ-001 | review | proof |", "| DQ-002 | review | old proof |"],
       after: ["| DQ-001 | review | draft |", "| DQ-002 | review | proof |"],
