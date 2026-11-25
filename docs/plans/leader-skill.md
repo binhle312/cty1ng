@@ -219,6 +219,39 @@ changed against `main`.
   the lead agent stops and reports.
 - The full set of `AGENTS.md` §4 on each final head, with no edits during the run.
 
+## Revision 6 (2026-11-25): the lead agent's files, and three text fixes
+
+Approval of this revision: owner, 2026-11-25. The owner approved the files design in the closed #157
+("your proposal plan looks good for me, remember to keep everything simple, we're software engineer,
+don't complicate thing that shouldn't be"), then closed #157 and moved the work here: "stop it,
+close 157 with reason, let try continue on 156".
+
+The owner's requirement, 2026-11-25: "Leader have to write down 3 md files: goal, instruction,
+handoff. So when I start the leader in new conversation, it can pickup the work where it left off".
+Then: "goal.md and handoff.md are must". The advisor and two consultants found no part of
+`instruction.md` that has no other home.
+
+**What changes.**
+- `SKILL.md`: a section "Your files for the next conversation": `goal.md` and `handoff.md` in
+  `tmp/leader/` of the lead agent's worktree, a `git check-ignore` check before the first write,
+  when each file is written, and how a new conversation continues (`/leader <folder path>`, check
+  each claim against the repository, the repository wins). The summary keeps the folder path. The
+  session list of the workers is in `handoff.md`. The 35% handoff of a worker is "the worker's
+  handoff", and the worker gives it as its last message, so a reviewer that cannot write files can
+  give it too (the report file of that turn holds it).
+- `references/codex.md`: the Codex windows in the owner's words, and F1B-1 ("reaches 35% before it
+  reports").
+- `GUIDE.md`: how the human continues in a new conversation, and the worker's handoff as its last
+  message. The Mermaid blocks do not change.
+
+**One change from the design of #157.** That design kept the worker sessions in `runs/`, the run
+folders of the script. Without the script, the session list is a part of `handoff.md`.
+
+**Test.** The fact map against `a600a49` lists each sentence that leaves, with its reason. A
+headless continuation test of the #157 text passed on 2026-11-25: a new conversation that got only
+the folder path found a commit that `handoff.md` did not name, reported it before it acted, and did
+not redo the plan. The same test runs again on this text.
+
 ## Open questions
 
 None. The owner answered each question on 2026-11-24.

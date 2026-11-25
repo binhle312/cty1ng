@@ -21,9 +21,11 @@ The table has no row for the tasks that you do yourself.
 - Raise the effort of a worker one level when a task has more steps or more trade-offs. A
   reviewer keeps the effort of the table. Most tasks do not need `max`. With `ultra`, Codex
   starts agents of its own.
-- Sol and Terra read 500,000 tokens by default; Astra reads 272,000.
+- On 2026-11-25, Codex reported windows of 475,000 tokens for Sol and 258,400 for Astra (owner:
+  "astra is 258k like you said, sol is 475l as I checked directly in codex session"). Terra: 475,000
+  (owner, 2026-11-25: "they reduce it to 475k only"; not measured in a run).
 - On a model with a window of about 258,000 tokens, a full review of a large change reaches 35%
-  first.
+  before it reports.
 - The table is from 2026-11-24. If Codex lists a newer model, tell the owner before you use it.
 
 ## Commands

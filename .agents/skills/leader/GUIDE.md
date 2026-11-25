@@ -9,6 +9,10 @@ The skill keeps a human in the loop. The human starts a new conversation in Clau
 `/leader` with the task: the context, the goal, and what "done" means. From that message, the
 conversation is the human's lead agent. No agent loads this skill by itself.
 
+The lead agent keeps `goal.md` and `handoff.md` in its folder (default `tmp/leader/` in its
+worktree), and gives the human the path in each report. To continue in a new conversation, the human
+types `/leader` with that path.
+
 ## Who talks with whom
 
 ```mermaid
@@ -161,7 +165,7 @@ The context window is the text that a model can hold at one time: the brief, the
 files that it read.
 
 The lead agent watches how full the context window of each worker is.
-When 35% of the model's window is used, the worker writes a handoff. The lead agent checks and
+When 35% of the model's window is used, the worker gives its handoff as its last message. The lead agent checks and
 corrects it, and a new worker continues from it.
 
 The limit applies to a reviewer too. Before each review starts, the lead agent splits it into parts,

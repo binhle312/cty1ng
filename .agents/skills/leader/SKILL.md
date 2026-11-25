@@ -17,7 +17,11 @@ $ARGUMENTS
 
 From this message, you are the **lead agent** of this conversation until the task ends. If the
 conversation gets a summary, keep these facts in it: your role, the task, each open gate of the
-owner, and the session list of your workers.
+owner, and the path to [your folder](#your-files-for-the-next-conversation). After a summary, read
+`goal.md` and `handoff.md` again.
+
+If the task is the path of a folder that holds `goal.md`, continue that task: see
+[Your files for the next conversation](#your-files-for-the-next-conversation).
 
 The **lead agent** is the Claude Code conversation that the owner starts.
 
@@ -93,6 +97,25 @@ Stop the work that depends on the item, and tell the owner, when one of these oc
 Other work goes on. An ordinary obstacle, such as an error, a timeout or a failed tool, is not a
 stop: find its cause, and try again another way.
 
+## Your files for the next conversation
+
+Keep two files in your folder, `tmp/leader/` in your own worktree, so that a new conversation can
+continue the task. Before the first write, run `git check-ignore -q tmp/leader/`. If Git does not
+ignore the folder, ask the owner for another folder.
+
+| File | What it holds | When to write it |
+| --- | --- | --- |
+| `goal.md` | The goal in the owner's words, the completion criteria, the scope, and the owner's constraints and standing instructions | At the start, and after each owner decision that changes it |
+| `handoff.md` | The current state with commits; the checks and their results; the owner's decisions in the owner's words, each with the question that it answers; the failed attempts with their reasons; the session list of your workers; the next action; the open questions. Give the commit where you checked each claim. | Write it in full each time, not as a patch: at the end of each stage, after each owner decision, and before you stop to wait for the owner |
+
+Give the owner the folder path in each report. Never give your folder to a worker as a writable
+folder.
+
+The owner starts a new conversation with `/leader <folder path>`. Read `goal.md` and `handoff.md`.
+Check their claims against the repository (`git status`, the head, the PR), and run the quick checks
+again. If a file and the repository disagree, the repository wins: tell the owner. Then tell the
+owner the next action, and continue.
+
 ## Workers
 
 Before you decide who builds or who reviews, read `references/codex.md`, relative to the
@@ -141,8 +164,8 @@ or send the second message after the first worker is done with that command.
 If the start message lets the worker build or run checks, do the [order check](#order-check).
 Start the worker in its own worktree and branch. For Codex, use the
 [start command in `references/codex.md`](references/codex.md#start). Start each run in the background.
-Write its session id, worktree, model, effort and sandbox mode on one line of a session list file.
-Add its last [context use](#context-of-each-worker) to that line after each check.
+Write its session id, worktree, model, effort and sandbox mode on one line of the session list in
+`handoff.md`, with its last [context use](#context-of-each-worker).
 
 Use a new report file for each turn. For a Codex worker that commits and pushes, use the
 [commit and push options in `references/codex.md`](references/codex.md#commit-and-push).
@@ -162,7 +185,7 @@ file, so it has no plan turn.
 
 ### Talk with the worker
 
-A worker is a conversation. Use the session id from the session list file. Send it more messages
+A worker is a conversation. Use the session id from the session list. Send it more messages
 when that is needed. Answer its question, accept its plan, or send the findings of a review.
 For Codex, use the [send command in `references/codex.md`](references/codex.md#send-a-message).
 Before a message that lets it build or run checks, do the [order check](#order-check). If a run goes
@@ -182,13 +205,14 @@ of each worker at each moment.
   window. For Codex, get it with the [context command in `references/codex.md`](references/codex.md#context-use).
 - At 35% or more (the owner's limit; the owner can change it), replace the worker:
   1. If a turn runs, [stop the run](#stop-a-workers-run).
-  2. Send the worker a message: write the handoff to a file that you name, and do no other work.
-  3. Read the handoff. Compare each claim with the diff, the commits and the test results. Correct
-     it, and add each fact that it misses.
+  2. Send the worker a message: give the worker's handoff as your last message, and do no other
+     work. The report file of that turn holds it, also for a reviewer that cannot write files.
+  3. Read the worker's handoff. Compare each claim with the diff, the commits and the test results.
+     Correct it, and add each fact that it misses.
   4. Start a new worker with the same model, effort and sandbox, in the same worktree. Give it the
-     brief and the handoff. Its first turn returns its plan for the rest of the work.
+     brief and the worker's handoff. Its first turn returns its plan for the rest of the work.
   5. Mark the old session as ended in the session list, and send it no more messages.
-- The handoff has:
+- The worker's handoff has:
   - the goal, and what "done" means;
   - the work that is done, with each commit;
   - the state of the worktree: the changed files that are not committed;
@@ -197,8 +221,8 @@ of each worker at each moment.
   - the next steps, in order;
   - what the new worker must not do again, with the reason.
 - Split each review before it starts, by files or by checks, so that each part ends under 35%
-  (owner, 2026-11-24). A handoff does not save a review that is too big: the new reviewer reads
-  the brief, the handoff and the files again, and stops at the limit before it reports.
+  (owner, 2026-11-24). A worker's handoff does not save a review that is too big: the new reviewer
+  reads the brief, the worker's handoff and the files again, and stops at the limit before it reports.
 
 ## Rules for the worker
 
@@ -214,8 +238,7 @@ and the push.
   Push only to the branch of the brief, and with no force.
 - If you pushed: in the report, give the pushed commit and the result of the remote checks for it.
 - For each claim in the report, give the command and its result.
-- When the lead agent asks for a handoff, write it to the file that the message names, and do no
-  other work.
+- When the lead agent asks for your handoff, give it as your last message, and do no other work.
 
 ## The project wins
 
