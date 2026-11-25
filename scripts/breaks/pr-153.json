@@ -1159,6 +1159,28 @@
           ]
         }
       ]
+    },
+    {
+      "id": "counts-no-write-without-prevention",
+      "claim": "records:counts --write writes nothing when the prevention search file is missing.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "writes nothing when the prevention search file is missing"
+      },
+      "assertion": "expect(readFileSync(join(dir, REGISTER), \"utf8\"), \"the stale register stays\").toBe(before);",
+      "breaks": [
+        {
+          "id": "write-despite-file-problems",
+          "file": "scripts/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (values.write && fileProblems.length === 0) {",
+              "replace": "if (values.write) {"
+            }
+          ]
+        }
+      ]
     }
   ],
   "exempt": [

@@ -216,6 +216,19 @@ describe("records:counts", () => {
     });
   });
 
+  it("writes nothing when the prevention search file is missing", () => {
+    const fixture = onePr({
+      registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
+    });
+    withSplitLedger({ fixture }, (dir) => {
+      rmSync(join(dir, PREVENTION));
+      const before = readFileSync(join(dir, REGISTER), "utf8");
+      const result = runCounts(dir, "--write");
+      expect(result.status, result.stdout + result.stderr).toBe(1);
+      expect(readFileSync(join(dir, REGISTER), "utf8"), "the stale register stays").toBe(before);
+    });
+  });
+
   it("reports a blank line that splits the prevention table", () => {
     const prevention = [
       "| Cause / linked issues | Action and owner | Enforcement or review step | Verification | State |",
