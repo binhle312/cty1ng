@@ -101,19 +101,20 @@ stop: find its cause, and try again another way.
 
 Keep two files in your folder, `tmp/leader/` in your own worktree, so that a new conversation can
 continue the task. Before the first write, run `git check-ignore -q tmp/leader/`. If Git does not
-ignore the folder, ask the owner for another folder.
+ignore the folder, ask the owner for another folder. If the folder already holds the files of
+another task, ask the owner: continue that task, or use a new folder such as `tmp/leader/<task>/`.
 
 | File | What it holds | When to write it |
 | --- | --- | --- |
 | `goal.md` | The goal in the owner's words, the completion criteria, the scope, and the owner's constraints and standing instructions | At the start, and after each owner decision that changes it |
-| `handoff.md` | The current state with commits; the checks and their results; the owner's decisions in the owner's words, each with the question that it answers; the failed attempts with their reasons; the session list of your workers; the next action; the open questions. Give the commit where you checked each claim. | Write it in full each time, not as a patch: at the end of each stage, after each owner decision, and before you stop to wait for the owner |
+| `handoff.md` | The worktree, the branch and the PR; the current state with commits; the checks and their results; the owner's decisions in the owner's words, each with the question that it answers; the failed attempts with their reasons; the session list of your workers; the next action; the open questions. Give the commit where you checked each claim. | Write it in full each time, not as a patch: at the start, at the end of each stage, after each owner decision, and before you stop to wait for the owner |
 
-Give the owner the folder path in each report. Never give your folder to a worker as a writable
+Give the owner the absolute folder path in each report. Never give your folder to a worker as a writable
 folder.
 
 The owner starts a new conversation with `/leader <folder path>`. Read `goal.md` and `handoff.md`.
-Check their claims against the repository (`git status`, the head, the PR), and run the quick checks
-again. If a file and the repository disagree, the repository wins: tell the owner. Then tell the
+In the worktree that `handoff.md` names, check their claims against the repository (`git status`, the
+head, the PR), and run the quick checks again. If a file and the repository disagree, the repository wins: tell the owner. Then tell the
 owner the next action, and continue.
 
 ## Workers
@@ -204,13 +205,15 @@ of each worker at each moment.
 - The context use is the token count of the last model call, as a percent of the model's context
   window. For Codex, get it with the [context command in `references/codex.md`](references/codex.md#context-use).
 - At 35% or more (the owner's limit; the owner can change it), replace the worker:
-  1. If a turn runs, [stop the run](#stop-a-workers-run).
+  1. If a turn runs, [stop the run](#stop-a-workers-run). Do not stop the handoff turn of step 2 at
+     the limit: let it finish.
   2. Send the worker a message: give the worker's handoff as your last message, and do no other
      work. The report file of that turn holds it, also for a reviewer that cannot write files.
   3. Read the worker's handoff. Compare each claim with the diff, the commits and the test results.
      Correct it, and add each fact that it misses.
   4. Start a new worker with the same model, effort and sandbox, in the same worktree. Give it the
-     brief and the worker's handoff. Its first turn returns its plan for the rest of the work.
+     brief and the worker's handoff. A new builder's first turn returns its plan for the rest of the
+     work; a new reviewer continues the review.
   5. Mark the old session as ended in the session list, and send it no more messages.
 - The worker's handoff has:
   - the goal, and what "done" means;

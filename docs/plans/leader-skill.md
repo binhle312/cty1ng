@@ -228,7 +228,7 @@ close 157 with reason, let try continue on 156".
 
 The owner's requirement, 2026-11-25: "Leader have to write down 3 md files: goal, instruction,
 handoff. So when I start the leader in new conversation, it can pickup the work where it left off".
-Then: "goal.md and handoff.md are must". The advisor and two consultants found no part of
+Then: "goal.md and handoff.md are must". The advisor and the Opus consultant found no part of
 `instruction.md` that has no other home.
 
 **What changes.**
@@ -236,7 +236,12 @@ Then: "goal.md and handoff.md are must". The advisor and two consultants found n
   `tmp/leader/` of the lead agent's worktree, a `git check-ignore` check before the first write,
   when each file is written, and how a new conversation continues (`/leader <folder path>`, check
   each claim against the repository, the repository wins). The summary keeps the folder path. The
-  session list of the workers is in `handoff.md`. The 35% handoff of a worker is "the worker's
+  session list of the workers is in `handoff.md`, with the last context use at each write (no
+  longer after each check, because `handoff.md` is written in full at events). The lead agent gives
+  the owner the absolute folder path in each report, and never gives its folder to a worker as a
+  writable folder (both from the consultants' answers on #157). A folder that holds another task's
+  files is not reused without the owner. A replacement reviewer continues the review; the handoff
+  turn is not stopped at the limit. The 35% handoff of a worker is "the worker's
   handoff", and the worker gives it as its last message, so a reviewer that cannot write files can
   give it too (the report file of that turn holds it).
 - `references/codex.md`: the Codex windows in the owner's words, and F1B-1 ("reaches 35% before it
