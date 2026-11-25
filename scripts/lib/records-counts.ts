@@ -364,14 +364,15 @@ function staleProblems(ledger: Ledger): string[] {
 
 // The "Same cause?" answer of a row lives in its "Fix and verification" cell (AGENTS.md §9; owner,
 // 2026-11-18, q4 Q3 A). Two checks, by id; a withdrawn row has no fix to answer for:
-// - DQ-751 to DQ-777 (the rows of #135): the form below, with any search text.
+// - DQ-751 to DQ-777 (the rows of #135): the old form uses the rule of main
+//   (owner, 2026-11-25, plan revision 6).
 // - From DQ-853 on (owner, 2026-11-19, morning Q4 A, "new rows only"): the search is one pattern
 //   that this module runs again, each id that the row cites must be in a hit line other than the
 //   row, and a yes names its §9 step. The rows in between belong to PRs that were open then.
 const OLD_FORM = { first: 751, last: 777 };
 const FIRST_SEARCHED_ID = 853;
 // `Same cause: yes|no (search: <command or places>: <hits>)`; an escaped `\|` may be in the search.
-const OLD_ANSWER_START = /^Same cause: (yes|no) \(search: ((?:`[^`]*`|[^`|\\)]|\\.)+?): /;
+const OLD_ANSWER = /Same cause: (yes|no) \(search: (?:[^|\\]|\\.)+?: (?:[^|\\]|\\.)+\)/;
 const ANSWER_START = /^Same cause: (yes|no) \(search: `([^`]*)`: /;
 const STEP_START = "; §9: ";
 const OWNER_STEP =
@@ -391,8 +392,8 @@ function isGregorianDate(value: string): boolean {
   );
 }
 
-function answerParts(segment: string, oldForm = false) {
-  const start = (oldForm ? OLD_ANSWER_START : ANSWER_START).exec(segment);
+function answerParts(segment: string) {
+  const start = ANSWER_START.exec(segment);
   if (start === null) return undefined;
   const body = segment.slice(start[0].length);
   let depth = 0;
@@ -524,17 +525,20 @@ function answerProblems(
       if (cells[6] === "withdrawn") return [];
       const cell = cells[8] ?? "";
       const where = `${file.path}: ${dq(id)}`;
-      const formProblem = oldForm
-        ? `${where} has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; rows ${dq(OLD_FORM.first)} to ${dq(OLD_FORM.last)}).`
-        : `${where} has no "Same cause: yes|no (search: \`<pattern>\`: <hits>)" in its "Fix and verification" cell (AGENTS.md §9; each row from ${dq(FIRST_SEARCHED_ID)} on).`;
+      if (oldForm) {
+        if (OLD_ANSWER.test(cell)) return [];
+        return [
+          `${where} has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; rows ${dq(OLD_FORM.first)} to ${dq(OLD_FORM.last)}).`,
+        ];
+      }
+      const formProblem = `${where} has no "Same cause: yes|no (search: \`<pattern>\`: <hits>)" in its "Fix and verification" cell (AGENTS.md §9; each row from ${dq(FIRST_SEARCHED_ID)} on).`;
       const markers = [...cell.matchAll(/\\[\\`]|`[^`]*`|(Same cause:)/g)].filter(
         (token) => token[1] !== undefined,
       );
       if (markers.length === 0) return [formProblem];
       return markers.flatMap((marker, n) => {
-        const answer = answerParts(cell.slice(marker.index, markers[n + 1]?.index), oldForm);
+        const answer = answerParts(cell.slice(marker.index, markers[n + 1]?.index));
         if (answer === undefined) return [formProblem];
-        if (oldForm) return [];
         return searchProblems({
           where,
           answer,

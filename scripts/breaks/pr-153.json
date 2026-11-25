@@ -1,66 +1,22 @@
 {
   "claims": [
     {
-      "id": "old-answer-in-span",
-      "claim": "Rejects a row whose only old-form answer is in a code span.",
+      "id": "old-search-place-parentheses",
+      "claim": "Accepts parentheses in an old-form search place.",
       "test": {
         "kind": "vitest",
         "file": "scripts/records-counts.test.ts",
-        "name": "rejects an old-form answer inside a code span"
+        "name": "accepts an old-form search place with parentheses"
       },
-      "assertion": "expect(checkCounts(files(rows(fix))), \"quoted old answer\").toEqual([NO_ANSWER(751)]);",
+      "assertion": "expect(checkCounts(files(rows(fix))), \"parentheses in the search place\").toEqual([]);",
       "breaks": [
         {
-          "id": "count-quoted-old-answer",
+          "id": "reject-close-paren-in-old-search-place",
           "file": "scripts/lib/records-counts.ts",
           "edits": [
             {
-              "find": "/\\\\[\\\\`]|`[^`]*`|(Same cause:)/g",
-              "replace": "/(Same cause:)/g"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "old-incomplete-answer",
-      "claim": "Rejects an incomplete second old-form answer.",
-      "test": {
-        "kind": "vitest",
-        "file": "scripts/records-counts.test.ts",
-        "name": "rejects an incomplete second old-form answer"
-      },
-      "assertion": "expect(checkCounts(files(rows(fix, { id: 777 }))), \"incomplete old answer\").toEqual([",
-      "breaks": [
-        {
-          "id": "skip-incomplete-old-answer",
-          "file": "scripts/lib/records-counts.ts",
-          "edits": [
-            {
-              "find": "if (answer === undefined) return [formProblem];",
-              "replace": "if (answer === undefined) return oldForm && n > 0 ? [] : [formProblem];"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "old-blank-hits",
-      "claim": "Rejects blank hits in an old-form answer.",
-      "test": {
-        "kind": "vitest",
-        "file": "scripts/records-counts.test.ts",
-        "name": "rejects blank hits in an old-form answer"
-      },
-      "assertion": "expect(checkCounts(files(rows(fix, { id: 760 }))), \"blank old hits\").toEqual([NO_ANSWER(760)]);",
-      "breaks": [
-        {
-          "id": "allow-blank-old-hits",
-          "file": "scripts/lib/records-counts.ts",
-          "edits": [
-            {
-              "find": "if (cited.trim() === \"\") return undefined;",
-              "replace": "if (!oldForm && cited.trim() === \"\") return undefined;"
+              "find": "const OLD_ANSWER = /Same cause: (yes|no) \\(search: (?:[^|\\\\]|\\\\.)+?: (?:[^|\\\\]|\\\\.)+\\)/;",
+              "replace": "const OLD_ANSWER = /Same cause: (yes|no) \\(search: (?:`[^`]*`|[^`|\\\\)]|\\\\.)+?: (?:[^|\\\\]|\\\\.)+\\)/;"
             }
           ]
         }

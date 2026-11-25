@@ -75,9 +75,11 @@ states no state, count or result that a file or a tool owns:
     - `proposal DQ-<n>` for the ledger row of the redesign proposal. A row can name itself
       when its trimmed fix cell starts with `Proposal:`.
     - `fixed answer (AGENTS.md §9, owner 2026-11-11)` for a claim bigger than its proof.
-  - `pnpm records:counts` checks each row from DQ-853 on that is not `withdrawn`, and the form of
-    DQ-751 to DQ-777. It does not check the choice of the words (the reviewer does), that `none`
-    or a no is true, or that a decision named in a step exists.
+  - `pnpm records:counts` applies the marker rules above to each row from DQ-853 on that is not
+    `withdrawn`. For DQ-751 to DQ-777, it checks only that the cell holds one
+    `Same cause: yes|no (search: <command or places>: <hits>)` text, as on `main`. It does not check
+    the choice of the words (the reviewer does), that `none` or a no is true, or that a decision
+    named in a step exists.
 - A `docs/status.md` line of a PR has its state, its date and its link. It has no list of files, no
   count and no claim that a test or a row owns.
   `pnpm check:status` fails on a typed measure. Its units are in `scripts/lib/check-status.ts`.

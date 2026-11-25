@@ -554,21 +554,9 @@ describe("the Same cause answer of a row", () => {
     expect(checkCounts(files(rows(fix))), "no hits").toEqual([NO_ANSWER(751)]);
   });
 
-  it("rejects an old-form answer inside a code span", () => {
-    const fix = "The example is `Same cause: no (search: review log: no hit)`.";
-    expect(checkCounts(files(rows(fix))), "quoted old answer").toEqual([NO_ANSWER(751)]);
-  });
-
-  it("rejects an incomplete second old-form answer", () => {
-    const fix = "Same cause: no (search: review log: no hit). Same cause: yes";
-    expect(checkCounts(files(rows(fix, { id: 777 }))), "incomplete old answer").toEqual([
-      NO_ANSWER(777),
-    ]);
-  });
-
-  it("rejects blank hits in an old-form answer", () => {
-    const fix = "Same cause: no (search: review log:   )";
-    expect(checkCounts(files(rows(fix, { id: 760 }))), "blank old hits").toEqual([NO_ANSWER(760)]);
+  it("accepts an old-form search place with parentheses", () => {
+    const fix = "Same cause: no (search: review notes (archive): no hit)";
+    expect(checkCounts(files(rows(fix))), "parentheses in the search place").toEqual([]);
   });
 
   it("reads the answer only in the Fix and verification cell", () => {
