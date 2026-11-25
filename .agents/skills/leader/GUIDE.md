@@ -109,10 +109,8 @@ sequenceDiagram
     L->>H: all the open questions
     H->>L: answers
   end
-  loop until the human gives the OK
-    L->>H: the plan with the tasks, the workers, the reviewers, and the model and effort of each
-    H->>L: changes to the plan, or the OK
-  end
+  L->>H: the plan with the tasks, the workers, the reviewers, and the model and effort of each
+  H->>L: OK
   L->>W: brief
   Note over W: reads, changes no file
   W->>L: the plan in its own words, with its questions

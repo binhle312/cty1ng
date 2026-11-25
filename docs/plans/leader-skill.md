@@ -38,6 +38,9 @@ gives the parts; the build writes the text.
    2. Read the project's agent instructions and the documents that they name for the task.
    3. Find what the task needs and the documents do not say. Ask each question in one round.
    4. Write the plan and its tests. Wait for the owner where the project asks for an approval.
+
+   [Revision 7](#revision-7-2026-11-25-questions-until-clear-and-a-plan-that-the-owner-reviews)
+   changes stages 3 and 4.
    5. Give the build to a worker.
    6. Check the result against the plan and the project's checks.
    7. Give the review to a different agent. Send the findings to the builder.
@@ -275,6 +278,10 @@ review fixes `f8ce7de` and `ac4e10c` came after that run.
 
 ## Revision 7 (2026-11-25): questions until clear, and a plan that the owner reviews
 
+Approval of this revision: the owner ordered the change and the arena on 2026-11-25 (below). The
+additions beyond the owner's words wait for the owner's review; the PR lists them under
+`Needs human review`.
+
 The owner's words, 2026-11-25: "when leader receive the goal, it can grill owner to clarify things,
 until it know what exactly need to be done, it make a plan for owner to review. That plan must
 include the smaller goals for workers to work on, how many workers will be spawn, how many reviewers
@@ -304,7 +311,7 @@ and put the result together; the PR description has the scores under `Arena`.
   "Workers" (the picks go in the plan), "Get the plan first" (the worker's plan, in the scope of its
   task), and the `handoff.md` row (the plan, and the owner's OK or "no OK yet"; no new file).
 - `GUIDE.md`: the flowchart labels, the stage sketch, "What the skill does" (two plans), the turn
-  diagram (a question loop, then a plan loop that ends with the OK), and the sentence below it.
+  diagram (a question loop, then the plan and the owner's OK), and the sentence below it.
 
 **Additions beyond the owner's words** (each is in `Needs human review` of the PR):
 - The OK is a hard gate. The owner said "for owner to review"; all three arena versions read it as
@@ -315,8 +322,11 @@ and put the result together; the PR description has the scores under `Arena`.
   each task, the change rule after the OK and its exception.
 
 **Test.** The fact map against `a600a49` lists each sentence that leaves, with its reason. A
-headless run of `/leader` with a goal that has gaps checks that the lead agent asks or gives a plan,
-and starts no `codex exec`.
+headless run of `/leader` with a clear goal, the owner away, and a stub `codex` that logs each call
+other than `--version`: on the text before this revision (`d1690e2`), the lead agent ran
+`codex exec` with no OK on a plan; on this revision (`271904d`), it made no `codex exec` call, gave
+the plan with the task, the worker, the reviewer and their models, and waited for the OK. A goal
+with gaps does not tell the two texts apart: both asked questions and made no call.
 
 ## Open questions
 
