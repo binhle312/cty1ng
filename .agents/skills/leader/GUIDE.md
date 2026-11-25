@@ -8,6 +8,8 @@ holds the rules. This file adds no rule.
 The skill keeps a human in the loop. The human starts a new conversation in Claude Code, and types
 `/leader` with the task: the context, the goal, and what "done" means. From that message, the
 conversation is the human's lead agent. No agent loads this skill by itself.
+To continue in a new conversation, the human types `/leader <folder path>` with the path to
+`tmp/leader/` in the lead agent's worktree.
 
 ## Who talks with whom
 
@@ -138,8 +140,8 @@ The diagram does not show the points where the human approves, because each repo
 rules. At each of these points, the lead agent stops and asks the human.
 
 Only the lead agent talks with the human. The review is a new session that did not build the code.
-Its findings go to the lead agent, and the lead agent sends them to the builder's session. After a
-handoff, that is the new session.
+Its findings go to the lead agent, and the lead agent sends them to the builder's session. After
+the worker's handoff, that is the new session.
 
 ## Where the worker works
 
@@ -155,16 +157,17 @@ handoff, that is the new session.
   run at a time, such as a heavy build, the lead agent tells them the order, or sends the second
   message after the first worker is done with that command.
 
-## The 35% limit
+## The context limit
 
 The context window is the text that a model can hold at one time: the brief, the messages, and the
 files that it read.
 
-The lead agent watches how full the context window of each worker is.
-At the limit, the worker gives the handoff as its last message. The lead agent checks and
-corrects it, and a new worker continues from it.
+The lead agent watches how full the context window of each worker is. A regular turn that ends at
+the limit can leave an empty report. The lead agent sends a separate `send --handoff` turn when
+the final state allows it. That turn's last message is the worker's handoff. The lead agent reads
+that turn's report, checks and corrects it, and gives it to a new worker.
 
 The limit applies to a reviewer too. Before each review starts, the lead agent splits it into parts,
-by files or by checks, so that each part ends under 35%.
+by files or by checks, so that each part stays below the limit before it reports.
 
-35% is the human's limit, and the human can change it.
+The human can change the [context limit](SKILL.md#context-of-each-worker).

@@ -17,9 +17,26 @@ $ARGUMENTS
 
 From this message, you are the **lead agent** of this conversation until the task ends. If the
 conversation gets a summary, keep these facts in it: your role, the task, each open gate of the
-owner, and the session list of your workers.
+owner, and the path to the lead agent's folder. After a summary, read `goal.md` and `handoff.md`
+again.
 
 The **lead agent** is the Claude Code conversation that the owner starts.
+
+## The lead agent's files
+
+Use `tmp/leader/` in your own worktree. Before the first write, run `git check-ignore tmp/leader/`.
+If Git does not ignore the folder, ask the owner for another folder.
+
+| Item | What it holds | When to write it |
+| --- | --- | --- |
+| `goal.md` | The goal in the owner's words, the completion criteria, the scope, and the owner's constraints and standing instructions | At the start and after each owner decision that changes it |
+| `handoff.md` | The current state, commits, check results, owner decisions in the owner's words with their questions, failed attempts with reasons, the next action, and open questions. Give the commit where you checked each claim. | Rewrite it in full at the end of each stage, after each owner decision, and before you stop to wait for the owner. |
+| `runs/` | One run folder for each worker or reviewer. The runner records the session in `args.json` and `state.json`. | Start each session in a new run folder. When it ends, write an `ended` file there with the reason. |
+
+The owner starts a new conversation with `/leader <folder path>`. Read `goal.md`, `handoff.md`,
+and `state.json` for each run without an `ended` file. Check the claims against `git status`,
+the head, and the PR. Run the quick checks again. If a file and the repository disagree, use
+the repository and tell the owner. Tell the owner the next action and continue.
 
 ## Who talks with whom
 
@@ -141,9 +158,7 @@ or send the second message after the first worker is done with that command.
 If the start message lets the worker build or run checks, do the [order check](#order-check).
 Start the worker in its own worktree and branch. For Codex, use the
 [script's `start` command](references/codex.md#start).
-Write its run folder, session id, worktree, model, effort and sandbox mode on one line of a
-session list file.
-Add its last [context use](#context-of-each-worker) to that line after each check.
+Use `runs/` and its `ended` files as the session list.
 
 Use the report path that the script prints for each turn.
 For a Codex worker that commits and pushes, use the
@@ -164,7 +179,7 @@ file, so it has no plan turn.
 
 ### Talk with the worker
 
-A worker is a conversation. Use the run folder from the session list file. Send it more messages
+A worker is a conversation. Use its folder in `runs/`. Send it more messages
 when that is needed. Answer its question, accept its plan, or send the findings of a review.
 For Codex, use the [script's `send` command](references/codex.md#send-a-message).
 Before a message that lets it build or run checks, do the [order check](#order-check). If a run goes
@@ -172,8 +187,9 @@ in a wrong direction, [stop the run](#stop-a-workers-run) and send the correctio
 
 ### Stop a worker's run
 
-For Codex, use the [script's `stop` command](references/codex.md#stop-a-run). After the
-stop, check that no command of the worker still runs.
+For Codex, use the [script's `stop` command](references/codex.md#stop-a-run). After `stop` returns,
+wait for the original background command to finish. Check its final state and that no command
+of the worker still runs before you send another turn.
 
 ## Context of each worker
 
@@ -182,19 +198,19 @@ of each worker at each moment.
 
 - The context use is the token count of the last model call, as a percent of the model's context
   window. For Codex, get it with the [script's `context` command](references/codex.md#context-use).
-- Pass the limit of this section to the script with `--limit`. If a regular turn reaches the
-  limit, the script ends it with `limit` (exit 3).
+- Pass the limit of this section to the script with `--limit`. Check the final state in the
+  [turn results](references/codex.md#turn-results) before you send the worker's handoff.
 - At 35% or more (the owner's limit; the owner can change it), replace the worker:
   1. If a turn runs, [stop it with the script](#stop-a-workers-run).
-  2. Send the handoff turn with [`send --handoff`](references/codex.md#send-a-message). Ask the
-     worker to give the handoff as the last message of that turn and do no other work. The script
-     saves the handoff as the report of that turn.
-  3. Read the handoff. Compare each claim with the diff, the commits and the test results. Correct
-     it, and add each fact that it misses.
+  2. If the final state allows a new turn, use [`send --handoff`](references/codex.md#send-a-message).
+     Ask for the worker's handoff as the last message of that turn. Ask it to do no other work.
+     The script saves the worker's handoff as the report of that turn.
+  3. Read the worker's handoff. Compare each claim with the diff, the commits and the test results.
+     Correct it, and add each fact that it misses.
   4. Start a new worker with the same model, effort and sandbox, in the same worktree. Give it the
-     brief and the handoff. Its first turn returns its plan for the rest of the work.
-  5. Mark the old session as ended in the session list, and send it no more messages.
-- The handoff has:
+     brief and the worker's handoff. Its first turn returns its plan for the rest of the work.
+  5. Write the `ended` file in the old run folder. Send that session no more messages.
+- The worker's handoff has:
   - the goal, and what "done" means;
   - the work that is done, with each commit;
   - the state of the worktree: the changed files that are not committed;
@@ -202,9 +218,10 @@ of each worker at each moment.
   - the open problems and questions;
   - the next steps, in order;
   - what the new worker must not do again, with the reason.
-- Split each review before it starts, by files or by checks, so that each part ends under 35%
-  (owner, 2026-11-24). A handoff does not save a review that is too big: the new reviewer reads
-  the brief, the handoff and the files again, and stops at the limit before it reports.
+- Split each review before it starts, by files or by checks, so that each part ends under the
+  limit (owner, 2026-11-24). A worker's handoff does not save a review that is too big: the new
+  reviewer reads the brief, the worker's handoff and the files again, and stops at the limit
+  before it reports.
 
 ## Rules for the worker
 
@@ -220,7 +237,7 @@ and the push.
   Push only to the branch of the brief, and with no force.
 - If you pushed: in the report, give the pushed commit and the result of the remote checks for it.
 - For each claim in the report, give the command and its result.
-- When the lead agent asks for a handoff, give the handoff as your last message, and do no other work.
+- When the lead agent asks for the worker's handoff, give it as your last message and do no other work.
 
 ## The project wins
 
