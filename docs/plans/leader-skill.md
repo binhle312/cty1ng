@@ -490,6 +490,22 @@ Runs at `3d491a7`:
   and reported the commit, started no worker, kept the gate closed.
 - Two tasks, real Codex: the lead agent made the 4-line README task itself (own work) and had the
   outside reviewers check it with the worker's task.
+- Two tasks, real Codex, code and a measurement: two worker sessions started at the same second;
+  the code worker started `test-verifier` and `reviewer`, the measurement worker (default worker)
+  `reviewer` only. The lead agent used one Astra session for both teams.
+
+Runs at `80d5651` (after two rounds of outside review):
+- Clear goal, Codex stub: 0 `codex exec` and 0 subagents before the OK; the plan names
+  "Checkpoints: 1, the final report", the two read-only outside reviewers and the backup.
+- Backup: the team checks, then two Opus outside reviewers; each fix went back to the same
+  checkers and reviewers. Gap: the lead agent did not set the subagents' effort (the text says
+  "give it its model" only); not fixed, the patches are stopped.
+- Two tasks, real Codex: both worker sessions started at the same second; no subagent in a plan
+  turn; follow-ups to the same subagents in each fix turn; an Opus and an Astra reviewer for each
+  task; the same pair checked each fix.
+
+The outside review stopped after two fix checks (AGENTS.md §9); the open findings and the owner's
+options are in the PR.
 
 ## Open questions
 
