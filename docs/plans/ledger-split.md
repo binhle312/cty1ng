@@ -326,7 +326,7 @@ Revision 6 adds these places. Their line numbers refer to the commit that fixes 
 - `.github/pull_request_template.md:46–48` and `:52–53` — fixed. The description holds no state, count or fix commit of a ledger row; for its review findings, a PR with no milestone follows step 2, which is the one home of that rule (Q2 A, R7W-F1, R7L-F3).
 - `docs/workflows/pull-request.md:46–47` and `:51–53` — fixed. For its review findings, a PR with no milestone follows step 2 (Q2 A, R7L-F3).
 - `docs/workflows/merge-bar.md:19` — right (revision 7). Its P3 home is for a PR in a milestone or an audit; step 2 gives the home for a PR with no milestone.
-- `docs/workflows/merge-bar.md:70`, `:90`, `:94–95` and `:97–102` — right (revision 7). These rules give a review finding a ledger row or an issue row, so they are for a PR in a milestone or an audit; step 2 says so.
+- `docs/workflows/merge-bar.md:70`, `:90`, `:94–95` and `:97–103` — right (revision 7). Lines 70, 90 and 94 give a review finding a ledger row or an issue row, and the measure at 97–103 reads such rows, so they are for a PR in a milestone or an audit; step 2 says so.
 - `docs/review-guide.md:94` — right. A plan difference goes under `Differences from the plan`; it is not a review record.
 
 ## Revision 6: the owner's answers after review round 6
@@ -397,7 +397,7 @@ mapping words.
   "Where a rule names an issue row for a review finding, such a PR uses its line in that table" of
   revision 6, and the Q3 A verdicts of the merge-bar places in "Round places".
   - Rules that L turns off for a review finding of such a PR: merge bar 19, 70, 90, 94–95 and the
-    measure at 97–102; implementation 50 and 52; review guide 109. A PR with no milestone has no
+    measure at 97–103; implementation 50 and 52; review guide 109. A PR with no milestone has no
     round 2 measure; #153 has 0 round 2 corrections.
   - Rules that stay on: the row size and removed-words rules of the PR workflow (lines 94, 118 and
     128), merge bar 28, and the defect rows of the template.
@@ -405,15 +405,45 @@ mapping words.
   trimmed cells of a heading line that starts with `|`. The heading lookup itself is from
   `95e830e`; `b76a015` of #153 uses it for issue rows. The fix also lets `records:counts` find a
   padded heading of its own tables. R6C1-F1 (an extra space after the issue id) stays a limit.
-- **Test strategy.** Test first: `finds the issue heading with extra spaces` failed on `c1efeee`
-  with `[raw row]` in place of `[Source]`. Break claim `removed-words-padded-heading` restores the
-  exact heading match. The rule text has no code test. The round 9 brief replays three findings of
-  #153 against step 2 and the merge bar: R7L-F5 (fixed: one table line, no follow-up row), R6B1-F1
-  (open: one table line and one follow-up row), and a round 2 correction (a table line that the
-  measure does not read).
+- **Test strategy.** Test first: a test of a padded `Issue ID` heading, and a break that restores
+  the exact heading match. The rule text has no code test. The round 9 brief replays two findings
+  of #153 and one made-up case against step 2 and the merge bar: R7L-F5 (fixed: one table line, no
+  follow-up row), R6B1-F1 (open: one table line and one follow-up row), and a round 2 correction
+  (a table line that the measure does not read; #153 has none).
 - **Round 9** reviews `c1efeee..` the final head and the PR description. Check D is split in two.
   Its brief says that the limit of L is known and tracked; reviewers report each issue that they
   find.
 - **Fixes with no question:** the description facts of round 8 (R8D-F1, R8D-F4 to F9, R8L-F4) and
   the plan line R8W-F6. The line numbers of the round places that revision 7 changes refer to the
   revision 7 commit.
+
+## Revision 8: the owner's answers after review round 9
+
+Owner, 2026-11-25, after round 9 (the review of `c1efeee..dc23e78`), on the round 9 page: Q1 S,
+Q2 A, Q3 A and Q4 C. Two consultants (Opus 5.5 and GPT-6.2 Astra) checked the questions first. The
+page told the owner that R9W-F1 is the fourth round of the Q2 A rule-text cause after the redesign
+L, and that the Q2 F fix changed a shared function, wider than the Q2 F page said (R9B-F1).
+
+- **Q1 S, one heading rule** (R9B-F1): a line is the heading of a table when its trimmed cells
+  match and a separator line follows it. The separator rule is the one of the split-table check,
+  in one constant. This applies to each reader of `tablesWithHeader` (`records:counts` and
+  `records:removed-words`), so an unpadded heading with no separator line no longer opens a table
+  either. That older gap is from before #153.
+- **Q2 A, two rule sentences** (R9W-F1, R9W-F2, R9L-F2):
+  - `docs/workflows/implementation.md:33`: "At handoff, reconcile the PR's issue rows and their
+    evidence there. Step 2 says where review rounds and review findings go."
+  - Ledger §7 step 2: "The line holds the fix, or the decision that leaves the finding open, and
+    the "Same cause" answer with its search; the finding gets no issue row (owner, 2026-11-25)."
+- **Q3 A, answers in a PR description** (R9D2-F2, R9D2-F3): the owner's answer is the §9 decision
+  for a repeated answer defect in the table of a PR description: fix it in place, and review checks
+  each line. One Follow-ups row asks a later PR for a script check of that table.
+- **Q4 C, round 10** is the complete review of the final head (review guide §6). It ends the review
+  if it finds no P1 or P2. Its checks are split by file group, each under 35% of its context. The
+  owner limits and the costs of Q1 L are not findings.
+- **Test strategy for Q1 S.** Test first, each with a break claim: a padded heading with no
+  separator line (the cells are compared as one raw row), an unpadded heading with no separator
+  line, and a padded data row in another table (no second register).
+- **Fixes with no question:** the description facts of round 9 (R9D1-F1 to F5, R9D2-F4, R9D2-F5),
+  each "yes" answer of the description names its §9 step, and the plan lines R9W-F3, R9W-F4 and
+  R9L-F4. R9L-F5: the revision 7 record came in `dc23e78`, after its code commit `f5c7f9a`; this
+  revision comes before its code.
