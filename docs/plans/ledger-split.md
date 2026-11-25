@@ -34,6 +34,7 @@ Revision 6, owner, 2026-11-25, after round 6 ("All your picks"): the section "Re
 Revision 7, owner, 2026-11-25, after round 8 (Q1 L, Q2 F): the section "Revision 7" below.
 Revision 8, owner, 2026-11-25, after round 9 (Q1 S, Q2 A, Q3 A, Q4 C): the section "Revision 8" below.
 Revision 9, owner, 2026-11-25, after round 10 ("let goes with your picks": Q1 E, Q2 R, Q3 A): the section "Revision 9" below.
+Revision 10, owner, 2026-11-25, after round 11 ("let go with your picks": Q1 A to Q6 A): the section "Revision 10" below.
 
 ## Goal
 
@@ -491,3 +492,36 @@ consultants (Opus 5.5 and GPT-6.2 Astra) checked the questions first.
 - **Fixes with no question:** the other round 10 findings, in place. R10D5-F1 cites round 8 Q1 L;
   R10D5-F2, R10D2-F1 and R10D6-F1 cite round 9 Q3 A; R10D2-F2 cites DQ-155 (owner, 2026-11-09,
   option A).
+
+## Revision 10: the owner's answers after review round 11
+
+Owner, 2026-11-25, after round 11, on the round 11 page: "let go with your picks" (Q1 A, Q2 A,
+Q3 A, Q4 A, Q5 A, Q6 A). Two consultants (Opus 5.5 and GPT-6.2 Astra) checked the questions first.
+
+- **Q1 A, test first for Q2 R.** The owner approves the smaller criterion for the Q2 R fix: its
+  tests fail on the code before the fix. The PR description names the gap under Differences and
+  under Needs human review.
+- **Q2 A, rows over 600 bytes** (R11W-F1, R11L1-F1; the cause repeats DQ-862). An exception to
+  "This PR does not shorten rows by hand" (revision 4): the builder cuts only text that this PR
+  added to DQ-857 and DQ-865, so that each row is at most 600 bytes and stays longer than on
+  `main`. A Follow-ups row asks for a check that refuses a row that crosses 600 bytes against the
+  base, in `records:removed-words`, which pairs base and head rows.
+- **Q3 A, four old answers with no covering decision** (body lines 289, 348, 411 and 486 of the
+  description at `489bea0`): the fixes stand as made, with no redesign. Each line answers yes and
+  cites this answer. For line 289 this also settles the open ruling of DQ-477.
+- **Q4 A, the P3s and the last check.**
+  - A P3 in the PR description is fixed in place only by removing or narrowing words.
+  - The P3s in the repository go into one Follow-ups row with their ids.
+  - Before each check, a script counts the cells of each table row in the description.
+  - If a P2 is left after the last allowed check, the PR stays a draft, and the lead agent asks
+    the owner for one focused check of that repair.
+- **Q5 A, R11L2-F1, second part: P3.** `records:removed-words` reads only the live ledger and the
+  archive, the files with issue rows. A line under Differences says why.
+- **Q6 A, one checked-file list** (§9 redesign of the cause of S1-F3, S2-F2, R10C-F1, R11D2-F1
+  and R11PC-F1). `scripts/records-counts.ts` runs the form, split-table and cell-count checks
+  once over all four delivery-quality files. The cell-count check knows the prevention heading.
+  `writeCounts` never writes the prevention file.
+  - Test strategy: test first, each with a break claim. A test proves that each check covers
+    each file (a CR, a padded id, a blank line in a table, a row with a wrong cell count, in each
+    of the four files); the real files give no problem; `--write` writes nothing on a problem in
+    any file.
