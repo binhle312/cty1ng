@@ -85,7 +85,6 @@ the consultants (they have their own skill).
 | `.agents/skills/leader/SKILL.md` | New. `disable-model-invocation: true`; the trigger first in the description |
 | `.agents/skills/leader/references/worker-brief.md` | New. The brief template for a worker: context and goal, facts, scope, limits, done and checks, the first turn (plan only), the report form, the immediate task |
 | `.agents/skills/leader/references/reviewer-brief.md` | New. The brief template for a reviewer: a different agent, the diff and the plan to check, the checks it runs, no commits, findings with evidence |
-| `.agents/skills/leader/references/test-verifier-brief.md` | New in revision 9. The brief template for a test verifier: a new session in its own worktree, the acceptance criteria, its own test cases, PASS, FAIL or NOT VERIFIED with evidence, no commits |
 | `.agents/skills/leader/agents/openai.yaml` | New. `allow_implicit_invocation: false` |
 | `.claude/skills/leader` | New relative link |
 | `.agents/skills/README.md` | One row |
@@ -379,52 +378,65 @@ Claude Sonnet worker (high) and a Claude Opus reviewer (high): the worker's plan
 one review finding, the fix, and the check of the fix; it used no other `codex` program. The test
 project has two files, so no run needed a broad search: the Haiku search did not run.
 
-## Revision 9 (2026-11-25): a team for each task, and terminal sketches
+## Revision 9 (2026-11-25): worker teams, two outside reviewers, and terminal sketches
 
-Approval of this revision: the owner approved the plan of this revision on 2026-11-25 ("yes,
-agree"), after the answers below. The additions beyond the owner's words wait for the owner's
-review; the PR lists them under `Needs human review`.
+Approval of this revision: the owner approved the design on 2026-11-25 (the answers below, then
+"1. Agree with your suggestion for the mdel ... 4. Agree 5. yes"). The additions beyond the owner's
+words wait for the owner's review; the PR lists them under `Needs human review`.
 
 The owner's words, 2026-11-25: "Basic roles that I have the team should have: 1. explorer 2.
-implemeter 3. test verifier 4. reviewer". Then: "It like a team. When I mean "worker", I meant these
-4 roles for the coding task, default role for any other task that these 4 roles not cover"; the
-explorer: "It's Claude Explore subagent on Haiku"; the reviewer role fits a task that is not code,
-so "include it"; "Session A shouldn't communicate with each other, actually, when needed, leader can
-tell them to work on the different worktrees ... leader should break down the tasks to smaller
-independent tasks, so when needed, it spawn up to 2 workers to work at the same time" (the lead
-agent read "2 workers" as 2 teams; the owner agreed); "Leave Codex as it is" for the subagents that
-a Codex session starts. And: "replace the mermaid chart with the terminal sketch in the PR".
+implemeter 3. test verifier 4. reviewer"; "When I mean "worker", I meant these 4 roles for the
+coding task, default role for any other task that these 4 roles not cover"; the explorer: "It's
+Claude Explore subagent on Haiku", and "Haiku only help to explore to gather information and give
+back to leader so leader have enough context to make the plan"; the test verifier and the reviewer:
+"it's the subagent in worker session, just like test verifier and reviewer"; "We also need a
+separate reviewers (one from Anthropic, one from OpenAI), they will help leader to review the PR by
+each state (like workers team)"; "Launch these "reviewers" when worker team report each state as we
+have to ensure the worker is on the right track"; "let use GPt6.2 astra high as reviewer from
+OpenAI"; "Session A shouldn't communicate with each other, actually, when needed, leader can tell
+them to work on the different worktrees ... it spawn up to 2 workers to work at the same time";
+"Leave Codex as it is" for the other subagents of a Codex session; and "replace the mermaid chart
+with the terminal sketch in the PR". A first version of this revision (`6e311fd`) made the test
+verifier and the reviewer separate sessions of the lead agent; the owner corrected it, and this
+text replaces it.
 
 **What changes.**
-- `SKILL.md`, a new part "Teams" under "Workers": a table of the roles (explorer, implementer, test
-  verifier, reviewer, default worker), with the job, the Codex session and the backup of each. A
-  coding task gets the explorer, the implementer, the test verifier and the reviewer; another task
-  gets the default worker and the reviewer. At most 2 teams run at the same time (owner,
-  2026-11-25); the search, a new session at the limit and a check of the fixes add no team.
-- The explorer is the `Explore` search of revision 8: it runs before the plan, so that the plan can
-  name the files of each task, and its report goes into the briefs (the lead agent's reading of
-  where the explorer runs).
-- Stage 4: the plan gives the team of each task, and the model and effort of each member. Stage 7:
-  for a coding task, the test verifier and the reviewer check the same commit at the same time; for
-  another task, the reviewer checks alone; both check the fixes again.
-- The test verifier: a new session in a worktree of its own at the builder's commit, on the
-  reviewer column of the model table (never weaker than the builder); no commit and no plan turn.
-  In the backup, a test role such as `test-verifier`, with the reviewer's model passed to it. New
-  template `references/test-verifier-brief.md`.
-- Sessions do not talk with each other: the lead agent carries each result, after it checks it.
-  The session list in `handoff.md` names the role of each session.
+- `SKILL.md`, "Teams" under "Workers": each task gets a worker team, one worker session. For a
+  coding task, the implementer builds; after the build, it starts its own `test-verifier` and
+  `reviewer` subagents at the same time, by role name, and fixes their findings before it reports.
+  A task that is not code gets a default worker, with the `reviewer` subagent only. At most 2 worker
+  teams run at the same time (owner, 2026-11-25).
+- `SKILL.md`, a new part "Outside reviewers": at each report of a worker team (a checkpoint, the
+  final report, a report of fixes), the lead agent starts two reviewers at the same time: a Claude
+  Code subagent on Opus at `high` (with a review role that cannot edit files, such as `reviewer`),
+  and a new Codex session on `gpt-6.2-astra` at `high`, read-only. Stages 4 and 7 follow.
+- The explorer (`Explore` on Haiku) only gathers facts for the lead agent's plan; it is not in a
+  team.
+- `references/worker-brief.md`: a part "Your team" that names the two subagent roles.
+- `references/codex.md`: the table keeps the worker column; the OpenAI outside reviewer is always
+  `gpt-6.2-astra` at `high`. The sentence "With `ultra`, Codex starts agents of its own" was false
+  (the runs of 2026-11-24 and 2026-11-25 show subagents at `high`); it now says that a Codex session
+  can start subagents at any effort.
+- The backup: a Claude subagent cannot start subagents, so the lead agent starts the Claude test
+  verifier and team reviewer itself, after the build; a second Claude Opus session takes the place
+  of the OpenAI reviewer.
+- Sessions do not talk with each other: the lead agent carries each result. The session list in
+  `handoff.md` names the role of each session.
 - `GUIDE.md`: both Mermaid charts are now terminal sketches (owner's order; revision 6 kept the
   Mermaid blocks). The sketches, the stages, the table "Who does which work" and the text show the
-  teams.
-- `docs/workflows/coordination.md`: a row for the test verifier; the builder is the implementer.
-- `.agents/skills/README.md`: the row of `leader` names the teams and the sketches.
+  worker teams and the outside reviewers.
+- `docs/workflows/coordination.md`, `.agents/skills/README.md`: the rows follow.
 - Revision 8 said that `test-verifier` is not used; this revision changes that.
 
 **Additions beyond the owner's words:**
-- The test verifier's model: the reviewer column of the model table, never weaker than the builder.
-- The test verifier works in a worktree of its own at the builder's commit, and commits nothing.
-- What counts as a team for the limit of 2 (not the search, not a new session at the limit, not a
-  check of the fixes).
+- The Anthropic reviewer runs on Opus at `high` (the lead agent's suggestion; the owner agreed).
+- "Each state" read as each report of a worker team: a checkpoint, the final report, a report of
+  fixes.
+- In the backup, the lead agent starts the test verifier and the team reviewer itself, and a second
+  Claude Opus session replaces the OpenAI reviewer (the owner agreed).
+- The team's subagents run on the models of the owner's Codex role files (`gpt-6.2-sol` at `high`),
+  which can be weaker than an Astra worker; the outside reviewers are never weaker (the owner
+  agreed).
 - A code change that the lead agent makes itself gets no team: a different agent reviews it in the
   next review round, as before.
 

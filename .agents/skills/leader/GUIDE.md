@@ -23,23 +23,29 @@ types `/leader` with that path.
      task, answers, OK of the plan   ▼    ▲   questions, plan, report
                        ┌──────────────────────────────┐       ┌──────────────────────────┐
  ┌──────────────┐ asks │ Lead agent                   │ asks  │ Explorer                 │
- │ Advisor tool │ ◀─── │ the Claude Code conversation │ ────▶ │ Claude Code `Explore`    │
- │ built into   │ ───▶ │ carries each result from one │ ◀──── │ on Haiku, read-only      │
- │ Claude Code  │advice│ session to the next          │ paths,│ search, before the plan  │
- └──────────────┘      └──────────────────────────────┘ lines └──────────────────────────┘
-          briefs, answers, findings   ▼    ▲   plans, questions, reports, findings
- ╔═════════════════════════════════════════════╗   ╔═══════════════════════════════════╗
- ║ Team of a coding task (the explorer too)    ║   ║ Team of another task              ║
- ║                                             ║   ║ (documents, research, a measure)  ║
- ║ Implementer    plan first, builds, commits  ║   ║ Default worker   does the task    ║
- ║ Test verifier  tests each criterion         ║   ║ Reviewer         checks the result║
- ║ Reviewer       reviews, changes no file     ║   ║                                   ║
- ║ Codex sessions; Claude roles if Codex fails ║   ║ Codex sessions; Claude if it fails║
- ╚═════════════════════════════════════════════╝   ╚═══════════════════════════════════╝
-  At most 2 teams at the same time. The sessions do not talk with each other.
+ │ Advisor tool │ ◀─── │ the Claude Code conversation │ ────▶ │ Claude Code `Explore` on │
+ │ built into   │ ───▶ │ carries each result from one │ ◀──── │ Haiku: facts for the     │
+ │ Claude Code  │advice│ session to the next          │ facts │ plan, read-only          │
+ └──────────────┘      └──────────────────────────────┘       └──────────────────────────┘
+      briefs, answers, findings   ▼    ▲   plans,     review briefs   ▼    ▲   findings
+                                           reports
+ ╔══════════════════════════════════════════╗     ┌──────────────────────────────────────┐
+ ║ Worker team: one Codex session per task  ║     │ Outside reviewers, at each report of │
+ ║ (at most 2 teams at the same time)       ║     │ a team, at the same time:            │
+ ║                                          ║     │                                      │
+ ║ Implementer: the session itself; plan    ║     │ From Anthropic: Claude Opus, high,   │
+ ║   first, builds, tests, commits, fixes   ║     │   the `reviewer` role                │
+ ║   └─ its own subagents, at the same time:║     │ From OpenAI: Codex gpt-6.2-astra,    │
+ ║      ├─ test-verifier                    ║     │   high, read-only                    │
+ ║      └─ reviewer                         ║     │                                      │
+ ║ A task that is not code: a default       ║     │ Neither built the work; neither      │
+ ║ worker, with the reviewer subagent only  ║     │ changes a file                       │
+ ╚══════════════════════════════════════════╝     └──────────────────────────────────────┘
+  The sessions do not talk with each other. If Codex cannot run, Claude Code subagents
+  take each Codex place.
 ```
 
-The sessions of a team send no messages to each other or to the human. Each message passes through
+The sessions send no messages to each other or to the human. Each message passes through
 the lead agent. The lead agent can ask the advisor before it decides.
 
 ## The stages of a task, with the human's gates
@@ -53,16 +59,17 @@ the lead agent. The lead agent can ask the advisor before it decides.
                                                exactly what must be done)
                                                   │
                                                   ▼
- 4 plan: the tasks, the team of each,
+ 4 plan: the tasks, the worker team of each,
          the model and the effort of each ══▶ HUMAN reviews it and gives the OK
       │
       ▼
- 5 implementer: plan in its own words ──▶ lead agent accepts ──▶ implementer builds
+ 5 worker: plan in its own words ──▶ lead agent accepts ──▶ worker builds, and its
+   test-verifier and reviewer subagents check
    (see The lead agent's own work)
       │
       ▼
- 6 lead agent checks the report ──▶ 7 test verifier + reviewer ──▶ fixes ──▶ lead agent
-                                                                         checks the fixes
+ 6 lead agent checks each report ──▶ 7 two outside reviewers ──▶ fixes ──▶ lead agent
+                                                                        checks the fixes
       │
       ▼
  8 report ══▶ the merge, only when the HUMAN asks for it
@@ -82,10 +89,10 @@ fix, or when an approval is missing. Other work goes on.
 | --- | --- |
 | Plans, briefs, records, messages to the human | The lead agent |
 | [The lead agent's own work](SKILL.md#the-lead-agents-own-work) | The lead agent |
-| A broad search for the documents and the code of a task | The explorer: the `Explore` subagent of Claude Code on Haiku, before the plan |
-| Each other code change, also a simple one | A coding team: the explorer, a Codex implementer, a Codex test verifier and a Codex reviewer |
-| A task that is not code: documents, research, a measurement | A default team: a Codex default worker and a Codex reviewer |
-| Each test and each review | A new session that did not build the work |
+| A broad search for the facts of the plan | The explorer: the `Explore` subagent of Claude Code on Haiku, for the lead agent |
+| Each other code change, also a simple one | A worker team: a Codex implementer, with its own `test-verifier` and `reviewer` subagents |
+| A task that is not code: documents, research, a measurement | A worker team: a Codex default worker, with its own `reviewer` subagent |
+| The review of each report of a team | Two outside reviewers at the same time: Claude Opus and Codex `gpt-6.2-astra`, both at `high` |
 
 The rules for the worker are in `SKILL.md`. The templates for the briefs are in `references/`.
 
@@ -95,35 +102,37 @@ The [models](references/codex.md#pick-the-models) and the [commands](references/
 ## What the skill does
 
 The human talks with one agent: the lead agent. It is the Claude Code conversation that the human
-starts. The lead agent gives each task to a team of Codex sessions, at most 2 teams at the same
-time, and it talks with each session when that is needed. If Codex cannot run because of its
+starts. The lead agent gives each task to a worker team, one Codex session, at most 2 teams at the
+same time, and it talks with each session when that is needed. Two outside reviewers check each
+report of a team. If Codex cannot run because of its
 account, Claude Code subagents do that work.
 The human approves, decides, and merges.
 
 A task has two plans. The lead agent's plan goes to the human, and the human gives the OK before a
-team starts. Each implementer or default worker then gives the lead agent a plan for its own task. The lead
+team starts. Each worker then gives the lead agent a plan for its own task. The lead
 agent's OK on a worker's plan is not the human's approval. When the rules of the repository ask for
 the human's approval, the lead agent stops and asks the human.
 
 ## One task, turn by turn
 
 ```
- Human            Lead agent                   Implementer              Test verifier and
-   │                  │                        (one session)            reviewer (new sessions)
+ Human            Lead agent                   Worker team              Outside reviewers
+   │                  │                        (one Codex session)      (Claude Opus and
+   │                  │                              │                   Codex Astra, new)
    │── task ─────────▶│                              │                         │
    │◀─ questions ─────│ all the open questions; again while one is open        │
    │── answers ──────▶│                              │                         │
-   │                  │ the explorer (Explore on Haiku) searches; its report   │
-   │                  │ names the files of each task                           │
-   │◀─ the plan ──────│ tasks, the team of each, model and effort of each      │
+   │                  │ the explorer (Explore on Haiku) gathers facts          │
+   │◀─ the plan ──────│ tasks, worker teams, model and effort of each          │
    │── OK ───────────▶│                              │                         │
    │                  │── brief ────────────────────▶│ reads, changes no file  │
    │                  │◀─ its plan, with questions ──│                         │
    │                  │── answers or corrections ───▶│ (while the plan needs   │
    │                  │◀─ the new plan ──────────────│  them)                  │
    │                  │── "plan OK, build" ─────────▶│ builds and commits;     │
-   │                  │                              │ pushes if the brief     │
-   │                  │                              │ names a remote branch   │
+   │                  │                              │ its test-verifier and   │
+   │                  │                              │ reviewer subagents      │
+   │                  │                              │ check; it fixes         │
    │                  │── stop + correction ────────▶│ (if the work goes in a  │
    │                  │                              │  wrong direction; same  │
    │                  │                              │  session, context kept) │
@@ -132,16 +141,15 @@ the human's approval, the lead agent stops and asks the human.
    │                  │◀─ the handoff ───────────────│                         │
    │                  │ checks and corrects it; a new worker session gets the  │
    │                  │ brief and the handoff, and sends its plan for the rest │
-   │                  │◀─ report of each turn ───────│ commits, push, checks   │
-   │                  │◀─ final report ──────────────│ each claim, with its    │
-   │                  │                              │ command and its result  │
+   │                  │◀─ report (each checkpoint) ──│ commits, push, checks,  │
+   │                  │                              │ its subagents' results  │
    │                  │ compares each claim with the diff, the test results,   │
    │                  │ and the remote checks if the worker pushed             │
-   │                  │── test brief, review brief ───────────────────────────▶│ both check
-   │                  │◀─ PASS / FAIL per criterion, findings ─────────────────│ the commit
-   │                  │ checks each finding                                    │
-   │                  │── the findings ─────────────▶│ the builder's session   │
-   │                  │◀─ report of the fixes ───────│ fixes them              │
+   │                  │── review briefs ──────────────────────────────────────▶│ both at
+   │                  │◀─ findings ────────────────────────────────────────────│ the same
+   │                  │ checks each finding                                    │ time
+   │                  │── the findings ─────────────▶│ fixes them              │
+   │                  │◀─ report of the fixes ───────│                         │
    │                  │── the fixes to check ─────────────────────────────────▶│
    │                  │◀─ the checks of the fixes ─────────────────────────────│
    │◀─ the result ────│ with each open issue         │                         │
@@ -157,9 +165,9 @@ The diagram shows the human's OK of the plan. It does not show the other points 
 approves, because each repository has its own rules. At each of these points, the lead agent stops
 and asks the human.
 
-Only the lead agent talks with the human. The test verifier and the reviewer are new sessions that
-did not build the code. Their findings go to the lead agent, and the lead agent sends them to the
-builder's session. After a
+Only the lead agent talks with the human. The outside reviewers are new sessions that did not
+build the code. Their findings go to the lead agent, and the lead agent sends them to the builder's
+session. After a
 handoff, that is the new session.
 
 ## Where the worker works
@@ -170,8 +178,7 @@ handoff, that is the new session.
 - A turn is one run of the worker: from a message of the lead agent to the report of the worker.
 - If the brief names a remote branch, the worker pushes its commits to that branch at each
   checkpoint. It pushes to no other branch, and it does not force a push.
-- A test verifier and a reviewer make no commits. The test verifier runs its tests in a worktree
-  of its own.
+- A reviewer makes no commits.
 - The lead agent breaks the human's goal into small tasks that do not touch each other's files or
   wait for each other, so that several workers and reviewers work at the same time, each on a small
   piece of work. The plan names these tasks. The lead agent runs at most 2 teams at the same time,

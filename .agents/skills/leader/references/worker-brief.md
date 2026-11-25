@@ -62,6 +62,16 @@ Write the report for a reader who did not see your work. Put the key points firs
 - Your questions, if a fact is missing.
 </report>
 
+<your_team>
+After you build, start two subagents of your own at the same time, and name the role of each:
+- `test-verifier`: it tests each acceptance criterion of the task, from the requirements, and gives
+  PASS, FAIL or NOT VERIFIED with evidence.
+- `reviewer`: it reviews your change and its evidence, and changes no file.
+> For a task that is not code, keep only the reviewer.
+Give each one the task, the acceptance criteria, the worktree and the commands. Fix their findings
+before you report, and put their results in your report.
+</your_team>
+
 <rules_for_the_worker>
 [Copy the list "Rules for the worker" from the leader skill here.]
 If a command fails or times out, find the cause and try again another way. Stop only for a missing

@@ -29,7 +29,8 @@ The **lead agent** is the Claude Code conversation that the owner starts.
 
 - The owner talks only with you. Each question, report and request for an approval goes from you.
 - You can ask the built-in `advisor` tool before you decide. Its advice is not an approval.
-- You start each session of a [team](#teams), and each one reports only to you.
+- You start each [worker team](#teams) and each [outside reviewer](#outside-reviewers), and each
+  one reports only to you.
 - Your sessions do not talk with each other. Carry each result from one to the next, after you
   check it.
 
@@ -48,9 +49,8 @@ The **lead agent** is the Claude Code conversation that the owner starts.
 Keep short reads for yourself. Give a broad search for the documents and the code that a task
 needs to the built-in `Explore` subagent of Claude Code, with the model Haiku. Ask it for paths,
 line numbers and short quotes, and read each line yourself before your plan depends on it (owner,
-2026-11-25). This is the explorer of the [teams](#teams). A search subagent changes no file and is
-not a worker, so it can run before the owner's OK: run it before the plan, so that the plan can
-name the files of each task, and put its report in the briefs.
+2026-11-25). The explorer only gathers facts for you, so that you have the context to write the
+plan. It changes no file and is not a worker, so it runs before the owner's OK.
 
 Do these tasks yourself, and start no worker for them:
 
@@ -80,13 +80,14 @@ Give each other build to a worker, including a simple code change.
      checks, so that each worker and each reviewer ends well under the
      [limit](#context-of-each-worker) (owner, 2026-11-25). Make the tasks independent: no task
      changes a file of another task or waits for another task. Give them to different
-     [teams](#teams), and check each task apart. A task that needs the result of another task
+     [worker teams](#teams), and check each task apart. A task that needs the result of another task
      starts after that task is done. Name the files of each task, and the order if one exists.
-   - **The teams:** the team of each task, and each task that you do
-     [yourself](#the-lead-agents-own-work). A big review has
-     [more than one part](#context-of-each-worker), and each part has its own reviewer.
-   - **The models:** the model and the effort of each member of each team, with one reason from
-     its task. See [Workers](#workers).
+   - **The workers:** the worker team of each task, and each task that you do
+     [yourself](#the-lead-agents-own-work).
+   - **The reviewers:** the [two outside reviewers](#outside-reviewers) of each team. A big review
+     has [more than one part](#context-of-each-worker), and each part has its own reviewers.
+   - **The models:** the model and the effort of each worker, with one reason from its task. See
+     [Workers](#workers).
 
    Make the plan as short as the work. For a code change that you make yourself, a few lines are
    enough. Work that starts no worker and no reviewer needs no plan: do it.
@@ -102,11 +103,10 @@ Give each other build to a worker, including a simple code change.
    worker's plan, the diff, the project's check results, including the test results, and, for
    pushed work, the remote checks of the pushed head. Read the worker's [context use](#context-of-each-worker) after each turn, and
    about each minute while a turn runs.
-7. **Test and review:** for a coding task, the test verifier and the reviewer check the same commit
-   at the same time. For another task, the reviewer checks alone. Each is a new session that did
-   not build the work, and none of them commits. Send their findings to the session that built the
-   work. They check the fixes again. A different agent also reviews each code change that you made
-   yourself, in the next review round.
+7. **Review:** at each report of a worker team, start the
+   [two outside reviewers](#outside-reviewers) at the same time. Send the findings that you accept
+   to the worker session. The reviewers check the fixes again. A different agent also reviews each
+   code change that you made yourself, in the next review round.
 
    If the review message lets the reviewer run checks, do the [order check](#order-check).
    For Codex, use the [review run in `references/codex.md`](references/codex.md#review-run). If a
@@ -157,31 +157,40 @@ Before you decide who builds or who reviews, read `references/codex.md`, relativ
 base directory of this skill. It holds the models and the commands. If the file is missing, stop
 and tell the owner.
 
-Pick the builder by the task. Pick the test verifier and the reviewer by the builder and by the
-difficulty. A reviewer is
-never a weaker model than the builder, and a test verifier neither. For Codex, use the
+Pick the worker by the task. The [outside reviewers](#outside-reviewers) have fixed models, and a
+reviewer is never a weaker model than the worker. For Codex, use the
 [model table in `references/codex.md`](references/codex.md#pick-the-models). Give each pick to the
 owner in the plan of [stage 4](#stages-of-a-task), with its effort and one reason. Keep the model
 of a session until its task ends.
 
 ### Teams
 
-Each task of your plan gets a team. Each member is a session that you start, a worker, except the
-explorer.
+Each task of your plan gets a worker team: one worker session that builds, and checks its own
+work with subagents that it starts (owner, 2026-11-25).
 
-| Role | Its job | Codex | When Codex cannot run |
+| Member | Its job | Codex | When Codex cannot run |
 | --- | --- | --- | --- |
-| Explorer | The read-only search: paths, lines and short quotes | Not Codex: the `Explore` subagent of Claude Code on Haiku | The same |
-| Implementer | Builds the task: its plan first, then the code, the tests and the commits | The worker column of the model table | A building role, such as `implementer` |
-| Test verifier | Tests each acceptance criterion of the task: PASS, FAIL or NOT VERIFIED, with evidence. It fixes nothing | A new session in a worktree of its own at the builder's commit, on the reviewer column | A test role, such as `test-verifier`, on the reviewer's model |
-| Reviewer | Reviews the diff or the result, and its evidence. It changes no file | A new read-only session, on the reviewer column | A review role that cannot edit files, such as `reviewer` |
-| Default worker | A task that is not code and is not [your own work](#the-lead-agents-own-work): documents, research, a measurement | The worker column of the model table | A general subagent |
+| Implementer | The worker session of a coding task: its plan first, then the code, the tests and the commits; it fixes the findings | The worker column of the model table | A building role, such as `implementer` |
+| Test verifier | A subagent of the worker: tests each acceptance criterion, PASS, FAIL or NOT VERIFIED, with evidence | The worker starts a subagent with the role `test-verifier` | You start a test role, such as `test-verifier`, after the build |
+| Team reviewer | A subagent of the worker: reviews the change and its evidence, and changes no file | The worker starts a subagent with the role `reviewer` | You start a review role that cannot edit files, such as `reviewer`, after the build |
+| Default worker | The worker session of a task that is not code and is not [your own work](#the-lead-agents-own-work), such as documents, research or a measurement; its only subagent is the team reviewer | The worker column of the model table | A general subagent |
 
-- A coding task gets the explorer, the implementer, the test verifier and the reviewer.
-- Another task gets the default worker and the reviewer.
-- Run at most 2 teams at the same time (owner, 2026-11-25; the owner can change it). The search, a
-  new session at the limit and a check of the fixes add no team. Your plan gives the order of the
-  tasks that wait.
+- After it builds, the worker starts its test verifier and its team reviewer at the same time, by
+  role name, and fixes their findings before it reports. The worker brief says so.
+- Run at most 2 worker teams at the same time (owner, 2026-11-25; the owner can change it). A new
+  session at the limit adds no team. Your plan gives the order of the tasks that wait.
+
+### Outside reviewers
+
+At each report of a worker team (a checkpoint, the final report, a report of fixes), start two
+reviewers at the same time, so that the worker stays on the right track (owner, 2026-11-25). Each
+is a new session that did not build the work. It reads, changes no file and makes no commit.
+
+- **From Anthropic:** a Claude Code subagent on Opus, at `high`, with a review role that cannot edit
+  files, such as `reviewer`, if Claude Code has one.
+- **From OpenAI:** a new Codex session on `gpt-6.2-astra`, at `high`, read-only.
+
+Write both briefs from `references/reviewer-brief.md`.
 
 ### Briefs
 
@@ -201,8 +210,7 @@ explorer.
 Write each brief from a template in this skill's folder:
 
 - `references/worker-brief.md` for a worker. It has one section for each part of a brief above.
-- `references/reviewer-brief.md` for a reviewer.
-- `references/test-verifier-brief.md` for a test verifier.
+- `references/reviewer-brief.md` for an outside reviewer.
 
 Fill each section with facts for this task. Delete the guidance lines. The brief carries each limit
 as a rule, and you check the diff and the folders after each turn. For a task with an image, name
@@ -230,12 +238,16 @@ Use a new report file for each turn. For a Codex worker that commits and pushes,
 ### When Codex cannot run
 
 If a start or a message fails because of the Codex account, such as an ended plan, a used limit or
-no login, use Claude Code subagents as the members of the teams (owner, 2026-11-25). Another
+no login, use Claude Code subagents in place of the Codex sessions (owner, 2026-11-25). Another
 error, such as a wrong option or a sandbox refusal, is an ordinary obstacle: find its cause.
 
 - Use Claude Opus in place of Astra, and Claude Sonnet in place of Sol or Terra, at the same effort.
 - Use the roles of the [Teams](#teams) table if Claude Code has them, else a general subagent. Give
   each one its model: a role file can name a weaker one.
+- A subagent cannot start subagents. So you start the test verifier and the team reviewer yourself,
+  after the build, on a model that is not weaker than the implementer, and you send their findings
+  to the implementer.
+- The OpenAI reviewer cannot run: a second new Claude Opus session takes its place.
 - Start each subagent in the background with the Agent tool, with the same brief, the same first
   turn and the same worktree rules. Send each next message to the same subagent.
 - A test verifier or reviewer subagent has no sandbox. Its brief says to commit nothing, and you
@@ -255,7 +267,7 @@ when all of these are true:
 
 If the worker's plan needs corrections, send them. When you accept it, do the
 [order check](#order-check) before you send the message to build. Your OK is not the owner's
-approval. A test verifier and a reviewer commit nothing, so they have no plan turn.
+approval. A reviewer commits nothing, so it has no plan turn.
 
 ### Talk with the worker
 
@@ -302,8 +314,8 @@ of each worker at each moment.
 
 ## Rules for the worker
 
-Put these rules in each build brief. In a test or review brief, leave out the rules about the
-first turn and the push.
+Put these rules in each build brief. In a review brief, leave out the rules about the first turn
+and the push.
 
 - In your first turn, write your plan in your own words: the goal, each step with its check, and
   your questions. Change no file before the lead agent accepts the plan.

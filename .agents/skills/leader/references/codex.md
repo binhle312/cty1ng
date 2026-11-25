@@ -8,19 +8,19 @@ See the [stages of a task in `leader`](../SKILL.md#stages-of-a-task) for the pro
 
 Pick the models from the table.
 
-| Task                                                                                      | Worker                      | Reviewer                                |
-| ----------------------------------------------------------------------------------------- | --------------------------- | --------------------------------------- |
-| Screens and images: compare a screenshot with a design, read a chart                      | `gpt-6.1-terra` at `medium` | `gpt-6.2-sol` at `high`                 |
-| Everyday code and judgment: a bug fix, a feature, a proof, a fix after a review, security | `gpt-6.2-sol` at `high`     | `gpt-6.2-astra` at `high`               |
-| The cause or the design is not known at the start: a bug across modules, open trade-offs  | `gpt-6.2-astra` at `high`   | A new `gpt-6.2-astra` session at `high` |
+| Task                                                                                      | Worker                      |
+| ----------------------------------------------------------------------------------------- | --------------------------- |
+| Screens and images: compare a screenshot with a design, read a chart                      | `gpt-6.1-terra` at `medium` |
+| Everyday code and judgment: a bug fix, a feature, a proof, a fix after a review, security | `gpt-6.2-sol` at `high`     |
+| The cause or the design is not known at the start: a bug across modules, open trade-offs  | `gpt-6.2-astra` at `high`   |
 
-The table has no row for the tasks that you do yourself.
+The table has no row for the tasks that you do yourself. The OpenAI outside reviewer is always a
+new `gpt-6.2-astra` session at `high` (owner, 2026-11-25).
 
 - Use the cheapest row that fits. For the same tokens, Terra uses about half the credits of
   Sol, and Astra uses about 4 times the credits of Sol.
-- Raise the effort of a worker one level when a task has more steps or more trade-offs. A
-  reviewer keeps the effort of the table. Most tasks do not need `max`. With `ultra`, Codex
-  starts agents of its own.
+- Raise the effort of a worker one level when a task has more steps or more trade-offs. Most
+  tasks do not need `max`. A Codex session can start subagents of its own at any effort.
 - On 2026-11-25, Codex reported windows of 475,000 tokens for Sol and 258,400 for Astra (owner:
   "astra is 258k like you said, sol is 475l as I checked directly in codex session"). Terra: 475,000
   (owner, 2026-11-25: "they reduce it to 475k only"; not measured in a run).
