@@ -255,7 +255,9 @@ folders of the script. Without the script, the session list is a part of `handof
 **Test.** The fact map against `a600a49` lists each sentence that leaves, with its reason. A
 headless continuation test of the #157 text passed on 2026-11-25: a new conversation that got only
 the folder path found a commit that `handoff.md` did not name, reported it before it acted, and did
-not redo the plan. The same test runs again on this text.
+not redo the plan. The same test ran again on this text (`d7033de`) and passed: run 2 got only the
+folder path, reported the commit that `handoff.md` did not name, and did not redo the plan. The
+review fixes `f8ce7de` and `ac4e10c` came after that run.
 
 ## Open questions
 
