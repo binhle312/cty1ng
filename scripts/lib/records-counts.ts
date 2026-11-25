@@ -190,7 +190,12 @@ export function formProblems(files: readonly LedgerFile[]): string[] {
   });
 }
 
-function readLedger(files: readonly LedgerFile[]): { ledger?: Ledger; problems: string[] } {
+// The counts come only from `files`; the structure checks also read `checkedOnly` (plan revision 11,
+// Q1 A: the prevention file is checked, never a source of counts).
+function readLedger(
+  files: readonly LedgerFile[],
+  checkedOnly: readonly LedgerFile[] = [],
+): { ledger?: Ledger; problems: string[] } {
   const problems: string[] = [];
   const found = Object.values(TABLES).map((table) => {
     const tables = tablesWithHeader({ files, header: table.header });
@@ -204,7 +209,12 @@ function readLedger(files: readonly LedgerFile[]): { ledger?: Ledger; problems: 
       );
     return tables[0];
   });
-  problems.push(...formProblems(files), ...splitTables(files), ...cellCountProblems(files));
+  const checkedFiles = [...files, ...checkedOnly];
+  problems.push(
+    ...formProblems(checkedFiles),
+    ...splitTables(checkedFiles),
+    ...cellCountProblems(checkedFiles),
+  );
   const [milestones, register] = found;
   if (problems.length > 0 || milestones === undefined || register === undefined)
     return { problems };
@@ -590,11 +600,15 @@ function answerProblems(
 
 // Every problem: the structure of the files, then each owned cell that differs from the rows.
 // A search of a row also reads `otherSearchFiles`: docs/delivery-quality-prevention.md and the lessons.
+// `checkedOnly` files get the structure checks and are never a source of counts.
 export function checkCounts(
   files: readonly LedgerFile[],
-  otherSearchFiles: readonly LedgerFile[] = [],
+  {
+    otherSearchFiles = [],
+    checkedOnly = [],
+  }: { otherSearchFiles?: readonly LedgerFile[]; checkedOnly?: readonly LedgerFile[] } = {},
 ): string[] {
-  const { ledger, problems } = readLedger(files);
+  const { ledger, problems } = readLedger(files, checkedOnly);
   if (ledger === undefined) return problems;
   // A stale cell counted from broken rows would mislead, and `--write` refuses to write then.
   const structure = structureProblems(ledger);
@@ -603,11 +617,14 @@ export function checkCounts(
 }
 
 // The files with each owned cell written from the rows. With a structure problem, no file changes.
-export function writeCounts(files: readonly LedgerFile[]): {
+export function writeCounts(
+  files: readonly LedgerFile[],
+  checkedOnly: readonly LedgerFile[] = [],
+): {
   files: LedgerFile[];
   problems: string[];
 } {
-  const { ledger, problems } = readLedger(files);
+  const { ledger, problems } = readLedger(files, checkedOnly);
   if (ledger === undefined) return { files: [...files], problems };
   const structure = structureProblems(ledger);
   if (structure.length > 0) return { files: [...files], problems: structure };

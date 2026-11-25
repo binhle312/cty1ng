@@ -271,6 +271,18 @@ describe("records:counts", () => {
     });
   });
 
+  it("does not count a round table in the prevention file", () => {
+    const prevention = ["# Prevention", "", ...ROUND_HEADER, round(10), ""].join("\n");
+    withSplitLedger({ fixture: onePr(), prevention }, (dir) => {
+      const before = readFileSync(join(dir, REGISTER), "utf8");
+      const result = runCounts(dir, "--write");
+      expect(readFileSync(join(dir, REGISTER), "utf8"), "prevention round not counted").toBe(
+        before,
+      );
+      expect(result.status, "counts stay right").toBe(0);
+    });
+  });
+
   describe("checks each of the four files", () => {
     const prevention = [
       "# Prevention",
@@ -849,7 +861,7 @@ describe("the search of a new row (DQ-853 on)", () => {
     );
   }
   const check = (fix: string, change?: (row: string) => string) =>
-    checkCounts(rows(`\`abc1234\`: the fix. ${fix}`, change), [LESSON]);
+    checkCounts(rows(`\`abc1234\`: the fix. ${fix}`, change), { otherSearchFiles: [LESSON] });
   const FORM = `${MAIN}: DQ-853 has no "Same cause: yes|no (search: \`<pattern>\`: <hits>)" in its "Fix and verification" cell (AGENTS.md §9; each row from DQ-853 on).`;
   const MISSING = (pattern: string, id: string) =>
     `${MAIN}: DQ-853: the search \`${pattern}\` finds ${id} in no line other than this row; cite only ids of its hits (owner, 2026-11-19, morning Q4 A).`;
@@ -1022,7 +1034,8 @@ describe("the search of a new row (DQ-853 on)", () => {
   });
 
   it("checks a fixed row whose fix cell says withdrawn", () => {
-    expect(checkCounts(rows("withdrawn"), [LESSON]), "withdrawn outside State").toEqual([FORM]);
+    const problems = checkCounts(rows("withdrawn"), { otherSearchFiles: [LESSON] });
+    expect(problems, "withdrawn outside State").toEqual([FORM]);
   });
 
   it("rejects a section 9 step for a no", () => {

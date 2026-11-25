@@ -96,7 +96,7 @@
         "file": "scripts/records-counts.test.ts",
         "name": "checks a fixed row whose fix cell says withdrawn"
       },
-      "assertion": "expect(checkCounts(rows(\"withdrawn\"), [LESSON]), \"withdrawn outside State\").toEqual([FORM]);",
+      "assertion": "expect(problems, \"withdrawn outside State\").toEqual([FORM]);",
       "breaks": [
         {
           "id": "skip-withdrawn-outside-state",
@@ -1197,8 +1197,8 @@
           "file": "scripts/lib/records-counts.ts",
           "edits": [
             {
-              "find": "problems.push(...formProblems(files), ",
-              "replace": "problems.push("
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
             }
           ]
         }
@@ -1219,8 +1219,8 @@
           "file": "scripts/lib/records-counts.ts",
           "edits": [
             {
-              "find": "problems.push(...formProblems(files), ",
-              "replace": "problems.push("
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
             }
           ]
         }
@@ -1238,11 +1238,11 @@
       "breaks": [
         {
           "id": "skip-prevention-form-cr",
-          "file": "scripts/records-counts.ts",
+          "file": "scripts/lib/records-counts.ts",
           "edits": [
             {
-              "find": "const checked = [...files, ...requiredSearchFiles];",
-              "replace": "const checked = [...files];"
+              "find": "  const checkedFiles = [...files, ...checkedOnly];\n",
+              "replace": "  const checkedFiles = [...files];\n"
             }
           ]
         }
@@ -1260,11 +1260,11 @@
       "breaks": [
         {
           "id": "skip-prevention-form-id",
-          "file": "scripts/records-counts.ts",
+          "file": "scripts/lib/records-counts.ts",
           "edits": [
             {
-              "find": "const checked = [...files, ...requiredSearchFiles];",
-              "replace": "const checked = [...files];"
+              "find": "  const checkedFiles = [...files, ...checkedOnly];\n",
+              "replace": "  const checkedFiles = [...files];\n"
             }
           ]
         }
@@ -1304,11 +1304,11 @@
       "breaks": [
         {
           "id": "write-despite-split-prevention",
-          "file": "scripts/records-counts.ts",
+          "file": "scripts/lib/records-counts.ts",
           "edits": [
             {
-              "find": "const checked = [...files, ...requiredSearchFiles];",
-              "replace": "const checked = [...files];"
+              "find": "  const checkedFiles = [...files, ...checkedOnly];\n",
+              "replace": "  const checkedFiles = [...files];\n"
             }
           ]
         }
@@ -1326,11 +1326,11 @@
       "breaks": [
         {
           "id": "check-ledger-files-only",
-          "file": "scripts/records-counts.ts",
+          "file": "scripts/lib/records-counts.ts",
           "edits": [
             {
-              "find": "const checked = [...files, ...requiredSearchFiles];",
-              "replace": "const checked = [...files];"
+              "find": "  const checkedFiles = [...files, ...checkedOnly];\n",
+              "replace": "  const checkedFiles = [...files];\n"
             }
           ]
         },
@@ -1341,6 +1341,28 @@
             {
               "find": "    PREVENTION_HEADER,\n",
               "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-prevention-not-count-source",
+      "claim": "records:counts reads no count from the prevention file; a round table there changes no count (plan revision 11, Q1 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "does not count a round table in the prevention file"
+      },
+      "assertion": "expect(readFileSync(join(dir, REGISTER), \"utf8\"), \"prevention round not counted\")",
+      "breaks": [
+        {
+          "id": "count-from-prevention",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  const { ledger, problems } = readLedger(files, checkedOnly);\n  if (ledger === undefined) return { files: [...files], problems };",
+              "replace": "  const { ledger, problems } = readLedger([...files, ...checkedOnly]);\n  if (ledger === undefined) return { files: [...files], problems };"
             }
           ]
         }
