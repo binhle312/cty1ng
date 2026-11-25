@@ -10,6 +10,11 @@ owner approves this plan and its code design before the build.
 Approval: owner, 2026-11-25, revision 2 (the plan after review RP, `87ee1c1`). The owner's answers
 to the open questions: "1. Yes 2. Yes 3. Yes 4. Yes. Meaning you can measure with real runs 5. Yes
 6. Yes".
+Approval: owner, 2026-11-25, revision 3 (the lead agent's files for the next conversation; see
+"Revision 3"): "your proposal plan looks good for me, remember to keep everything simple, we're
+software engineer, don't complicate thing that shouldn't be". Review round 1 (RSA, RSB): the owner
+chose option 3, "3": fix RSA-7, RSA-9, RSA-10, RSA-11, RSA-1 and RSA-3, and write RSA-2, RSA-4,
+RSA-5, RSA-6 and RSA-8 as known limits (see "Revision 3").
 
 Base: this branch starts from the head of #156 (`a600a49`), because the script changes files that
 only #156 adds. It merges after #156.
@@ -139,7 +144,7 @@ watch.
 - The limit (35%) stays in `SKILL.md`, "Context of each worker". The script has no default:
   `--limit` is required, and the lead agent passes the number from `SKILL.md`.
 - The check interval, the start wait and the count wait have their defaults in
-  `scripts/codex-run.config.json` (20 s, 120 s and 6 checks), written one time. `references/codex.md`
+  `scripts/codex-run.config.json`, written one time. `references/codex.md`
   names the file and gives no numbers. Options override them; the tests use short values.
 - No timeout by default. A turn with the full checks can take more than one hour.
 - The model table stays in `references/codex.md`. The script has no presets.
@@ -218,6 +223,63 @@ started a real Codex worker, because Bash was blocked).
 Review: one complete review of the final head by a new Codex `gpt-6.2-astra` session (high,
 read-only), in parts if it would pass 35%, then one narrow fix check, then the lead agent stops and
 reports to the owner.
+
+## Revision 3 (2026-11-25): the lead agent's files for the next conversation
+
+The owner's words, 2026-11-25: "Leader have to write down 3 md files: goal, instruction, handoff. So
+when I start the leader in new conversation, it can pickup the work where it left off". The owner's
+answers: build it in #157; the files live in `tmp/` of the lead agent's own worktree; `goal.md` at
+the start and after each owner decision, `handoff.md` at the end of each stage; the owner gives the
+path to a new conversation; the names come from the research
+(`docs/research/agent-session-handoffs.md`, a note of the owner that is not in the repository). Then: "goal.md and handoff.md are must. Let ask from
+Advisor and consultants if they think we need any extra files". The advisor and the Opus consultant
+said no `instruction.md`: each of its parts has a home in `goal.md`, `handoff.md` or the skill. The
+worker session list already exists as the script's run folders. The owner chose the simple design
+below.
+
+**The design.** The folder `tmp/leader/` of the lead agent's own worktree holds:
+
+| Item | What it holds | When the lead agent writes it |
+| --- | --- | --- |
+| `goal.md` | The goal in the owner's words, the completion criteria, the scope, and the owner's constraints and standing instructions | At the start, and after each owner decision that changes it |
+| `handoff.md` | The current state with commits, the checks and their results, the owner's decisions in the owner's words with the question each one answers, the failed attempts with reasons, the next action, and the open questions. Each claim names the commit where the lead agent checked it | A new file each time (not a patch): at the end of each stage, after each owner decision, and before it stops to wait for the owner |
+| `runs/` | The run folders of the script, one for each worker or reviewer. The script's `args.json` and `state.json` already hold the facts of each session. When a session ends, the lead agent writes a file `ended` in its run folder, with the reason | At each start; `ended` when a session ends |
+
+Before the first write, the lead agent checks that Git ignores the folder (`git check-ignore`). If
+it does not, it asks the owner for another folder.
+
+The owner's answer "A" also said "before the conversation gets full". The lead agent cannot see its
+own context use, so it writes at the events above instead; a summary then loses at most the last
+step. (Opus and Astra consultants, 2026-11-25.)
+
+**A new conversation.** The owner starts it with `/leader` and the path of the folder. The lead agent
+reads `goal.md`, `handoff.md` and the `state.json` of each run folder that has no `ended` file. It
+checks the claims against the repository (`git status`, the head, the PR), and runs the cheap checks
+again. Where a file and the repository disagree, the repository wins, and the lead agent tells the
+owner. It tells the owner the next action and continues. After a summary in the same conversation,
+it reads the two files again.
+
+The name `handoff.md` stays: the research uses "handoff" for the file that carries the work to the
+next session. The skill calls the 35% handoff of a worker "the worker's handoff".
+
+**What changes.** `SKILL.md`: a short section with the table, the start of a new conversation, and
+the summary line (it keeps the folder path); the session list points to `runs/`. `references/codex.md`: run folders go in
+`runs/`. `GUIDE.md`: one sentence on how the human continues in a new conversation.
+
+**Test.** One headless run of `/leader <small task>` in a scratch Git project writes `goal.md`,
+`handoff.md` and a run folder in `runs/`. A second headless run gets only `/leader <path>`: it must
+continue without redoing a finished step. Before the second run, one commit that `handoff.md` does
+not name is added: the second run must report it before it acts.
+
+**Review round 1 (owner option 3).** Fixed: RSA-7 (the thread is read from any event line), RSA-9 (a
+final count over the limit wins over a Codex error), RSA-10 (each self-test case has a deadline),
+RSA-11 (cases 5 and 11 test what they claim), RSA-1 (no second Codex after a crash between the start
+and the process id), RSA-3 (no `done` while a child of Codex still runs), all RSB findings, and the
+count wait: the default goes from 6 to 30 checks, because a healthy Astra turn sent its first count
+after more than 2 minutes on 2026-11-25. Known limits, written in `references/codex.md`: RSA-2 (the
+check does not cover the temporary folder of Codex or a broken symlink), RSA-4, RSA-5 and RSA-6 (a
+`stop` at the same moment as a start, an end or a refused `send`), RSA-8 (a session file that is
+deleted and restored gives an old count).
 
 ## Open questions
 
