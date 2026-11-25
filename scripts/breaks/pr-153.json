@@ -827,6 +827,28 @@
       ]
     },
     {
+      "id": "removed-words-padded-heading",
+      "claim": "Reads the cells of an issue row by heading when the Issue ID heading has extra spaces.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "finds the issue heading with extra spaces"
+      },
+      "assertion": "expect(report, \"cells by a padded heading\").toEqual([",
+      "breaks": [
+        {
+          "id": "exact-heading-match",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (!line.startsWith(\"|\") || !lineOf(cellsOf(line)).startsWith(input.header)) return;",
+              "replace": "if (!line.startsWith(input.header)) return;"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "removed-words-growing-legacy-row",
       "claim": "Reports a lost word when a malformed legacy row grows.",
       "test": {

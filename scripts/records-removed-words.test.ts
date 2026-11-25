@@ -70,6 +70,20 @@ describe("records:removed-words", () => {
     ]);
   });
 
+  it("finds the issue heading with extra spaces", () => {
+    const padded = (row: string): LedgerFile => ({
+      path: LIVE,
+      text: `|  Issue ID  | Source | Fix and verification |\n| --- | --- | --- |\n${row}\n`,
+    });
+    const report = removedWords({
+      base: [padded("| DQ-001 | old origin | needs proof |")],
+      head: [padded("| DQ-001 | origin | needs a longer proof |")],
+    });
+    expect(report, "cells by a padded heading").toEqual([
+      `DQ-001 ${LIVE} -> ${LIVE} [Source]: old`,
+    ]);
+  });
+
   it("reports removed words when only the raw line shrinks", () => {
     const report = reportRows({
       before: ["| DQ-001 | old     | proof   |"],

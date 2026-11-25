@@ -84,7 +84,8 @@ function tablesWithHeader(input: { files: readonly LedgerFile[]; header: string 
   for (const file of input.files) {
     const lines = file.text.split("\n");
     lines.forEach((line, index) => {
-      if (!line.startsWith(input.header)) return;
+      // Compare the trimmed cells, so that extra spaces inside a heading do not hide its table.
+      if (!line.startsWith("|") || !lineOf(cellsOf(line)).startsWith(input.header)) return;
       const rows: Row[] = [];
       for (let next = index + 2; next < lines.length; next++) {
         const row = lines[next] ?? "";
