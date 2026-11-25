@@ -36,6 +36,7 @@ Revision 8, owner, 2026-11-25, after round 9 (Q1 S, Q2 A, Q3 A, Q4 C): the secti
 Revision 9, owner, 2026-11-25, after round 10 ("let goes with your picks": Q1 E, Q2 R, Q3 A): the section "Revision 9" below.
 Revision 10, owner, 2026-11-25, after round 11 ("let go with your picks": Q1 A to Q6 A): the section "Revision 10" below.
 Revision 11, owner, 2026-11-25, after the check of the round 11 fixes ("let goes with your picks": Q1 A, Q2 C, Q3 A, Q4 A, Q5 A): the section "Revision 11" below.
+Revision 12, owner, 2026-11-25, after the last check ("A"): the section "Revision 12" below.
 
 ## Goal
 
@@ -555,3 +556,14 @@ Q5 A). Two consultants (Opus 5.5 and GPT-6.2 Astra) checked the questions first.
 - **Q5 A, the end of the review.** One last check reads `cab9726` to the final head. If a P2 is
   left after it, this PR stays a draft, and the lead agent asks the owner for one focused check.
 - The P3s of the round 12 checks go into the round 11 Follow-ups row of `docs/status.md`.
+
+## Revision 12: the owner's answer after the last check
+
+Owner, 2026-11-25: "A". The last check found one P2, R13K-F1: the four cell-count cases of the
+refusal table expect only the words `the row`, so a wrong message passes. Its cause is the cause of
+the Q3 A redesign (a test checks less than its claim).
+
+- The four cases expect the whole cell-count message: the first cell, the cell count and the header
+  count. Four break claims change that message in the code; each must fail at the refusal message.
+- One focused check reads only this repair. The other findings of the last check go to the
+  Follow-ups row of `docs/status.md`.
