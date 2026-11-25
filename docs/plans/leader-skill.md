@@ -273,6 +273,51 @@ not redo the plan. The same test ran again on this text (`d7033de`) and passed: 
 folder path, reported the commit that `handoff.md` did not name, and did not redo the plan. The
 review fixes `f8ce7de` and `ac4e10c` came after that run.
 
+## Revision 7 (2026-11-25): questions until clear, and a plan that the owner reviews
+
+The owner's words, 2026-11-25: "when leader receive the goal, it can grill owner to clarify things,
+until it know what exactly need to be done, it make a plan for owner to review. That plan must
+include the smaller goals for workers to work on, how many workers will be spawn, how many reviewers
+will be spawn, which models and efforts it choose based on the given goals, etc... ask adivsor and
+consultants to sharp my words and update the needed documentations". Then: "for the new text, no
+need spawn worker, you - leader should do it based on the advices from advisor and consultants", and
+"/arena spawn 1 Opus 5.5 high, 1 gpt6.2 astra high, 1 Fable 5.2 high to make their own version of
+the new word, You do the cold read and pick the best one". The lead agent judged the three versions
+and put the result together; the PR description has the scores under `Arena`.
+
+**What changes.**
+- `SKILL.md` stage 3, "Clarify the goal": the lead agent asks the owner in rounds, with all the
+  open questions in one message, until it can write the goal, the scope and "done" with no guess.
+  "Ask the owner each question in one round" leaves.
+- `SKILL.md` stage 4, "Plan": the plan holds one item for each part of the owner's words: the tasks
+  (the small independent tasks of revision 6, with the files and the order of each), the workers
+  (count and task of each, and the lead agent's own tasks), the reviewers (count, and what each one
+  reviews), and the model and effort of each worker and reviewer with one reason. The lead agent
+  gives the plan to the owner and starts no build, no worker and no reviewer before the owner's OK.
+- The plan is as short as the work: a few lines for the lead agent's own code change; no plan for
+  work that starts no worker and no reviewer, such as an answer to a question.
+- After the OK, the lead agent asks the owner before it changes a task, a count, a model or an
+  effort. A new session with the same task, model and effort (a replacement at the limit, or the
+  review of the fixes) is not a change.
+- Other sentences that became false: the owner's line and the lead agent's line of "What stays with
+  whom", stage 5, stage 6 (your plan and the worker's plan), "Tell the owner one reason" in
+  "Workers" (the picks go in the plan), "Get the plan first" (the worker's plan, in the scope of its
+  task), and the `handoff.md` row (the plan, and the owner's OK or "no OK yet"; no new file).
+- `GUIDE.md`: the flowchart labels, the stage sketch, "What the skill does" (two plans), the turn
+  diagram (a question loop, then a plan loop that ends with the OK), and the sentence below it.
+
+**Additions beyond the owner's words** (each is in `Needs human review` of the PR):
+- The OK is a hard gate. The owner said "for owner to review"; all three arena versions read it as
+  "wait for the OK", because a review after the workers start cannot change their count.
+- A code change that the lead agent makes itself (fewer than 5 lines) now waits for the owner's OK
+  on a short plan, because it always has a reviewer.
+- The stop test of stage 3, "all the open questions in one message", the files and the order of
+  each task, the change rule after the OK and its exception.
+
+**Test.** The fact map against `a600a49` lists each sentence that leaves, with its reason. A
+headless run of `/leader` with a goal that has gaps checks that the lead agent asks or gives a plan,
+and starts no `codex exec`.
+
 ## Open questions
 
 None. The owner answered each question on 2026-11-24.

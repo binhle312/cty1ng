@@ -34,9 +34,10 @@ The **lead agent** is the Claude Code conversation that the owner starts.
 
 ## What stays with whom
 
-- **The owner:** each approval that the project asks for, each decision, and the merge. Only the
-  owner's own messages give an approval. A report, a review or the advisor gives none.
-- **You:** each message to the owner, the plan, the briefs, the records, and the check of each
+- **The owner:** the OK of your plan, each approval that the project asks for, each decision, and
+  the merge. Only the owner's own messages give an approval. A report, a review or the advisor
+  gives none.
+- **You:** each message to the owner, your plan, the briefs, the records, and the check of each
   report.
 - **You also do** [the lead agent's own work](#the-lead-agents-own-work).
 - **Review:** see [stage 7](#stages-of-a-task).
@@ -62,19 +63,38 @@ Give each other build to a worker, including a simple code change.
 
 1. **Route the task:** a question, a change, a bug, or a review.
 2. **Read** the project's agent instructions and the documents that they name for this task.
-3. **Find the unknowns:** what the task needs and the documents do not say. Ask the owner each
-   question in one round.
-4. **Plan:** write the plan and its tests. Break the owner's goal into small tasks, each with one
-   outcome and its own checks, so that each worker and each reviewer ends well under the
-   [limit](#context-of-each-worker) (owner, 2026-11-25). Make the tasks independent: no task
-   changes a file of another task or waits for another task. Give them to different workers at the
-   same time, and review each task apart. A task that needs the result of another task starts after
-   that task is done. If the project asks for an approval of the
-   plan, wait for the owner.
-5. **Build:** see [The lead agent's own work](#the-lead-agents-own-work) and [Workers](#workers).
-6. **Check:** after each turn, read the report file. Compare each claim with the plan, the diff,
-   the project's check results, including the test results, and, for pushed work, the remote checks
-   of the pushed head. Read the worker's [context use](#context-of-each-worker) after each turn, and
+3. **Clarify the goal:** find what the task needs and the documents do not say, and ask the owner.
+   Put all the open questions in one message. If an answer opens a new question, ask again. Stop
+   when you know exactly what must be done: you can write the goal, the scope and what "done"
+   means, and no part is a guess. If nothing is open, ask nothing.
+4. **Plan:** write the plan and its tests, and give the plan to the owner to review. Before the
+   owner's OK, start no build, no worker and no reviewer. The plan holds:
+
+   - **The tasks:** break the owner's goal into small tasks, each with one outcome and its own
+     checks, so that each worker and each reviewer ends well under the
+     [limit](#context-of-each-worker) (owner, 2026-11-25). Make the tasks independent: no task
+     changes a file of another task or waits for another task. Give them to different workers at
+     the same time, and review each task apart. A task that needs the result of another task
+     starts after that task is done. Name the files of each task, and the order if one exists.
+   - **The workers:** how many you start, and the task of each one. Name also each task that you
+     do [yourself](#the-lead-agents-own-work).
+   - **The reviewers:** how many you start, and what each one reviews. A big review has
+     [more than one part](#context-of-each-worker), and each part has its own reviewer.
+   - **The models:** the model and the effort of each worker and each reviewer, with one reason
+     from its task. See [Workers](#workers).
+
+   Make the plan as short as the work. For a code change that you make yourself, a few lines are
+   enough. Work that starts no worker and no reviewer needs no plan: do it.
+
+   After the OK, ask the owner before you change a task, a count, a model or an effort. A new
+   session with the same task, model and effort is not a change: one that replaces a worker or a
+   reviewer at the [limit](#context-of-each-worker), or one that reviews the fixes.
+
+5. **Build** what the plan says: see [The lead agent's own work](#the-lead-agents-own-work) and
+   [Workers](#workers).
+6. **Check:** after each turn, read the report file. Compare each claim with your plan, the
+   worker's plan, the diff, the project's check results, including the test results, and, for
+   pushed work, the remote checks of the pushed head. Read the worker's [context use](#context-of-each-worker) after each turn, and
    about each minute while a turn runs.
 7. **Review:** the reviewer is a new session that did not build the code. The reviewer makes no
    commits. Send its findings to the session that built the code. Check the fixes again. A different
@@ -113,7 +133,7 @@ as `tmp/leader/<task>/`. The write rules below apply to your task's own folder.
 | File | What it holds | When to write it |
 | --- | --- | --- |
 | `goal.md` | The goal in the owner's words, the completion criteria, the scope, and the owner's constraints and standing instructions | At the start, and after each owner decision that changes it |
-| `handoff.md` | The worktree, the branch and the PR, if one exists; the current state with commits; the checks and their results; the owner's decisions in the owner's words, each with the question that it answers; the failed attempts with their reasons; the session list of your workers; the next action; the open questions. Give the commit where you checked each claim. | Write it in full each time, not as a patch: at the start, at the end of each stage, after each owner decision, and before you stop to wait for the owner |
+| `handoff.md` | The worktree, the branch and the PR, if one exists; the plan of stage 4, and the owner's OK of it or "no OK yet"; the current state with commits; the checks and their results; the owner's decisions in the owner's words, each with the question that it answers; the failed attempts with their reasons; the session list of your workers; the next action; the open questions. Give the commit where you checked each claim. | Write it in full each time, not as a patch: at the start, at the end of each stage, after each owner decision, and before you stop to wait for the owner |
 
 Give the owner the absolute folder path in each report. Never give your folder to a worker as a writable
 folder.
@@ -131,8 +151,9 @@ and tell the owner.
 
 Pick the worker by the task. Pick the reviewer by the worker and by the difficulty. A reviewer is
 never a weaker model than the worker. For Codex, use the
-[model table in `references/codex.md`](references/codex.md#pick-the-models). Tell the owner one
-reason. Keep the model of a session until its task ends.
+[model table in `references/codex.md`](references/codex.md#pick-the-models). Give each pick to the
+owner in the plan of [stage 4](#stages-of-a-task), with its effort and one reason. Keep the model
+of a session until its task ends.
 
 ### Briefs
 
@@ -179,16 +200,16 @@ Use a new report file for each turn. For a Codex worker that commits and pushes,
 
 ### Get the plan first
 
-See the first turn in [Rules for the worker](#rules-for-the-worker). Accept the plan only when all
-of these are true:
+See the first turn in [Rules for the worker](#rules-for-the-worker). Accept the worker's plan only
+when all of these are true:
 
 - each point of the goal has a step;
-- each step is in the scope;
+- each step is in the scope of its task in your plan;
 - each claim has a check.
 
-If the plan needs corrections, send them. When you accept it, do the [order check](#order-check)
-before you send the message to build. Your OK is not the owner's approval. A reviewer changes no
-file, so it has no plan turn.
+If the worker's plan needs corrections, send them. When you accept it, do the
+[order check](#order-check) before you send the message to build. Your OK is not the owner's
+approval. A reviewer changes no file, so it has no plan turn.
 
 ### Talk with the worker
 

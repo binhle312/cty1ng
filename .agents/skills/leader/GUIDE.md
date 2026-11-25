@@ -23,8 +23,8 @@ flowchart TB
   worker["Codex workers<br/>one or more, each builds its own task"]
   reviewer["Codex reviewer<br/>reviews code that it did not build"]
 
-  human -- "task, answers" --> lead
-  lead -- "questions, report" --> human
+  human -- "task, answers, OK of the plan" --> lead
+  lead -- "questions, plan, report" --> human
   lead -- "asks" --> advisor
   advisor -- "advice" --> lead
   lead -- "brief, answers" --> worker
@@ -42,10 +42,13 @@ the lead agent. The lead agent can ask the advisor before it decides.
  /leader <task>
       │
       ▼
- 1 route ──▶ 2 read the project's rules ──▶ 3 questions ══▶ HUMAN answers (one round)
+ 1 route ──▶ 2 read the project's rules ──▶ 3 questions ══▶ HUMAN answers
+                                              (again, until the lead agent knows
+                                               exactly what must be done)
                                                   │
                                                   ▼
- 4 plan and tests ══▶ HUMAN approves, if the project asks for it
+ 4 plan: the tasks, the workers, the reviewers,
+         the model and the effort of each ══▶ HUMAN reviews it and gives the OK
       │
       ▼
  5 worker: plan in its own words ──▶ lead agent accepts ──▶ worker builds
@@ -87,7 +90,9 @@ The human talks with one agent: the lead agent. It is the Claude Code conversati
 starts. The lead agent gives build work and review work to Codex workers, and it talks with them
 when that is needed. The human approves, decides, and merges.
 
-The lead agent's OK on a plan is not the human's approval. When the rules of the repository ask for
+A task has two plans. The lead agent's plan goes to the human, and the human gives the OK before a
+worker or a reviewer starts. Each worker then gives the lead agent a plan for its own task. The lead
+agent's OK on a worker's plan is not the human's approval. When the rules of the repository ask for
 the human's approval, the lead agent stops and asks the human.
 
 ## One task, turn by turn
@@ -100,7 +105,14 @@ sequenceDiagram
   participant R as Codex reviewer (a new session)
 
   H->>L: task
-  L->>H: the models, with one reason
+  loop while a question is open
+    L->>H: all the open questions
+    H->>L: answers
+  end
+  loop until the human gives the OK
+    L->>H: the plan with the tasks, the workers, the reviewers, and the model and effort of each
+    H->>L: changes to the plan, or the OK
+  end
   L->>W: brief
   Note over W: reads, changes no file
   W->>L: the plan in its own words, with its questions
@@ -138,8 +150,9 @@ The diagram uses [Talk with the worker](SKILL.md#talk-with-the-worker) for the s
 After each report, the lead agent compares each claim with the diff, the test results, and the
 remote checks if the worker pushed.
 
-The diagram does not show the points where the human approves, because each repository has its own
-rules. At each of these points, the lead agent stops and asks the human.
+The diagram shows the human's OK of the plan. It does not show the other points where the human
+approves, because each repository has its own rules. At each of these points, the lead agent stops
+and asks the human.
 
 Only the lead agent talks with the human. The review is a new session that did not build the code.
 Its findings go to the lead agent, and the lead agent sends them to the builder's session. After a
@@ -156,8 +169,8 @@ handoff, that is the new session.
 - A reviewer makes no commits.
 - The lead agent breaks the human's goal into small tasks that do not touch each other's files or
   wait for each other, so that several workers and reviewers work at the same time, each on a small
-  piece of work. It can run more than one worker at the same time, each on its own task, in
-  its own worktree and branch. The turn diagram shows one of them. For a command that only one agent can
+  piece of work. The plan names these tasks. The lead agent can run more than one worker at the
+  same time, each on its own task, in its own worktree and branch. The turn diagram shows one of them. For a command that only one agent can
   run at a time, such as a heavy build, the lead agent tells them the order, or sends the second
   message after the first worker is done with that command.
 
