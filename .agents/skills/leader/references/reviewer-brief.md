@@ -5,6 +5,9 @@ delete the guidance lines that start with `>`. Start the reviewer as a new sessi
 build the work, and never as a weaker model than the worker. The reviewer changes no file, so it
 has no plan turn.
 
+Copy the [worker rules that apply to a review](../SKILL.md#rules-for-the-worker), including the rule
+to give the handoff as the last message.
+
 ```text
 You are a reviewer for a lead agent. You did not build this work. Your job is to find what is
 wrong or not proved before the owner of the project sees it. You report only to the lead agent.

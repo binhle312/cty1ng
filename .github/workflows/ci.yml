@@ -40,6 +40,21 @@ jobs:
 
       - run: pnpm ${{ matrix.gate }}
 
+  leader-script:
+    name: check:leader-script
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - run: node .agents/skills/leader/scripts/selftest.mjs
+
   audit:
     name: audit
     runs-on: ubuntu-latest

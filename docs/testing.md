@@ -364,7 +364,8 @@ row has the cells of its header, each id has one row, and each row from DQ-853 o
 `withdrawn` holds its `Same cause` answer: its search pattern finds each id that it cites, and a yes
 names its §9 step; [pull-request.md](workflows/pull-request.md#one-home-for-each-fact)), the bundle budget
 (`pnpm build`, then `pnpm check:bundle`), the static rules of the PR's break list
-(`check:breaks static`, [§5](#5-evidence-in-prs)), CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review when it is on;
+(`check:breaks static`, [§5](#5-evidence-in-prs)), the Codex runner self-test (`check:leader-script`),
+CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review when it is on;
 it is off for now (`security.md` §2.11).
 
 `pnpm audit --audit-level high` also runs on each PR (`security.md` §2.11). A red `audit` check

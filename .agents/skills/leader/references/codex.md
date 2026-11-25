@@ -1,6 +1,6 @@
 # Codex workers
 
-A **worker** is a Codex session that the lead agent starts with `codex exec`.
+A **worker** is a Codex session that the lead agent starts with the runner.
 
 See the [stages of a task in `leader`](../SKILL.md#stages-of-a-task) for the process.
 
@@ -21,96 +21,88 @@ The table has no row for the tasks that you do yourself.
 - Raise the effort of a worker one level when a task has more steps or more trade-offs. A
   reviewer keeps the effort of the table. Most tasks do not need `max`. With `ultra`, Codex
   starts agents of its own.
-- Sol and Terra read 500,000 tokens by default; Astra reads 272,000.
+- On 2026-11-25, Codex reported windows of 475,000 tokens for Sol and 258,400 for Astra. The owner
+  said, "astra is 258k like you said, sol is 475l as I checked directly in codex session".
+  For Terra, the owner said that day, "they reduce it to 475k only" (475,000 tokens, not measured
+  in a run). The script reads the window of each run from its session file.
 - On a model with a window of about 258,000 tokens, a full review of a large change reaches 35%
-  first.
+  before it reports.
 - The table is from 2026-11-24. If Codex lists a newer model, tell the owner before you use it.
 
 ## Commands
+
+Run each command with `node` and the path to [the runner](../scripts/codex-run.mjs). Start each
+`start` or `send` as a background command of your tool so that the tool reports when it ends.
+The script waits for Codex.
 
 ### Start
 
 A worker with no branch name makes its own branch.
 
-```bash
-codex exec -m <model> -c model_reasoning_effort="<effort>" -c service_tier="default" \
-  -s workspace-write -C <worktree> --json -o <report file> - \
-  < <brief file> > <events file> 2> <log file>
-```
+Give `start` these options: `--run-dir`, `--workdir`, `--brief`, `--model`, `--effort`, `--sandbox`,
+and `--limit`. Use the limit from [Context of each worker](../SKILL.md#context-of-each-worker).
+For a worker, use `--sandbox workspace-write`.
 
-The session id is in the first line of the events file:
-`{"type":"thread.started","thread_id":"<session id>"}`.
+Use a new run folder outside the work folder and each writable root. This protects the saved
+options of the next turn. The run folder holds `args.json`, `state.json`, and `run.log`.
+For turn `n`, the files are `t<n>-events.jsonl`, `t<n>-report.md`, and `t<n>-log.txt`.
+The report holds the last message of that turn. `run.log` shows the exact Codex command.
 
-`-o` writes only the last message of that turn.
+Outside a Git repository, add `--skip-git-check` to `start`. For writable roots or network access,
+see [Commit and push](#commit-and-push). The defaults for `--check-interval`, `--start-wait`, and
+`--count-wait` are in [`codex-run.config.json`](../scripts/codex-run.config.json).
 
 #### Image flag
 
-Add `-i <image file>` before `-s`.
+Add `--image <image file>` to `start`.
 
 ### Send a message
 
-```bash
-cd <worktree> && codex exec resume <session id> \
-  -m <model> -c model_reasoning_effort="<effort>" -c service_tier="default" \
-  -c sandbox_mode="<sandbox mode>" --json -o <report file> - \
-  < <message file> > <events file> 2> <log file>
-```
-
-A resumed session keeps its conversation, and nothing more. It takes its folder from the folder
-where you start it. It takes its model, its effort and its sandbox from the Codex configuration.
-So start it in the worktree, and give each option of the start command again. Use the sandbox
-mode of the session list: `workspace-write` for a worker, `read-only` for a reviewer that only
-reads. `resume` has no `-s` and no `-C`: use `cd` and `-c sandbox_mode=...`.
-
-With `--last`, a message can go to another worker.
-
-Outside a Git repository, add `--skip-git-repo-check` to the start command and to each `resume`.
+Use `send --run-dir <run folder> --message <message file>`. The script resumes the thread of that
+run with the saved work folder, model, effort, sandbox, roots, and network options.
+Use `--handoff` for the handoff turn. After a turn ends with `limit`, `send` requires `--handoff`.
+The watch lets a handoff turn continue at the limit. It still checks for the thread and a fresh count.
 
 Each message sends the full session again.
 
 ### Context use
 
-```bash
-python3 - <session id> <<'EOF'
-import glob, json, os, sys
-home = os.environ.get("CODEX_HOME", os.path.expanduser("~/.codex"))
-path = glob.glob(f"{home}/sessions/*/*/*/rollout-*-{sys.argv[1]}.jsonl")[0]
-info = None
-for line in open(path):
-    payload = json.loads(line).get("payload", {})
-    if payload.get("type") == "token_count" and payload.get("info"):
-        info = payload["info"]
-used = info["last_token_usage"]["total_tokens"]
-window = info["model_context_window"]
-print(f"{100 * used / window:.1f}% of {window} tokens")
-EOF
-```
+Use `context` with either `--run-dir <run folder>` or `--thread <session id>`.
+The command prints the context use and window from the session file.
 
 The `usage` of `turn.completed` in the `--json` events adds all model calls of a turn, so it is
 not the context use.
 
 Codex writes each session to a file under `~/.codex/sessions/`, and its `token_count` events hold
-the usage of the last model call and the context window of the model. If the command finds no file
-or no `token_count` event, tell the person: this Codex version may write another format.
+the usage of the last model call and the context window of the model. If `CODEX_HOME` is set,
+Codex uses its `sessions/` folder.
 
 ### Stop a run
 
-```bash
-kill -INT <process id of that codex exec>
-```
-
-The process id is `$!` immediately after you start a run in the background. Write it to a file.
+Use `stop --run-dir <run folder> --turn <turn number>`. The script requests a stop for that turn.
+The runner of that turn sends SIGINT to its own child. If the turn already ended, `stop` says so.
 The session stays usable.
+
+### Turn results
+
+At the end of a turn, `start` or `send` writes `state.json` and prints this last line:
+`state=<state> turn=<n> thread=<id> context=<percent> window=<tokens> report=<file> exit=<code>`.
+
+| State | Exit code | Meaning | Next step |
+| --- | --- | --- | --- |
+| `done` | 0 | The turn ended with a report and the last count is under the limit. | Read the report. |
+| `limit` | 3 | The count reached the limit during the turn or was at or over it at the end. A handoff turn can end with this state and a saved report. | If this was the handoff turn, read its report. Otherwise, follow the [handoff steps](../SKILL.md#context-of-each-worker). |
+| `watch-error` | 4 | The watch could not get a thread in the start wait or a fresh count in the count wait. This includes a clean Codex exit with no fresh count. | Run `context`. Tell the owner if it fails again. |
+| `codex-error` | 5 | Codex failed or left an empty or missing report. | Read the log. |
+| `stopped` | 6 | A stop request or a signal to the runner ended the turn. | Follow the reason for the stop. |
+| `cleanup-error` | 7 | A process of the turn still runs or the runner could not check cleanup. | Tell the owner and give any process IDs in `state.json`. Do not resume. |
+| Usage error | 2 | The command was invalid or the run folder or turn could not be used. | Fix the command. |
 
 ### Commit and push
 
 In `workspace-write`, Codex keeps the Git folder read-only and the network closed. For a worker
-that commits and pushes, add these options to the start command and to each `resume`:
-
-```bash
--c 'sandbox_workspace_write.writable_roots=["<repository>/.git","<repository>/.git/worktrees/<admin name>"]' \
--c sandbox_workspace_write.network_access=true
-```
+that commits and pushes, give `start` a `--writable-root` for `<repository>/.git` and another for
+`<repository>/.git/worktrees/<admin name>`. Add `--network` to `start` to open the network.
 
 The admin name is the result of `basename "$(git rev-parse --git-dir)"` in the worktree.
 The network opens for each command of the worker.
@@ -124,6 +116,6 @@ command, and it then runs outside the sandbox.
 
 ### Review run
 
-Start a review with `-s read-only` when the reviewer only reads. A test tool that writes files
+Start a review with `--sandbox read-only` when the reviewer only reads. A test tool that writes files
 does not run in that sandbox. To run it in the [reviewer's own worktree](../SKILL.md#stages-of-a-task),
-use `-s workspace-write`.
+use `--sandbox workspace-write`.

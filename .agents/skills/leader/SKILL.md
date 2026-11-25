@@ -126,7 +126,7 @@ Write each brief from a template in this skill's folder:
 
 Fill each section with facts for this task. Delete the guidance lines. The brief carries each limit
 as a rule, and you check the diff and the folders after each turn. For a task with an image, name
-the path of the file in the brief, or use the [image flag in `references/codex.md`](references/codex.md#image-flag).
+the path of the file in the brief, or use the [script's image flag](references/codex.md#image-flag).
 For a worker that commits and pushes, permit the network only for Git and the Git host in the brief.
 
 ### Order check
@@ -140,11 +140,13 @@ or send the second message after the first worker is done with that command.
 
 If the start message lets the worker build or run checks, do the [order check](#order-check).
 Start the worker in its own worktree and branch. For Codex, use the
-[start command in `references/codex.md`](references/codex.md#start). Start each run in the background.
-Write its session id, worktree, model, effort and sandbox mode on one line of a session list file.
+[script's `start` command](references/codex.md#start).
+Write its run folder, session id, worktree, model, effort and sandbox mode on one line of a
+session list file.
 Add its last [context use](#context-of-each-worker) to that line after each check.
 
-Use a new report file for each turn. For a Codex worker that commits and pushes, use the
+Use the report path that the script prints for each turn.
+For a Codex worker that commits and pushes, use the
 [commit and push options in `references/codex.md`](references/codex.md#commit-and-push).
 
 ### Get the plan first
@@ -162,15 +164,15 @@ file, so it has no plan turn.
 
 ### Talk with the worker
 
-A worker is a conversation. Use the session id from the session list file. Send it more messages
+A worker is a conversation. Use the run folder from the session list file. Send it more messages
 when that is needed. Answer its question, accept its plan, or send the findings of a review.
-For Codex, use the [send command in `references/codex.md`](references/codex.md#send-a-message).
+For Codex, use the [script's `send` command](references/codex.md#send-a-message).
 Before a message that lets it build or run checks, do the [order check](#order-check). If a run goes
 in a wrong direction, [stop the run](#stop-a-workers-run) and send the correction.
 
 ### Stop a worker's run
 
-For Codex, use the [stop command in `references/codex.md`](references/codex.md#stop-a-run). After the
+For Codex, use the [script's `stop` command](references/codex.md#stop-a-run). After the
 stop, check that no command of the worker still runs.
 
 ## Context of each worker
@@ -179,10 +181,14 @@ A worker with a full context window works worse, and each message costs more. Kn
 of each worker at each moment.
 
 - The context use is the token count of the last model call, as a percent of the model's context
-  window. For Codex, get it with the [context command in `references/codex.md`](references/codex.md#context-use).
+  window. For Codex, get it with the [script's `context` command](references/codex.md#context-use).
+- Pass the limit of this section to the script with `--limit`. If a regular turn reaches the
+  limit, the script ends it with `limit` (exit 3).
 - At 35% or more (the owner's limit; the owner can change it), replace the worker:
-  1. If a turn runs, [stop the run](#stop-a-workers-run).
-  2. Send the worker a message: write the handoff to a file that you name, and do no other work.
+  1. If a turn runs, [stop it with the script](#stop-a-workers-run).
+  2. Send the handoff turn with [`send --handoff`](references/codex.md#send-a-message). Ask the
+     worker to give the handoff as the last message of that turn and do no other work. The script
+     saves the handoff as the report of that turn.
   3. Read the handoff. Compare each claim with the diff, the commits and the test results. Correct
      it, and add each fact that it misses.
   4. Start a new worker with the same model, effort and sandbox, in the same worktree. Give it the
@@ -214,8 +220,7 @@ and the push.
   Push only to the branch of the brief, and with no force.
 - If you pushed: in the report, give the pushed commit and the result of the remote checks for it.
 - For each claim in the report, give the command and its result.
-- When the lead agent asks for a handoff, write it to the file that the message names, and do no
-  other work.
+- When the lead agent asks for a handoff, give the handoff as your last message, and do no other work.
 
 ## The project wins
 

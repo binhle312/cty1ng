@@ -161,7 +161,7 @@ The context window is the text that a model can hold at one time: the brief, the
 files that it read.
 
 The lead agent watches how full the context window of each worker is.
-When 35% of the model's window is used, the worker writes a handoff. The lead agent checks and
+At the limit, the worker gives the handoff as its last message. The lead agent checks and
 corrects it, and a new worker continues from it.
 
 The limit applies to a reviewer too. Before each review starts, the lead agent splits it into parts,
