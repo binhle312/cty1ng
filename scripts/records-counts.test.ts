@@ -237,40 +237,6 @@ describe("records:counts", () => {
     });
   });
 
-  it("writes nothing when a blank line splits the prevention table", () => {
-    const fixture = onePr({
-      registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
-    });
-    const prevention = [
-      "| Cause / linked issues | Action and owner | Enforcement or review step | Verification | State |",
-      "| --- | --- | --- | --- | --- |",
-      "| Paper jam | Check the tray | Inspect the tray | Clear | done |",
-      "",
-      "| Empty tray | Refill the tray | Check the paper level | Full | done |",
-      "",
-    ].join("\n");
-    withSplitLedger({ fixture, prevention }, (dir) => {
-      const before = readFileSync(join(dir, REGISTER), "utf8");
-      runCounts(dir, "--write");
-      expect(readFileSync(join(dir, REGISTER), "utf8"), "split prevention table").toBe(before);
-    });
-  });
-
-  it("refuses a prevention row with a wrong cell count", () => {
-    const prevention = [
-      "| Cause / linked issues | Action and owner | Enforcement or review step | Verification | State |",
-      "| --- | --- | --- | --- | --- |",
-      "| Paper jam | Check the tray | Inspect the tray | Clear | done | extra |",
-      "",
-    ].join("\n");
-    withSplitLedger({ fixture: onePr(), prevention }, (dir) => {
-      const result = runCounts(dir);
-      expect(result.stderr, "prevention cell count").toContain(
-        `${PREVENTION}:3: the row Paper jam has 6 cells`,
-      );
-    });
-  });
-
   it("does not count a round table in the prevention file", () => {
     const prevention = ["# Prevention", "", ...ROUND_HEADER, round(10), ""].join("\n");
     withSplitLedger({ fixture: onePr(), prevention }, (dir) => {
@@ -293,49 +259,51 @@ describe("records:counts", () => {
       "",
     ].join("\n");
     const firstRow = /^\| (DQ-\d+|M2|Paper jam) \|/;
-    const kinds = {
-      cr: (text: string) => ({
-        text: crOnFirstLine(text),
-        message: () => ": the file has CR line ends",
-      }),
-      "padded id": (text: string) => {
+    type Damage = (text: string) => { text: string; message: string };
+    const damages: Record<string, Damage> = {
+      cr: (text) => ({ text: crOnFirstLine(text), message: ": the file has CR line ends" }),
+      "padded id": (text) => {
         const lines = text.replace(/\n$/, "").split("\n");
         return {
           text: `${lines.join("\n")}\n|  DQ-999 | padded |\n`,
-          message: () => `:${lines.length + 1}: write the first cell`,
+          message: `:${lines.length + 1}: write the first cell`,
         };
       },
-      "split table": (text: string) => {
+      "split table": (text) => {
         const lines = text.replace(/\n$/, "").split("\n");
         return {
           text: `${lines.join("\n")}\n\n| stray | row |\n`,
-          message: () => `:${lines.length + 2}: a table row with no header row before it`,
+          message: `:${lines.length + 2}: a table row with no header row before it`,
         };
       },
-      "cell count": (text: string) => {
+      "cell count": (text) => {
         const lines = text.split("\n");
         const index = lines.findIndex((line) => firstRow.test(line));
         lines[index] = `${lines[index]} extra |`;
-        return { text: lines.join("\n"), message: () => `:${index + 1}: the row` };
+        return { text: lines.join("\n"), message: `:${index + 1}: the row` };
       },
     };
-    for (const path of [MAIN, ARCHIVE, REGISTER, PREVENTION])
-      for (const [kind, damage] of Object.entries(kinds))
-        it(`finds a ${kind} in ${path}`, () => {
-          const fixture = onePr({
-            registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
-            archiveIssues: [issue({ id: 3, pr: 10 })],
-          });
-          withSplitLedger({ fixture, prevention }, (dir) => {
-            const damaged = damage(readFileSync(join(dir, path), "utf8"));
-            writeFileSync(join(dir, path), damaged.text);
-            const before = readFileSync(join(dir, REGISTER), "utf8");
-            const result = runCounts(dir, "--write");
-            expect(result.stderr, `${kind} in ${path}`).toContain(`${path}${damaged.message()}`);
-            if (path !== REGISTER)
-              expect(readFileSync(join(dir, REGISTER), "utf8"), "no write").toBe(before);
-          });
-        });
+    const paths = [MAIN, ARCHIVE, REGISTER, PREVENTION];
+    const cases = paths.flatMap((path) => Object.keys(damages).map((kind) => [kind, path]));
+    const allFiles = (dir: string) => paths.map((path) => readFileSync(join(dir, path), "utf8"));
+
+    // A refusal has three parts (plan revision 11, Q3 A): the message, exit status 1, and no
+    // changed file, the damaged file too. Each case has a break claim.
+    it.each(cases)("finds a %s in %s", (kind = "", path = "") => {
+      const fixture = onePr({
+        registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
+        archiveIssues: [issue({ id: 3, pr: 10 })],
+      });
+      withSplitLedger({ fixture, prevention }, (dir) => {
+        const damaged = damages[kind]?.(readFileSync(join(dir, path), "utf8"));
+        writeFileSync(join(dir, path), damaged?.text ?? "");
+        const before = allFiles(dir);
+        const result = runCounts(dir, "--write");
+        expect(result.stderr, "refusal message").toContain(`${path}${damaged?.message ?? ""}`);
+        expect(result.status, "refusal exit").toBe(1);
+        expect(allFiles(dir), "no file written").toEqual(before);
+      });
+    });
   });
 
   it("finds no form problem in the real delivery-quality files", () => {
@@ -343,41 +311,6 @@ describe("records:counts", () => {
     const paths = [...ISSUE_FILES, REGISTER, PREVENTION];
     const real = paths.map((path) => ({ path, text: readFileSync(join(root, path), "utf8") }));
     expect(formProblems(real), "real files").toEqual([]);
-  });
-
-  it("refuses CR line ends in the prevention file and writes nothing", () => {
-    const fixture = onePr({
-      registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
-    });
-    withSplitLedger({ fixture, prevention: "An earlier paper jam.\r\n" }, (dir) => {
-      const before = readFileSync(join(dir, REGISTER), "utf8");
-      const result = runCounts(dir, "--write");
-      expect(readFileSync(join(dir, REGISTER), "utf8"), "prevention CR").toBe(before);
-      expect(result.stderr).toContain(
-        `${PREVENTION}: the file has CR line ends; use LF line ends.`,
-      );
-    });
-  });
-
-  it("refuses a padded issue id in the prevention file and writes nothing", () => {
-    const fixture = onePr({
-      registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
-    });
-    const prevention = [
-      "| Cause / linked issues | Action and owner | Enforcement or review step | Verification | State |",
-      "| --- | --- | --- | --- | --- |",
-      "| Paper jam | Check the tray | Inspect the tray | Clear | done |",
-      "|  DQ-001 | Check the tray | Inspect the tray | Clear | done |",
-      "",
-    ].join("\n");
-    withSplitLedger({ fixture, prevention }, (dir) => {
-      const before = readFileSync(join(dir, REGISTER), "utf8");
-      const result = runCounts(dir, "--write");
-      expect(readFileSync(join(dir, REGISTER), "utf8"), "prevention padded id").toBe(before);
-      expect(result.stderr).toContain(
-        `${PREVENTION}:4: write the first cell of an issue row as "| DQ-n |"`,
-      );
-    });
   });
 
   it("reports a blank line that splits the prevention table", () => {

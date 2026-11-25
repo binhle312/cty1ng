@@ -1227,50 +1227,6 @@
       ]
     },
     {
-      "id": "counts-prevention-cr",
-      "claim": "records:counts refuses CR line ends in the prevention file and writes nothing.",
-      "test": {
-        "kind": "vitest",
-        "file": "scripts/records-counts.test.ts",
-        "name": "refuses CR line ends in the prevention file and writes nothing"
-      },
-      "assertion": "expect(readFileSync(join(dir, REGISTER), \"utf8\"), \"prevention CR\").toBe(before);",
-      "breaks": [
-        {
-          "id": "skip-prevention-form-cr",
-          "file": "scripts/lib/records-counts.ts",
-          "edits": [
-            {
-              "find": "  const checkedFiles = [...files, ...checkedOnly];\n",
-              "replace": "  const checkedFiles = [...files];\n"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "counts-prevention-padded-id",
-      "claim": "records:counts refuses a padded issue id in the prevention file and writes nothing.",
-      "test": {
-        "kind": "vitest",
-        "file": "scripts/records-counts.test.ts",
-        "name": "refuses a padded issue id in the prevention file and writes nothing"
-      },
-      "assertion": "expect(readFileSync(join(dir, REGISTER), \"utf8\"), \"prevention padded id\").toBe(before);",
-      "breaks": [
-        {
-          "id": "skip-prevention-form-id",
-          "file": "scripts/lib/records-counts.ts",
-          "edits": [
-            {
-              "find": "  const checkedFiles = [...files, ...checkedOnly];\n",
-              "replace": "  const checkedFiles = [...files];\n"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "counts-real-files-pass",
       "claim": "The real delivery-quality files give no form problem.",
       "test": {
@@ -1293,60 +1249,6 @@
       ]
     },
     {
-      "id": "counts-no-write-split-prevention",
-      "claim": "records:counts --write writes nothing when a blank line splits the prevention table.",
-      "test": {
-        "kind": "vitest",
-        "file": "scripts/records-counts.test.ts",
-        "name": "writes nothing when a blank line splits the prevention table"
-      },
-      "assertion": "expect(readFileSync(join(dir, REGISTER), \"utf8\"), \"split prevention table\").toBe(before);",
-      "breaks": [
-        {
-          "id": "write-despite-split-prevention",
-          "file": "scripts/lib/records-counts.ts",
-          "edits": [
-            {
-              "find": "  const checkedFiles = [...files, ...checkedOnly];\n",
-              "replace": "  const checkedFiles = [...files];\n"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "counts-cell-count-prevention",
-      "claim": "records:counts checks the cell count of each prevention table row (plan revision 10, Q6 A).",
-      "test": {
-        "kind": "vitest",
-        "file": "scripts/records-counts.test.ts",
-        "name": "refuses a prevention row with a wrong cell count"
-      },
-      "assertion": "expect(result.stderr, \"prevention cell count\").toContain(",
-      "breaks": [
-        {
-          "id": "check-ledger-files-only",
-          "file": "scripts/lib/records-counts.ts",
-          "edits": [
-            {
-              "find": "  const checkedFiles = [...files, ...checkedOnly];\n",
-              "replace": "  const checkedFiles = [...files];\n"
-            }
-          ]
-        },
-        {
-          "id": "forget-prevention-heading",
-          "file": "scripts/lib/records-counts.ts",
-          "edits": [
-            {
-              "find": "    PREVENTION_HEADER,\n",
-              "replace": ""
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "counts-prevention-not-count-source",
       "claim": "records:counts reads no count from the prevention file; a round table there changes no count (plan revision 11, Q1 A).",
       "test": {
@@ -1363,6 +1265,584 @@
             {
               "find": "  const { ledger, problems } = readLedger(files, checkedOnly);\n  if (ledger === undefined) return { files: [...files], problems };",
               "replace": "  const { ledger, problems } = readLedger([...files, ...checkedOnly]);\n  if (ledger === undefined) return { files: [...files], problems };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-ledger-cr",
+      "claim": "records:counts refuses a cr in docs/delivery-quality.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-ledger-cr-no-form-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-ledger-padded-id",
+      "claim": "records:counts refuses a padded id in docs/delivery-quality.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a padded id in docs/delivery-quality.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-ledger-padded-id-no-form-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-ledger-split",
+      "claim": "records:counts refuses a split table in docs/delivery-quality.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a split table in docs/delivery-quality.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-ledger-split-no-split-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...splitTables(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-ledger-cell-count",
+      "claim": "records:counts refuses a cell count in docs/delivery-quality.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cell count in docs/delivery-quality.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-ledger-cell-count-no-cell-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...cellCountProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-ledger-exit",
+      "claim": "records:counts exits with status 1 on a CR in docs/delivery-quality.md (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality.md"
+      },
+      "assertion": "expect(result.status, \"refusal exit\").toBe(1);",
+      "breaks": [
+        {
+          "id": "table-ledger-exit-zero",
+          "file": "scripts/lib/report.ts",
+          "edits": [
+            {
+              "find": "  process.exitCode = 1;",
+              "replace": "  process.exitCode = 0;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-ledger-no-write",
+      "claim": "records:counts --write changes no file on a CR in docs/delivery-quality.md, the damaged file too (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality.md"
+      },
+      "assertion": "expect(allFiles(dir), \"no file written\").toEqual(before);",
+      "breaks": [
+        {
+          "id": "table-ledger-write-on-problem",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  if (ledger === undefined) return { files: [...files], problems };",
+              "replace": "  if (ledger === undefined)\n    return { files: files.map((file) => ({ ...file, text: `${file.text}\\n` })), problems };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-archive-cr",
+      "claim": "records:counts refuses a cr in docs/delivery-quality-archive.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-archive.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-archive-cr-no-form-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-archive-padded-id",
+      "claim": "records:counts refuses a padded id in docs/delivery-quality-archive.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a padded id in docs/delivery-quality-archive.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-archive-padded-id-no-form-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-archive-split",
+      "claim": "records:counts refuses a split table in docs/delivery-quality-archive.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a split table in docs/delivery-quality-archive.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-archive-split-no-split-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...splitTables(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-archive-cell-count",
+      "claim": "records:counts refuses a cell count in docs/delivery-quality-archive.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cell count in docs/delivery-quality-archive.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-archive-cell-count-no-cell-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...cellCountProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-archive-exit",
+      "claim": "records:counts exits with status 1 on a CR in docs/delivery-quality-archive.md (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-archive.md"
+      },
+      "assertion": "expect(result.status, \"refusal exit\").toBe(1);",
+      "breaks": [
+        {
+          "id": "table-archive-exit-zero",
+          "file": "scripts/lib/report.ts",
+          "edits": [
+            {
+              "find": "  process.exitCode = 1;",
+              "replace": "  process.exitCode = 0;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-archive-no-write",
+      "claim": "records:counts --write changes no file on a CR in docs/delivery-quality-archive.md, the damaged file too (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-archive.md"
+      },
+      "assertion": "expect(allFiles(dir), \"no file written\").toEqual(before);",
+      "breaks": [
+        {
+          "id": "table-archive-write-on-problem",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  if (ledger === undefined) return { files: [...files], problems };",
+              "replace": "  if (ledger === undefined)\n    return { files: files.map((file) => ({ ...file, text: `${file.text}\\n` })), problems };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-register-cr",
+      "claim": "records:counts refuses a cr in docs/delivery-quality-register.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-register.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-register-cr-no-form-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-register-padded-id",
+      "claim": "records:counts refuses a padded id in docs/delivery-quality-register.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a padded id in docs/delivery-quality-register.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-register-padded-id-no-form-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-register-split",
+      "claim": "records:counts refuses a split table in docs/delivery-quality-register.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a split table in docs/delivery-quality-register.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-register-split-no-split-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...splitTables(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-register-cell-count",
+      "claim": "records:counts refuses a cell count in docs/delivery-quality-register.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cell count in docs/delivery-quality-register.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-register-cell-count-no-cell-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...cellCountProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-register-exit",
+      "claim": "records:counts exits with status 1 on a CR in docs/delivery-quality-register.md (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-register.md"
+      },
+      "assertion": "expect(result.status, \"refusal exit\").toBe(1);",
+      "breaks": [
+        {
+          "id": "table-register-exit-zero",
+          "file": "scripts/lib/report.ts",
+          "edits": [
+            {
+              "find": "  process.exitCode = 1;",
+              "replace": "  process.exitCode = 0;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-register-no-write",
+      "claim": "records:counts --write changes no file on a CR in docs/delivery-quality-register.md, the damaged file too (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-register.md"
+      },
+      "assertion": "expect(allFiles(dir), \"no file written\").toEqual(before);",
+      "breaks": [
+        {
+          "id": "table-register-write-on-problem",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  if (ledger === undefined) return { files: [...files], problems };",
+              "replace": "  if (ledger === undefined)\n    return { files: files.map((file) => ({ ...file, text: `${file.text}\\n` })), problems };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-prevention-cr",
+      "claim": "records:counts refuses a cr in docs/delivery-quality-prevention.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-prevention.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-prevention-cr-no-form-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "table-prevention-cr-ledger-files-only",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  const checkedFiles = [...files, ...checkedOnly];\n",
+              "replace": "  const checkedFiles = [...files];\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-prevention-padded-id",
+      "claim": "records:counts refuses a padded id in docs/delivery-quality-prevention.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a padded id in docs/delivery-quality-prevention.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-prevention-padded-id-no-form-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...formProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "table-prevention-padded-id-ledger-files-only",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  const checkedFiles = [...files, ...checkedOnly];\n",
+              "replace": "  const checkedFiles = [...files];\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-prevention-split",
+      "claim": "records:counts refuses a split table in docs/delivery-quality-prevention.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a split table in docs/delivery-quality-prevention.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-prevention-split-no-split-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...splitTables(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "table-prevention-split-ledger-files-only",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  const checkedFiles = [...files, ...checkedOnly];\n",
+              "replace": "  const checkedFiles = [...files];\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-prevention-cell-count",
+      "claim": "records:counts refuses a cell count in docs/delivery-quality-prevention.md with its message (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cell count in docs/delivery-quality-prevention.md"
+      },
+      "assertion": "expect(result.stderr, \"refusal message\").toContain(`${path}${damaged?.message ?? \"\"}`);",
+      "breaks": [
+        {
+          "id": "table-prevention-cell-count-no-cell-check",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    ...cellCountProblems(checkedFiles),\n",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "table-prevention-cell-count-ledger-files-only",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  const checkedFiles = [...files, ...checkedOnly];\n",
+              "replace": "  const checkedFiles = [...files];\n"
+            }
+          ]
+        },
+        {
+          "id": "table-prevention-cell-count-no-heading",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    PREVENTION_HEADER,\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-prevention-exit",
+      "claim": "records:counts exits with status 1 on a CR in docs/delivery-quality-prevention.md (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-prevention.md"
+      },
+      "assertion": "expect(result.status, \"refusal exit\").toBe(1);",
+      "breaks": [
+        {
+          "id": "table-prevention-exit-zero",
+          "file": "scripts/lib/report.ts",
+          "edits": [
+            {
+              "find": "  process.exitCode = 1;",
+              "replace": "  process.exitCode = 0;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-table-prevention-no-write",
+      "claim": "records:counts --write changes no file on a CR in docs/delivery-quality-prevention.md, the damaged file too (plan revision 11, Q3 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "finds a cr in docs/delivery-quality-prevention.md"
+      },
+      "assertion": "expect(allFiles(dir), \"no file written\").toEqual(before);",
+      "breaks": [
+        {
+          "id": "table-prevention-write-on-problem",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  if (ledger === undefined) return { files: [...files], problems };",
+              "replace": "  if (ledger === undefined)\n    return { files: files.map((file) => ({ ...file, text: `${file.text}\\n` })), problems };"
             }
           ]
         }
