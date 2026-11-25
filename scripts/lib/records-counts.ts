@@ -291,11 +291,17 @@ function ownedCells(ledger: Ledger): Owned[] {
 }
 
 const ISSUE_HEADER = "| Issue ID |";
+const PREVENTION_HEADER = "| Cause / linked issues |";
 
 // A row with more or fewer cells than its header: a stray or missing `|` moves each later cell,
 // so the state, the discovery PR or the escaped value would be read from the wrong cell.
 function cellCountProblems(files: readonly LedgerFile[]): string[] {
-  const headers = [ISSUE_HEADER, ROUND_HEADER, ...Object.values(TABLES).map((t) => t.header)];
+  const headers = [
+    ISSUE_HEADER,
+    ROUND_HEADER,
+    PREVENTION_HEADER,
+    ...Object.values(TABLES).map((t) => t.header),
+  ];
   return headers.flatMap((header) =>
     tablesWithHeader({ files, header }).flatMap((table) =>
       table.rows

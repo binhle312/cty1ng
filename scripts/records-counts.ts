@@ -8,8 +8,6 @@ import {
   ISSUE_FILES,
   type LedgerFile,
   checkCounts,
-  formProblems,
-  splitTables,
   strayLedgerFiles,
   writeCounts,
 } from "./lib/records-counts.ts";
@@ -32,20 +30,20 @@ const missingSearchFiles = REQUIRED_SEARCH_FILES.filter(
 const fileProblems = [
   ...strayLedgerFiles({ docs, list: LEDGER_FILES }),
   ...missingSearchFiles.map((path) => `${path}: required search file is missing.`),
-  ...formProblems(requiredSearchFiles),
-  ...splitTables(requiredSearchFiles),
 ];
-// The "Same cause?" search (AGENTS.md §9) also reads docs/delivery-quality-prevention.md and the lessons.
-const otherSearchFiles = [
-  ...requiredSearchFiles,
-  ...docs.filter((file) => /^docs\/lessons-learned\/[^/]+\.md$/.test(file.path)),
-];
+// One list for every check (plan revision 10, Q6 A): the ledger files and the prevention file.
+// Only the ledger files can be written; the prevention file is checked and searched.
+const checked = [...files, ...requiredSearchFiles];
+// The "Same cause?" search (AGENTS.md §9) also reads the lessons.
+const otherSearchFiles = docs.filter((file) =>
+  /^docs\/lessons-learned\/[^/]+\.md$/.test(file.path),
+);
 
 if (values.write && fileProblems.length === 0) {
-  const written = writeCounts(files);
+  const written = writeCounts(checked);
   for (const file of written.files) {
     const before = files.find((f) => f.path === file.path)?.text;
-    if (before !== file.text) {
+    if (before !== undefined && before !== file.text) {
       writeFileSync(file.path, file.text);
       console.log(`records:counts: wrote ${file.path}`);
     }
@@ -56,5 +54,5 @@ if (values.write && fileProblems.length === 0) {
     written.problems.length > 0 ? written.problems : checkCounts(written.files, otherSearchFiles),
   );
 } else {
-  report("records:counts", [...fileProblems, ...checkCounts(files, otherSearchFiles)]);
+  report("records:counts", [...fileProblems, ...checkCounts(checked, otherSearchFiles)]);
 }

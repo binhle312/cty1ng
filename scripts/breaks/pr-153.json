@@ -1241,8 +1241,8 @@
           "file": "scripts/records-counts.ts",
           "edits": [
             {
-              "find": "  ...formProblems(requiredSearchFiles),\n",
-              "replace": ""
+              "find": "const checked = [...files, ...requiredSearchFiles];",
+              "replace": "const checked = [...files];"
             }
           ]
         }
@@ -1263,8 +1263,8 @@
           "file": "scripts/records-counts.ts",
           "edits": [
             {
-              "find": "  ...formProblems(requiredSearchFiles),\n",
-              "replace": ""
+              "find": "const checked = [...files, ...requiredSearchFiles];",
+              "replace": "const checked = [...files];"
             }
           ]
         }
@@ -1307,7 +1307,39 @@
           "file": "scripts/records-counts.ts",
           "edits": [
             {
-              "find": "  ...splitTables(requiredSearchFiles),\n",
+              "find": "const checked = [...files, ...requiredSearchFiles];",
+              "replace": "const checked = [...files];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "counts-cell-count-prevention",
+      "claim": "records:counts checks the cell count of each prevention table row (plan revision 10, Q6 A).",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "refuses a prevention row with a wrong cell count"
+      },
+      "assertion": "expect(result.stderr, \"prevention cell count\").toContain(",
+      "breaks": [
+        {
+          "id": "check-ledger-files-only",
+          "file": "scripts/records-counts.ts",
+          "edits": [
+            {
+              "find": "const checked = [...files, ...requiredSearchFiles];",
+              "replace": "const checked = [...files];"
+            }
+          ]
+        },
+        {
+          "id": "forget-prevention-heading",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    PREVENTION_HEADER,\n",
               "replace": ""
             }
           ]

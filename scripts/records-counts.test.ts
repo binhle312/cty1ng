@@ -250,6 +250,76 @@ describe("records:counts", () => {
     });
   });
 
+  it("refuses a prevention row with a wrong cell count", () => {
+    const prevention = [
+      "| Cause / linked issues | Action and owner | Enforcement or review step | Verification | State |",
+      "| --- | --- | --- | --- | --- |",
+      "| Paper jam | Check the tray | Inspect the tray | Clear | done | extra |",
+      "",
+    ].join("\n");
+    withSplitLedger({ fixture: onePr(), prevention }, (dir) => {
+      const result = runCounts(dir);
+      expect(result.stderr, "prevention cell count").toContain(
+        `${PREVENTION}:3: the row Paper jam has 6 cells`,
+      );
+    });
+  });
+
+  describe("checks each of the four files", () => {
+    const prevention = [
+      "# Prevention",
+      "",
+      "| Cause / linked issues | Action and owner | Enforcement or review step | Verification | State |",
+      "| --- | --- | --- | --- | --- |",
+      "| Paper jam | Check the tray | Inspect the tray | Clear | done |",
+      "",
+    ].join("\n");
+    const firstRow = /^\| (DQ-\d+|M2|Paper jam) \|/;
+    const kinds = {
+      cr: (text: string) => ({
+        text: text.replace("\n", "\r\n"),
+        message: () => ": the file has CR line ends",
+      }),
+      "padded id": (text: string) => {
+        const lines = text.replace(/\n$/, "").split("\n");
+        return {
+          text: `${lines.join("\n")}\n|  DQ-999 | padded |\n`,
+          message: () => `:${lines.length + 1}: write the first cell`,
+        };
+      },
+      "split table": (text: string) => {
+        const lines = text.replace(/\n$/, "").split("\n");
+        return {
+          text: `${lines.join("\n")}\n\n| stray | row |\n`,
+          message: () => `:${lines.length + 2}: a table row with no header row before it`,
+        };
+      },
+      "cell count": (text: string) => {
+        const lines = text.split("\n");
+        const index = lines.findIndex((line) => firstRow.test(line));
+        lines[index] = `${lines[index]} extra |`;
+        return { text: lines.join("\n"), message: () => `:${index + 1}: the row` };
+      },
+    };
+    for (const path of [MAIN, ARCHIVE, REGISTER, PREVENTION])
+      for (const [kind, damage] of Object.entries(kinds))
+        it(`finds a ${kind} in ${path}`, () => {
+          const fixture = onePr({
+            registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
+            archiveIssues: [issue({ id: 3, pr: 10 })],
+          });
+          withSplitLedger({ fixture, prevention }, (dir) => {
+            const damaged = damage(readFileSync(join(dir, path), "utf8"));
+            writeFileSync(join(dir, path), damaged.text);
+            const before = readFileSync(join(dir, REGISTER), "utf8");
+            const result = runCounts(dir, "--write");
+            expect(result.stderr, `${kind} in ${path}`).toContain(`${path}${damaged.message()}`);
+            if (path !== REGISTER)
+              expect(readFileSync(join(dir, REGISTER), "utf8"), "no write").toBe(before);
+          });
+        });
+  });
+
   it("finds no form problem in the real delivery-quality files", () => {
     const root = fileURLToPath(new URL("..", import.meta.url));
     const paths = [...ISSUE_FILES, REGISTER, PREVENTION];
