@@ -1,7 +1,6 @@
 # Leader: guide for people
 
 This file shows a person how the skill works. The rules are in `SKILL.md`; this file adds no rule.
-Each label in a sketch is the name of a part or a stage of `SKILL.md`.
 
 ## How to start it
 
@@ -59,7 +58,6 @@ lead agent gives in each report.
       ▼
  5 worker: plan in its own words ──▶ lead agent accepts ──▶ worker builds, and its
    test-verifier and reviewer subagents check
-   (see The lead agent's own work)
       │
       ▼
  6 lead agent checks each report ──▶ 7 two outside reviewers ──▶ fixes ──▶ the same two

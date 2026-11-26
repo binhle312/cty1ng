@@ -68,15 +68,21 @@ subagents below at the same time and name the role of each, or ask the same ones
 start them in the plan turn.
 If the Codex configuration has no such role, give the same job to a subagent with no role.
 - `test-verifier`: it tests each acceptance criterion of the task, from the requirements, and gives
-  PASS, FAIL or NOT VERIFIED with evidence.
+  PASS, FAIL or NOT VERIFIED with evidence. It runs the tests and checks, changes no file of the
+  work, and makes no commit or push.
 - `reviewer`: it reviews your change and its evidence, and changes no file.
 > For a task that is not code, keep only the reviewer.
 Give each one the task, the acceptance criteria, the worktree, the commands and the limits of this
-brief. Fix their findings before you report, and put their results in your report.
+brief. Fix their findings, or answer a finding with your evidence, before you report. Put their
+results in your report.
 </your_team>
 
 <rules_for_the_worker>
-[Copy the list "Rules for the worker" from the leader skill here.]
+If a fact is missing, stop and write the question in the report. Do not guess.
+At each checkpoint of your plan, end your turn with a report.
+If this brief names a remote branch, push the committed work at each checkpoint: only to that
+branch, and with no force.
+Fix each finding that the lead agent sends, or answer it with your evidence.
 If a command fails or times out, find the cause and try again another way. Stop only for a missing
 fact or a deliberate block, such as a file that the brief tells you not to change. Then write what
 you found in the report.

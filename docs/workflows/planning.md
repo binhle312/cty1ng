@@ -1,6 +1,6 @@
 # Plan a slice
 
-Read this workflow before a new slice or a change that needs a plan. Who does each step: the [`leader` skill](../../.agents/skills/leader/SKILL.md). Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
+Read this workflow before a new slice or a change that needs a plan. The lead agent does the steps of this workflow: the spec gap pass, the risk probes (it can give one to a worker), the plan, the UI and code designs, and the test strategy. Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
 
 ## Brief
 
@@ -95,8 +95,8 @@ across several screens or a new requirement that changes an existing design, the
 one-page code design before any code (owner, 2026-11-04; `principle-design-first`). The design
 names the state owner, the modules, the data flow and the failure paths, and it compares at
 least two options with their costs. For a new requirement in an existing design, one option
-builds as if the requirement always existed. Before the owner approves it, an independent
-review tries to break it. The owner approves it in every such slice, checkpointed or not, from a short form (see
+builds as if the requirement always existed. Before the owner approves it, a reviewer that did not write it
+tries to break it: the lead agent starts this review before the owner's OK. This project rule comes before the rule of the `leader` skill that starts no reviewer before the OK. The owner approves it in every such slice, checkpointed or not, from a short form (see
 [human review](human-review.md)). The state table below is part of this design. A slice that
 stays inside one module skips this step, unless a new requirement changes its design.
 
@@ -129,10 +129,9 @@ becomes the lead agent with the `leader` skill. Type:
    If a screen has saves under a lock, live events or late answers, the plan has its state
    table (planning.md, "State table for stateful screens").
 3. Build on branch <m#-name> as the leader skill says, by
-   docs/workflows/implementation.md, test first. The leader skill,
-   .agents/skills/leader/SKILL.md, says who does each step. Keep to the brief's scope; list
+   docs/workflows/implementation.md, test first. Keep to the brief's scope; list
    anything else that you notice under "Follow-ups" in the PR instead of doing it.
 4. Run every check in AGENTS.md §4, and fill the PR description per
-   docs/workflows/pull-request.md, as the Roles table assigns.
+   docs/workflows/pull-request.md.
 If the docs and the code disagree, or the brief is ambiguous, stop and ask.
 ```

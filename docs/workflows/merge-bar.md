@@ -1,6 +1,6 @@
 # Merge bar
 
-The agents that build a change and the agents that review work use this bar. Who does each step: the [`leader` skill](../../.agents/skills/leader/SKILL.md). Read it when you give a finding a severity, decide what a
+The agents that build a change and the agents that review work use this bar. Read it when you give a finding a severity, decide what a
 finding blocks, write a state table or order test, set the limits of a pattern rule, or decide
 when the review of a P3 PR ends.
 
@@ -27,7 +27,7 @@ Harm is small and recoverable when all of these are true:
 
 At each milestone close, before the next milestone starts, each open P3 (ledger rows and follow-ups) is fixed, or the owner drops it (owner, 2026-11-10).
 
-If the builder of the PR, or the agent that built the change, and the reviewer disagree about a severity, ask the owner.
+If the builder of the PR, or the agent that built the change, and the reviewer disagree about a severity, ask the owner. If they disagree about a design question, the owner decides, and the decision goes into `docs/decisions/`.
 This bar does not change `AGENTS.md` §7, §8 or §9, but step 5 of the section below has an owner's exception with limits for §9 in round 2 and in a later review (owner, 2026-11-12 and 2026-11-13).
 
 ## When the review of a P3 PR ends

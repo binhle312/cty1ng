@@ -1,7 +1,8 @@
 # Implement an approved slice
 
 Read this workflow when you implement an approved plan. If a plan is missing, use [planning](planning.md) first.
-Who does each step: the [`leader` skill](../../.agents/skills/leader/SKILL.md).
+The builder (a worker that the lead agent starts) does these steps, and the lead agent checks each report.
+If the brief is ambiguous, the builder asks the lead agent, the lead agent asks the owner, and the owner's answer goes into the brief, so that it is kept.
 Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
 
 ## Build

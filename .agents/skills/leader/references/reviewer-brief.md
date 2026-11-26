@@ -32,11 +32,11 @@ Read the code before you make a claim about it. If you cannot check a claim, wri
 
 <limits>
 [The limits that the leader skill gives for this reviewer.]
-Run only the tests and checks of this diff: [the commands, or "none: the test results are in the
-facts"]. Do not run the full suite again.
+[The tests and checks that it may run, or "none: the test results are in the facts".]
 </limits>
 
 <checks>
+[The checks that the leader skill names for this reviewer, if any.]
 - Check each requirement and each promise of the plan against the code and its evidence.
 - Try to break the work: wrong input, a missing case, a wrong order of events, an old state.
 - Check that each test can fail: what change to the code makes it fail?

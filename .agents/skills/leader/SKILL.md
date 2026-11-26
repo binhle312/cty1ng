@@ -59,11 +59,12 @@ Do these tasks yourself, and start no worker for them:
 
 Give each other build to a worker, including a simple code change.
 
+- Run the checks of your plan on your own change before you commit it.
 - Start your own code change only on a worktree with no other change: `git status --porcelain`
   gives nothing. If it gives a line, give the change to a worker.
 - To count the changed lines, mark each new file of the change with `git add -N <file>`, then
-  run `git diff --numstat HEAD`. Add the larger of the added and the removed lines of each code
-  file. If your change grows to 5 lines or more, stop, and give it to a worker. After the OK, that
+  run `git diff --numstat <the commit before your change>`, also after a review fix. Add the larger
+  of the added and the removed lines of each code file. If your change grows to 5 lines or more, stop, and give it to a worker. After the OK, that
   is a change of the plan: ask the owner first.
 
 ## Stages of a task
@@ -87,13 +88,13 @@ Give each other build to a worker, including a simple code change.
      each task that you do [yourself](#the-lead-agents-own-work).
    - **The reviewers:** the [two outside reviewers](#outside-reviewers) of each worker team and of
      your own code change.
-   - **The models:** the model and the effort of each worker, with one reason from its task. See
-     [Workers](#workers).
+   - **The models:** the model and the effort of each worker and reviewer, with one reason from its
+     task. See [Workers](#workers).
 
    Make the plan as short as the work. For a code change that you make yourself, a few lines are
    enough. Work that starts no worker and no reviewer needs no plan: do it.
 
-   After the OK, ask the owner before you change a task, a model or an effort. A new
+   After the OK, ask the owner before you change a task, the number of workers or reviewers, a model or an effort. A new
    session with the same task, model and effort is not a change: one that replaces a worker or a
    reviewer at the [limit](#context-of-each-worker) or one that ended, and the new pair of outside
    reviewers at the next report. A move to the
@@ -121,7 +122,7 @@ Stop the work that depends on the item, and tell the owner, when one of these oc
 - A bug does not reproduce.
 - A fix has the same cause as an earlier fix.
 - An approval that the project asks for is missing.
-- A worker and a reviewer disagree about a finding, and the evidence does not decide it.
+- You, a worker or a reviewer disagree about a finding, and the evidence does not decide it.
 
 Other work goes on. An ordinary obstacle, such as an error, a timeout or a failed tool, is not a
 stop: find its cause, and try again another way.
@@ -156,9 +157,11 @@ and tell the owner.
 Pick the worker by the task. The [outside reviewers](#outside-reviewers) have fixed models, and an
 outside reviewer is never a weaker model than the worker. The subagents of a Codex worker keep the
 models of their Codex roles, which can be weaker (owner, 2026-11-25). For Codex, use the
-[model table in `references/codex.md`](references/codex.md#pick-the-models). Give each pick to the
-owner in the plan of [stage 4](#stages-of-a-task), with its effort and one reason. Keep the model
-of a session until its task ends.
+[model table in `references/codex.md`](references/codex.md#pick-the-models). Use the cheapest row
+that fits, and raise the effort one level for a task with more steps or more trade-offs. If Codex
+lists a newer model than the table, tell the owner before you use it. Give each pick to the owner
+in the plan of [stage 4](#stages-of-a-task), with its effort and one reason. Keep the model of a
+session until its task ends.
 
 ### Teams
 
@@ -172,9 +175,8 @@ its own work with subagents that it starts (owner, 2026-11-25).
 | Team reviewer | A subagent of the worker: reviews the change and its evidence, and changes no file | The worker starts a subagent with the role `reviewer` | You start a review role that cannot edit files, such as `reviewer` |
 | Default worker | The worker session of a task that is not code and is not [your own work](#the-lead-agents-own-work), such as documents, research or a measurement; its only subagent is the team reviewer | The worker column of the model table | A general subagent |
 
-- The worker ends its turn with a report at each checkpoint of its plan. After each build turn and
-  each fix turn, it runs its team checks and fixes their findings before it reports. The part
-  `<your_team>` of the worker brief tells it how.
+- The worker ends its turn with a report at each checkpoint of its plan, after the team checks of
+  the part `<your_team>` of the worker brief.
 - Run at most 2 worker teams at the same time (owner, 2026-11-25; the owner can change it). A new
   session at the limit adds no team. Your plan gives the order of the tasks that wait.
 
@@ -211,23 +213,11 @@ subagent that [takes a Codex place](#when-codex-cannot-run).
 
 ### Briefs
 
-**Write the brief** as a file. The worker has no part of your conversation, so the brief has these parts:
+**Write the brief** as a file. The worker has no part of your conversation. Write each brief from a
+template in this skill's folder:
 
-- **Goal and done:** the goal in the owner's words, its reason, and what "done" means.
-- **Facts:** each fact that the job needs: decisions, rules, ids, exact words, commands.
-- **Paths:** the paths that it can read, and the paths that it must not read.
-- **Worktree and branch.**
-- **Scope:** what to change, and what to leave as it is.
-- **Limits:** the limits of the machine and of parallel work that the worker must keep.
-- **Checks:** the commands that show that the work is done.
-- **Report:** the form of the report.
-- **Rules for the worker:** the [rules for the worker](#rules-for-the-worker).
-- **First turn:** the request for the plan in the worker's own words (see [Get the plan first](#get-the-plan-first)).
-
-Write each brief from a template in this skill's folder:
-
-- `references/worker-brief.md` for a worker. It has one section for each part of a brief above.
-- `references/reviewer-brief.md` for an outside reviewer.
+- `references/worker-brief.md` for a worker. It holds the rules for the worker and its first turn.
+- `references/reviewer-brief.md` for a reviewer.
 
 Fill each section with facts for this task. Delete the guidance lines. The brief carries each limit
 as a rule, and you check the diff and the folders after each turn. For a task with an image, name
@@ -268,16 +258,17 @@ error, such as a wrong option or a sandbox refusal, is an ordinary obstacle: fin
   Start the team reviewer, and for a coding task also the test verifier, or send the same ones a
   new message. Their models are the defaults of their roles (owner, 2026-11-26). Write their briefs
   from `references/reviewer-brief.md`. The limits of the team reviewer: it changes no file and
-  makes no commit. The test verifier tests each acceptance criterion (PASS, FAIL or NOT VERIFIED).
-  Its limits: it may run the tests and let them write their output files, it changes no project
-  file, and it makes no commit. Send their findings to the implementer.
+  makes no commit or push. For the test verifier, put the acceptance criteria in `<checks>`: each
+  FAIL or NOT VERIFIED is a finding. Its limits: it may run the tests and let them write their output
+  files, it changes no project file, and it makes no commit or push. Send their findings to the
+  implementer.
 - Start the outside reviewers of a checkpoint after the team checks ran and the implementer fixed
   their findings for that checkpoint (owner, 2026-11-26).
 - The OpenAI reviewer cannot run: start a second new Claude Opus reviewer in its place.
 
 ### Get the plan first
 
-See the first turn in [Rules for the worker](#rules-for-the-worker). Accept the worker's plan only
+The worker's first turn is in the worker brief. Accept the worker's plan only
 when all of these are true:
 
 - each point of the goal has a step;
@@ -313,8 +304,8 @@ of each Codex session at each moment. You cannot read it for a
 - At 50% or more (the owner's limit, 2026-11-25; the owner can change it), replace the worker:
   1. If a turn runs, [stop the run](#stop-a-workers-run). Do not stop the handoff turn of step 2 at
      the limit: let it finish.
-  2. Send the worker a message: give the worker's handoff as your last message, and do no other
-     work. The report file of that turn holds it, also for a reviewer that cannot write files.
+  2. Send the worker a message: give your handoff, with the parts below, as your last message, and
+     do no other work. The report file of that turn holds it, also for a reviewer that cannot write files.
   3. Read the worker's handoff. Compare each claim with the diff, the commits and the test results.
      Correct it, and add each fact that it misses.
   4. Start a new worker with the same model, effort and sandbox, in the same worktree. Give it the
@@ -333,23 +324,6 @@ of each Codex session at each moment. You cannot read it for a
   (owner, 2026-11-24). Each part gets its own two outside reviewers. A worker's handoff does not
   save a review that is too big: the new reviewer
   reads the brief, the worker's handoff and the files again, and stops at the limit before it reports.
-
-## Rules for the worker
-
-Put these rules in each build brief. In a review brief, leave out the rules about the first turn
-and the push.
-
-- In your first turn, write your plan in your own words: the goal, each step with its check, and
-  your questions. Change no file before the lead agent accepts the plan.
-- If a fact is missing, stop and write the question in the report. Do not guess.
-- In the report, name each obstacle, such as a missing file or a tool that did not work.
-- Work only in the worktree and on the branch that the brief names.
-- At each checkpoint of your plan, end your turn with a report.
-- If the brief names a remote branch: at each checkpoint of the plan, push the committed work.
-  Push only to the branch of the brief, and with no force.
-- If you pushed: in the report, give the pushed commit and the result of the remote checks for it.
-- For each claim in the report, give the command and its result.
-- When the lead agent asks for your handoff, give it as your last message, and do no other work.
 
 ## The project wins
 

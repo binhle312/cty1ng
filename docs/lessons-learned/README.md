@@ -12,6 +12,7 @@ The existing file paths stay stable so earlier review records still resolve.
 - Use `applied` for the recorded process response, or `open` when part still waits.
 - `applied` does not establish that every defect is closed or that a PR merged.
 - Update [delivery quality](../delivery-quality.md) when a review adds or resolves an issue.
+- When the owner sees a problem in how a slice was built (slow, too many questions, surprises), record the project evidence here and the quality evidence in [delivery quality](../delivery-quality.md); link or update the reusable principle and its project application.
 
 All source lessons remain because each contains project evidence.
 Their repeated general instructions now point to principles. The table maps every source lesson.

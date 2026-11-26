@@ -17,17 +17,16 @@ Pick the models from the table.
 The table has no row for the tasks that you do yourself. The reviewer model: the OpenAI outside
 reviewer is always a new `gpt-6.2-astra` session at `high` (owner, 2026-11-25).
 
-- Use the cheapest row that fits. For the same tokens, Terra uses about half the credits of
-  Sol, and Astra uses about 4 times the credits of Sol.
-- Raise the effort of a worker one level when a task has more steps or more trade-offs. Most
-  tasks do not need `max`. A Codex session at `high` starts subagents of its own; it does not need
-  `ultra`.
+- For the same tokens, Terra uses about half the credits of Sol, and Astra uses about 4 times the
+  credits of Sol.
+- Most tasks do not need `max`. A Codex session at `high` starts subagents of its own; it does not
+  need `ultra`.
 - On 2026-11-25, Codex reported windows of 475,000 tokens for Sol and 258,400 for Astra (owner:
   "astra is 258k like you said, sol is 475l as I checked directly in codex session"). Terra: 475,000
   (owner, 2026-11-25: "they reduce it to 475k only"; not measured in a run).
 - On a model with a window of about 258,000 tokens, full reviews of large changes reached 35% before
-  they reported (2026-11-24 and 2026-11-25). Split a large review.
-- The table is from 2026-11-24. If Codex lists a newer model, tell the owner before you use it.
+  they reported (2026-11-24 and 2026-11-25).
+- The table is from 2026-11-24.
 
 ## Commands
 

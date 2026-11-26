@@ -1,6 +1,6 @@
 # Development plan
 
-The order in which the app is built, and why. Progress lives in [status.md](status.md), not here;
+The order in which the app is built, and why. The owner chooses the next slice. Progress lives in [status.md](status.md), not here;
 this file changes only when the plan changes.
 
 Split milestones into reviewable parts where needed. Each part preserves a usable, tested
@@ -54,6 +54,9 @@ Allowed in parallel, in separate git worktrees and branches:
 
 Not in parallel: two slices that touch the same tables or migrations (drizzle-kit migrations
 would conflict), or anything in the same `*.rules.ts` file at the same time.
+
+**Document drift found later.** Fix the document or the code in a small PR, and note it in the next
+slice's plan.
 
 ## M3 delivery parts
 
