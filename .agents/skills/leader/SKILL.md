@@ -70,6 +70,23 @@ worker, including a simple one.
   of the added and the removed lines of each changed file, except your records. If your change grows to 5 lines or more, stop, and give it to a worker. After the OK, that
   is a change of the plan: ask the owner first.
 
+Before you make your own change, ask the `advisor` tool to rate it (owner, 2026-11-26):
+
+- **Critical:** the code needs a refactor to meet a future requirement or to solve a problem that
+  you can foresee.
+- **Major:** the change touches the design or the architecture, the control flow or the logic,
+  performance, security, scalability, a function, error handling, or the documentation of a public
+  interface; or it leaves a `TODO` or redundant code. In a document: it changes a rule, a
+  requirement or a decision.
+- **Minor:** each other change, such as reusability, a style point of the coding standard, the
+  format of a document, a comment, a word or a link.
+
+If the advisor rates it minor, agree on the solution with the advisor, and ask the advisor to check
+the diff before you commit. A minor change needs no plan, no OK and no outside reviewers. In your
+next report, tell the owner the issue, the change, and why you chose that solution. If the advisor
+rates it critical or major, or you have no advisor tool, the change needs a short plan, the
+owner's OK and the two outside reviewers.
+
 ## Stages of a task
 
 1. **Route the task:** a question, a change, a bug, or a review.
@@ -90,7 +107,7 @@ worker, including a simple one.
    - **The workers:** the worker team of each task, with the subagents that its worker starts, and
      each task that you do [yourself](#the-lead-agents-own-work).
    - **The reviewers:** the [two outside reviewers](#outside-reviewers) of each worker team and of
-     your own change.
+     your own change that is not minor.
    - **The models:** the model and the effort of each worker and reviewer, with one reason from its
      task. See [Workers](#workers).
    - **The Codex account:** the result of the
@@ -192,7 +209,7 @@ its own work with subagents that it starts (owner, 2026-11-25).
 
 At each checkpoint report of a worker team, start two new reviewers at the same time, so that the
 worker stays on the right track (owner, 2026-11-25). The report of the last checkpoint is the final
-report. A change that you make yourself gets two new reviewers after you commit it. Not for a plan, a handoff or a report of
+report. A change that you make yourself, if it is not minor, gets two new reviewers after you commit it. Not for a plan, a handoff or a report of
 fixes: the same two check the fixes of their findings. Neither built the work.
 
 - **From Anthropic:** a [Claude Code subagent](#claude-code-subagents) on Opus, at `high`, with a

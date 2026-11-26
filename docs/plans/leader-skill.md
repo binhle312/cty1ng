@@ -603,6 +603,46 @@ rule (the owner's "Drop the count" was only about checkpoints); the lost rules o
 `coordination.md` get a home (each cell is listed in the PR). The findings that need a new rule
 wait for the owner (R2, R4, F5, F11, F12, F17, R7, Windows).
 
+**The owner's answers on review round 1** (2026-11-26). Each one is a new rule of revision 10:
+- R2, "A": the test verifier tests the acceptance criteria of the current checkpoint, and all of
+  them at the last checkpoint; the worker's plan names the criteria of each checkpoint.
+- R4, "A" (after the question "what did you mean account limit?"): a subagent that replaces a Codex
+  session also gets each message that the old session did not get.
+- F5, "A": the 5-line rule of the lead agent's own work covers each project file, code or
+  documents; the lead agent's records are not project files in this rule.
+- F11, "A": a worker builds its next checkpoint only after the outside reviewers reported and
+  checked the fixes; the report of the last checkpoint is the final report.
+- F12, F17, R7: "Agree, no need new text for those items".
+- N1, "A" (owner: "I (owner) should be awared of it before telling leader to spawn codex worker
+  teams"): the plan gives the result of the account check of `references/codex.md` (the login, the
+  limits from the newest Codex session file, the time of that data).
+- N3, "Yes" (owner: "put in `guide.md` that if they run the skill on windows, please run it in git
+  bash or wsl"): `GUIDE.md` lists what a person needs. Not tested on Windows or macOS.
+- N4, "A": the start and resume commands write the process id to a pid file, and the stop command
+  reads it. Tested on 2026-11-26: the file held the Codex process id, `kill -INT` stopped the run,
+  and the session resumed.
+- O2, "partly, leader can check via advisor if the small change is considerd minor, if it is not
+  critial or major, leader can work with advisor for solution, but ensure to report back to user
+  about what the issue and why you choose that solution", with the owner's severity table for code
+  review (Critical: a refactor for a future requirement or a foreseeable problem; Major: design,
+  logic, performance, security, scalability, function, error handling, public interface
+  documentation, `TODO`, redundant code; Normal: reusability, coding standard, document format,
+  comments). The lead agent asks the advisor to rate its own change; a minor change needs no plan,
+  no OK and no outside reviewers, the advisor checks the diff, and the next report tells the owner
+  the issue, the change and the reason. My reading; the owner can correct it.
+- O1, O3 to O15: kept as they are (owner: "Yes", "keep", "agree", "accept", "No" for one more full
+  round, "do as your recommendation").
+- The merge bar (owner: "Agree"): blockers and the majors that a run or a real case shows are fixed;
+  minors become follow-ups; an edge case in text older than revision 7 does not block. A minor
+  finding: an agent that follows the skill still does the right thing (the text is unclear or
+  repeated, or the guide differs), or a later step catches a cheap error.
+
+**Test strategy for these rules:** the fact map and the copy check; the account command and the
+pid file, run by hand (done); one fix check by the same pair on `ac9410d` to the new head; the
+clear, backup and real runs on the final head. A run with two checkpoints shows R2 and F11. No run
+shows R4 (a Codex account error in the middle of a task) or a minor change rated by the advisor:
+not claimed.
+
 ## Open questions
 
-None. The owner answered each question on 2026-11-24.
+None. The owner answered each question on 2026-11-24 and 2026-11-26.
