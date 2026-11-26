@@ -582,6 +582,27 @@ questions):
 6. No link to `coordination.md` stays in a file that is not a record (`git grep`).
 7. Lint, check:index, check:status, CI on the pushed head.
 
+**Test, at `ac9410d`** (the build of revision 10). The test project of the headless runs has no
+`docs/` and no `AGENTS.md`, so each run tests the skill alone (test 5).
+- The fact map: rc 0. The copy and link check: pass; a planted copy and a planted bad link fail it.
+- Clear goal: no Codex call and no subagent before the OK; the plan names the team and the two
+  outside reviewers, with no checkpoint count.
+- Backup: Sonnet `high` implementer; the lead agent started the `test-verifier` and `reviewer`
+  roles with no model (role defaults), and sent the same two a new message in the fix turn; two
+  Opus `high` outside reviewers after the checks and the fix.
+- Real Codex, two tasks: `gpt-6.2-sol` workers; the code worker started `test-verifier` and
+  `reviewer` in its build turn, the measurement worker only `reviewer`, and it sent `followup_task`
+  to the same reviewer in each fix turn; Opus `high` and Astra `high` read-only pairs at each
+  checkpoint report and the final report; the same pair checked the fixes.
+- CI: green.
+
+**Review round 1 of `ac9410d`** (Opus 5.5 high: 5 major, 12 minor; Astra high: 11 major, 3 minor).
+The fixes in `04a516c` finish this plan or undo an error of `ac9410d`: the worker rules leave
+`SKILL.md` (one home: the worker brief); "the number of workers or reviewers" returns to the change
+rule (the owner's "Drop the count" was only about checkpoints); the lost rules of
+`coordination.md` get a home (each cell is listed in the PR). The findings that need a new rule
+wait for the owner (R2, R4, F5, F11, F12, F17, R7, Windows).
+
 ## Open questions
 
 None. The owner answered each question on 2026-11-24.
