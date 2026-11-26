@@ -54,17 +54,20 @@ plan. It changes no file and is not a worker, so it runs before the owner's OK.
 
 Do these tasks yourself, and start no worker for them:
 
-- a focused task with a clear result: written steps, an extraction, a summary;
-- a code change of fewer than 5 changed lines.
+- a focused task with a clear result that changes no project file: written steps, an extraction,
+  a summary;
+- a change of fewer than 5 changed lines to the project's files, code or documents.
 
-Give each other build to a worker, including a simple code change.
+Your records are not project files in this rule: your folder, and the records that the project's
+instructions give to you, such as a status file or a PR description. Give each other change to a
+worker, including a simple one.
 
 - Run the checks of your plan on your own change before you commit it.
-- Start your own code change only on a worktree with no other change: `git status --porcelain`
+- Start your own change only on a worktree with no other change: `git status --porcelain`
   gives nothing. If it gives a line, give the change to a worker.
 - To count the changed lines, mark each new file of the change with `git add -N <file>`, then
   run `git diff --numstat <the commit before your change>`, also after a review fix. Add the larger
-  of the added and the removed lines of each code file. If your change grows to 5 lines or more, stop, and give it to a worker. After the OK, that
+  of the added and the removed lines of each changed file, except your records. If your change grows to 5 lines or more, stop, and give it to a worker. After the OK, that
   is a change of the plan: ask the owner first.
 
 ## Stages of a task
@@ -87,11 +90,14 @@ Give each other build to a worker, including a simple code change.
    - **The workers:** the worker team of each task, with the subagents that its worker starts, and
      each task that you do [yourself](#the-lead-agents-own-work).
    - **The reviewers:** the [two outside reviewers](#outside-reviewers) of each worker team and of
-     your own code change.
+     your own change.
    - **The models:** the model and the effort of each worker and reviewer, with one reason from its
      task. See [Workers](#workers).
+   - **The Codex account:** the result of the
+     [account check in `references/codex.md`](references/codex.md#account-limit), with the time of
+     its data. If a limit is near or used, or the data is old or missing, say so.
 
-   Make the plan as short as the work. For a code change that you make yourself, a few lines are
+   Make the plan as short as the work. For a change that you make yourself, a few lines are
    enough. Work that starts no worker and no reviewer needs no plan: do it.
 
    After the OK, ask the owner before you change a task, the number of workers or reviewers, a model or an effort. A new
@@ -107,7 +113,9 @@ Give each other build to a worker, including a simple code change.
    pushed work, the remote checks of the pushed head. Read the [context use](#context-of-each-worker)
    of each Codex session after each turn, and about each minute while a turn runs.
 7. **Review:** start the [outside reviewers](#outside-reviewers). Send the findings that you
-   accept to the worker session, or fix them in your own change.
+   accept to the worker session, or fix them in your own change. Let a worker build its next
+   checkpoint only after the outside reviewers reported and the same two checked the fixes
+   (owner, 2026-11-26): they read the same worktree, and their findings can change the next step.
 
 8. **Report** to the owner. Merge only when the owner asks for the merge of that work.
 
@@ -171,7 +179,7 @@ its own work with subagents that it starts (owner, 2026-11-25).
 | Member | Its job | Codex | When Codex cannot run |
 | --- | --- | --- | --- |
 | Implementer | The worker session of a coding task: its plan first, then the code, the tests and the commits; it fixes the findings | The worker column of the model table | A building role, such as `implementer` |
-| Test verifier | A subagent of the worker: tests each acceptance criterion, PASS, FAIL or NOT VERIFIED, with evidence | The worker starts a subagent with the role `test-verifier` | You start a test role, such as `test-verifier` |
+| Test verifier | A subagent of the worker: tests the acceptance criteria of each checkpoint, PASS, FAIL or NOT VERIFIED, with evidence | The worker starts a subagent with the role `test-verifier` | You start a test role, such as `test-verifier` |
 | Team reviewer | A subagent of the worker: reviews the change and its evidence, and changes no file | The worker starts a subagent with the role `reviewer` | You start a review role that cannot edit files, such as `reviewer` |
 | Default worker | The worker session of a task that is not code and is not [your own work](#the-lead-agents-own-work), such as documents, research or a measurement; its only subagent is the team reviewer | The worker column of the model table | A general subagent |
 
@@ -182,9 +190,9 @@ its own work with subagents that it starts (owner, 2026-11-25).
 
 ### Outside reviewers
 
-At each checkpoint report of a worker team and at its final report, start two new reviewers at the
-same time, so that the worker stays on the right track (owner, 2026-11-25). A code change that you
-make yourself gets two new reviewers after you commit it. Not for a plan, a handoff or a report of
+At each checkpoint report of a worker team, start two new reviewers at the same time, so that the
+worker stays on the right track (owner, 2026-11-25). The report of the last checkpoint is the final
+report. A change that you make yourself gets two new reviewers after you commit it. Not for a plan, a handoff or a report of
 fixes: the same two check the fixes of their findings. Neither built the work.
 
 - **From Anthropic:** a [Claude Code subagent](#claude-code-subagents) on Opus, at `high`, with a
@@ -209,7 +217,8 @@ subagent that [takes a Codex place](#when-codex-cannot-run).
   and the commits after each turn.
 - You cannot read its context use. Keep its task small.
 - It ends with this conversation. Start a new one, in a new conversation or in place of a Codex
-  session that was in a task, with the brief, the diff and the commits.
+  session that was in a task, with the brief, the diff, the commits, and each message that the old
+  session did not get, such as a finding to fix (owner, 2026-11-26).
 
 ### Briefs
 
@@ -258,7 +267,8 @@ error, such as a wrong option or a sandbox refusal, is an ordinary obstacle: fin
   Start the team reviewer, and for a coding task also the test verifier, or send the same ones a
   new message. Their models are the defaults of their roles (owner, 2026-11-26). Write their briefs
   from `references/reviewer-brief.md`. The limits of the team reviewer: it changes no file and
-  makes no commit or push. For the test verifier, put the acceptance criteria in `<checks>`: each
+  makes no commit or push. For the test verifier, put the acceptance criteria of the checkpoint in `<checks>`, and at
+  the last checkpoint all of them: each
   FAIL or NOT VERIFIED is a finding. Its limits: it may run the tests and let them write their output
   files, it changes no project file, and it makes no commit or push. Send their findings to the
   implementer.
@@ -274,7 +284,7 @@ when all of these are true:
 - each point of the goal has a step;
 - each step is in the scope of its task in your plan;
 - each claim has a check;
-- it names its checkpoints.
+- it names its checkpoints, and the acceptance criteria of each.
 
 If the worker's plan needs corrections, send them. When you accept it, do the
 [order check](#order-check) before you send the message to build. Your OK is not the owner's

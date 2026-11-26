@@ -35,10 +35,14 @@ reviewer is always a new `gpt-6.2-astra` session at `high` (owner, 2026-11-25).
 A worker with no branch name makes its own branch.
 
 ```bash
-codex exec -m <model> -c model_reasoning_effort="<effort>" -c service_tier="default" \
+sh -c 'echo $$ > "$0"; exec "$@"' <pid file> \
+  codex exec -m <model> -c model_reasoning_effort="<effort>" -c service_tier="default" \
   -s workspace-write -C <worktree> --json -o <report file> - \
   < <brief file> > <events file> 2> <log file>
 ```
+
+The first line writes the process id of the run to the pid file, and then starts Codex in the same
+process. Use a new pid file for each run.
 
 The session id is in the first line of the events file:
 `{"type":"thread.started","thread_id":"<session id>"}`.
@@ -52,8 +56,8 @@ Add `-i <image file>` before `-s`.
 ### Send a message
 
 ```bash
-cd <worktree> && codex exec resume <session id> \
-  -m <model> -c model_reasoning_effort="<effort>" -c service_tier="default" \
+cd <worktree> && sh -c 'echo $$ > "$0"; exec "$@"' <pid file> \
+  codex exec resume <session id> -m <model> -c model_reasoning_effort="<effort>" -c service_tier="default" \
   -c sandbox_mode="<sandbox mode>" --json -o <report file> - \
   < <message file> > <events file> 2> <log file>
 ```
@@ -95,14 +99,55 @@ Codex writes each session to a file under `~/.codex/sessions/`, and its `token_c
 the usage of the last model call and the context window of the model. If the command finds no file
 or no `token_count` event, tell the person: this Codex version may write another format.
 
+### Account limit
+
+Codex writes the limits of the account into each session file. This command reads them from the
+newest session file that has them, so the values are from the last Codex call, not from now.
+
+```bash
+codex login status
+python3 - <<'EOF'
+import glob, json, os, time
+home = os.environ.get("CODEX_HOME", os.path.expanduser("~/.codex"))
+files = sorted(glob.glob(f"{home}/sessions/*/*/*/rollout-*.jsonl"), key=os.path.getmtime)
+limits = when = None
+for path in reversed(files):
+    for line in open(path):
+        event = json.loads(line)
+        payload = event.get("payload", {})
+        if payload.get("type") == "token_count" and payload.get("rate_limits"):
+            limits, when = payload["rate_limits"], event.get("timestamp")
+    if limits:
+        break
+if not limits:
+    raise SystemExit("No limit data: no Codex session file holds it.")
+print(f"Data from {when} (UTC)")
+for name in ("primary", "secondary"):
+    window = limits.get(name)
+    if not window:
+        continue
+    reset = window.get("resets_at")
+    if reset and reset < time.time():
+        state = "the reset time has passed, so this value is old"
+    elif reset:
+        state = "resets " + time.strftime("%a %d %b %H:%M", time.localtime(reset))
+    else:
+        state = "no reset time"
+    print(f"{name}: {window.get('used_percent')}% used of {window.get('window_minutes')} minutes; {state}")
+credits = limits.get("credits") or {}
+print(f"Credits: {credits.get('balance')}; limit reached: {limits.get('rate_limit_reached_type')}")
+EOF
+```
+
+If the command finds no data, or a reset time has passed, the values are not known.
+
 ### Stop a run
 
 ```bash
-kill -INT <process id of that codex exec>
+kill -INT "$(cat <pid file of that run>)"
 ```
 
-The process id is `$!` immediately after you start a run in the background. Write it to a file.
-The session stays usable.
+The session stays usable: send it the next message with `resume`.
 
 ### Commit and push
 

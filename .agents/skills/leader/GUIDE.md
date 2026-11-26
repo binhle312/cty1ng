@@ -9,6 +9,16 @@ and what "done" means. From that message, the conversation is your lead agent. N
 skill by itself. To continue in a new conversation, type `/leader` with the folder path that the
 lead agent gives in each report.
 
+## What you need
+
+- Claude Code.
+- The Codex CLI, logged in: `codex login status` shows the login.
+- Git, and Python 3 as `python3`.
+- A POSIX shell. On Linux and macOS, use the normal terminal. On Windows, start Claude Code in Git
+  Bash or WSL: the commands of the skill do not run in PowerShell or cmd.
+
+The skill was tested on Linux (WSL2) only.
+
 ## Who talks with whom
 
 ```
@@ -27,7 +37,7 @@ lead agent gives in each report.
                                            reports
  ╔══════════════════════════════════════════╗     ┌──────────────────────────────────────┐
  ║ Teams: one Codex worker session per task ║     │ Outside reviewers, at each checkpoint│
- ║ (at most 2 teams at the same time)       ║     │ and final report, at the same time:  │
+ ║ (at most 2 teams at the same time)       ║     │ report, at the same time:            │
  ║                                          ║     │                                      │
  ║ Implementer: the session itself; plan    ║     │ From Anthropic: Claude Opus, high,   │
  ║   first, builds, tests, commits, fixes   ║     │   the `reviewer` role                │
