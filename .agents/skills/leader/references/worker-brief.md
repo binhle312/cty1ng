@@ -63,9 +63,9 @@ Write the report for a reader who did not see your work. Put the key points firs
 </report>
 
 <your_team>
-> Delete this part when the worker is a Claude Code subagent: the lead agent starts these checks.
-After each build turn, before you report, start the subagents below at the same time, and name
-the role of each. After each fix turn, ask the same ones again. Do not start them in the plan turn.
+After each build turn and each fix turn, before you report, run your team checks: start the
+subagents below at the same time and name the role of each, or ask the same ones again. Do not
+start them in the plan turn.
 If the Codex configuration has no such role, give the same job to a subagent with no role.
 - `test-verifier`: it tests each acceptance criterion of the task, from the requirements, and gives
   PASS, FAIL or NOT VERIFIED with evidence.

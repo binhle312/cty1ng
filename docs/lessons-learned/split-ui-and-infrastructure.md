@@ -12,4 +12,4 @@ and every fix needed a full gate run.
 
 **Reusable principles.** [Split changes](../../.agents/skills/principle-split-changes/SKILL.md).
 
-**Project guidance.** [planning workflow](../workflows/planning.md#slice-size), [coordination workflow](../workflows/coordination.md#when-things-go-wrong).
+**Project guidance.** [planning workflow](../workflows/planning.md#slice-size).

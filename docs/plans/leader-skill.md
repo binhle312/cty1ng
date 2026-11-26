@@ -509,7 +509,9 @@ options are in the PR.
 
 ## Revision 10 (2026-11-26): one home for each rule
 
-Status: plan, waiting for the owner's OK. No code before it.
+Status: approved. The owner, 2026-11-26: "Your plan looks good enough, we need to figure this
+coordination.md out", and then: "Alright, let remove that file. I believe our leader skill.md has
+explain the workflow that we want".
 
 Why: the outside review of revisions 7 to 9 stopped after two fix checks (AGENTS.md §9). Two causes:
 a rule had copies in 3 to 5 files, and each fix round added rules that brought new gaps. The owner
@@ -535,7 +537,7 @@ questions):
 | What a reviewer or a backup checker reads, with a `[limits]` slot | `references/reviewer-brief.md` | `SKILL.md` gives the value of the slot for each kind of reviewer |
 | Commands and flags | `references/codex.md` | `SKILL.md` links to them; no rule text in `codex.md` |
 | How it works, for a human | `GUIDE.md`: the sketches and a short text with no rules; it says "The rules are in `SKILL.md`" | Each sketch label is the name of a `SKILL.md` part or step |
-| The project's roles | `docs/workflows/coordination.md` | Its leader rows become one pointer to the skill; the skill never points to project documents |
+| Who does each step of the work | `SKILL.md` | `docs/workflows/coordination.md` is removed (owner, 2026-11-26); project documents point to the skill, and the skill never points to project documents |
 
 **Changes:**
 - `SKILL.md`: apply the four decisions; remove each sentence that repeats the worker brief; "Claude
@@ -548,8 +550,18 @@ questions):
 - `references/codex.md`: the review run keeps only the flag `-s read-only`.
 - `GUIDE.md`: keep the three sketches and the short intro; remove the rule text and the tables
   that repeat `SKILL.md`.
-- `docs/workflows/coordination.md`: the Test verifier row goes; the Builder and Reviewer rows name
-  no leader-skill detail and point to the skill.
+- `SKILL.md`, "Stop and tell the owner": one more item. A worker and a reviewer disagree about a
+  finding, and the evidence does not decide it. Before, only `coordination.md` had this rule.
+- Remove `docs/workflows/coordination.md`. Its project rules move to the documents that link to it:
+  - "Who does each step" in the workflow documents points to the `leader` skill;
+  - who updates `docs/status.md` goes into `docs/status.md`; who keeps the review records goes
+    into `docs/review-guide.md`;
+  - "Parallel work" moves to `docs/development-plan.md`, which links to it two times;
+  - "fix a red `main` first" moves to `docs/testing.md` §4;
+  - the other rows of "When things go wrong" already have a home: `AGENTS.md` §2 (decisions,
+    document drift), `planning.md` (slice size, answers in the owning documents), `merge-bar.md`
+    (a severity dispute), and `docs/lessons-learned/README.md`.
+  - Old plans and ledger rows keep their text; a link in them becomes plain text.
 - The rest of the open findings at `80d5651` (R2-1, R2-2, N5, N7, the guide summary, the plan's main
   text, the backup effort) close with these changes or with the decisions.
 
@@ -564,7 +576,11 @@ questions):
 4. One complete review of the final head by two new outside reviewers (Opus high subagent, Codex
    `gpt-6.2-astra` high, read-only), not a fix check. Its fixes get checked by the same pair. If
    that check finds a gap with one of the two causes again, stop and ask the owner.
-5. Lint, check:index, check:status, CI on the pushed head.
+5. Standalone: copy only the `leader` folder into a new empty git repository (no `docs/`, no
+   `AGENTS.md`), and run the clear goal there. A check script finds each relative link in the
+   skill folder and passes when each one points to a file in that folder.
+6. No link to `coordination.md` stays in a file that is not a record (`git grep`).
+7. Lint, check:index, check:status, CI on the pushed head.
 
 ## Open questions
 

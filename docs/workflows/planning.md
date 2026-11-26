@@ -1,6 +1,6 @@
 # Plan a slice
 
-Read this workflow before a new slice or a change that needs a plan. Who does each step: the [Roles](coordination.md#roles) table. Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
+Read this workflow before a new slice or a change that needs a plan. Who does each step: the [`leader` skill](../../.agents/skills/leader/SKILL.md). Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
 
 ## Brief
 
@@ -19,8 +19,7 @@ are cheap; the same decisions made during the build stop it.
 
 Keep UI work and infrastructure in separate slices or PRs. Static serving,
 docs pages, code generation, CI jobs and launch scripts are one PR; the screens that use
-them are another. Smaller PRs mean shorter builds, smaller reviews and fewer full gate runs
-([coordination](coordination.md#when-things-go-wrong), "Slice too big"). A screen with saves under a lock, live events or requests that can
+them are another. Smaller PRs mean shorter builds, smaller reviews and fewer full gate runs. A screen with saves under a lock, live events or requests that can
 answer after the owner moved on is its own part, and so is a set of dialogs or cards with
 their own requests. A plan that touches more than about 30 files is a sign to split (lesson
 `state-table-before-stateful-code.md`).
@@ -111,7 +110,7 @@ its state owner and `docs/testing.md` §3 for cell and sequence tests.
 Write the plan, table and test strategy at `xhigh` effort; the build can run at `high`
 (owner, 2026-11-03; lesson `state-table-before-stateful-code.md`).
 
-For parallel work or role assignment, read [coordination](coordination.md).
+For parallel work, read [parallel work](../development-plan.md#parallel-work).
 
 ## Lead agent prompt
 
@@ -130,8 +129,8 @@ becomes the lead agent with the `leader` skill. Type:
    If a screen has saves under a lock, live events or late answers, the plan has its state
    table (planning.md, "State table for stateful screens").
 3. Build on branch <m#-name> as the leader skill says, by
-   docs/workflows/implementation.md, test first. The Roles table of
-   docs/workflows/coordination.md says who does each step. Keep to the brief's scope; list
+   docs/workflows/implementation.md, test first. The leader skill,
+   .agents/skills/leader/SKILL.md, says who does each step. Keep to the brief's scope; list
    anything else that you notice under "Follow-ups" in the PR instead of doing it.
 4. Run every check in AGENTS.md §4, and fill the PR description per
    docs/workflows/pull-request.md, as the Roles table assigns.

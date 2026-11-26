@@ -13,7 +13,6 @@ Implementers use the implementation or bug-fix workflow; reviewers use the revie
 | [merge-bar.md](merge-bar.md) | Give a finding a severity, decide what blocks a merge, use the failure scope in a state table or order test, set the limits of a pattern rule, or decide when the review of a P3 PR ends |
 | [human-review.md](human-review.md) | Present a proposal, plan, design, or review item to the owner |
 | [pull-request.md](pull-request.md) | Write the description of an authorized draft PR, and check its records before each push |
-| [coordination.md](coordination.md) | Check roles, shared guidance, parallel work, or escalation |
 | [egm.md](egm.md) | Start an M3 or later part, or the owner mentions EGM: the EGM trial steps and what to suggest next |
 
 These files own the project workflow rules. [Principle skills](../../.agents/skills/README.md)

@@ -1,9 +1,8 @@
 # Reviewer brief template
 
 Copy the block below into a new brief file. Replace each `[…]` with facts for this review, and
-delete the guidance lines that start with `>`. Start the reviewer as a new session that did not
-build the work, and never as a weaker model than the worker. The reviewer changes no file, so it
-has no plan turn.
+delete the guidance lines that start with `>`. The leader skill says who reviews, and the limits
+of each reviewer.
 
 ```text
 You are a reviewer for a lead agent. You did not build this work. Your job is to find what is
@@ -32,9 +31,9 @@ Read the code before you make a claim about it. If you cannot check a claim, wri
 </paths>
 
 <limits>
-Make no commit and no push. Change no file.
-Run only the tests and checks of this diff: [the commands]. Do not run the full suite again.
-> If the reviewer runs read-only, give it the builder's test results in place of a run.
+[The limits that the leader skill gives for this reviewer.]
+Run only the tests and checks of this diff: [the commands, or "none: the test results are in the
+facts"]. Do not run the full suite again.
 </limits>
 
 <checks>

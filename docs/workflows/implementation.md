@@ -1,7 +1,7 @@
 # Implement an approved slice
 
 Read this workflow when you implement an approved plan. If a plan is missing, use [planning](planning.md) first.
-Who does each step: the [Roles](coordination.md#roles) table.
+Who does each step: the [`leader` skill](../../.agents/skills/leader/SKILL.md).
 Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
 
 ## Build

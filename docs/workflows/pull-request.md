@@ -3,7 +3,7 @@
 The template is [`.github/pull_request_template.md`](../../.github/pull_request_template.md). GitHub
 puts it into each new PR, and it is the one home of the sections and their order (DQ-753, by the
 rule [one home for each fact](#one-home-for-each-fact); owner review pending). This file holds the
-rules for what goes into them. Who writes it: the [Roles](coordination.md#roles) table.
+rules for what goes into them. Who writes it: the lead agent.
 Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
 
 ## Examples of filled rows

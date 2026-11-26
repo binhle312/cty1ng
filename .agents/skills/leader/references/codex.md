@@ -128,5 +128,4 @@ command, and it then runs outside the sandbox.
 
 ### Review run
 
-Start an outside reviewer with `-s read-only`. A test tool that writes files does not run in that
-sandbox: give the reviewer the test results of the worker and its test verifier.
+Start an outside reviewer with `-s read-only`.

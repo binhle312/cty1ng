@@ -4,7 +4,7 @@ The order in which the app is built, and why. Progress lives in [status.md](stat
 this file changes only when the plan changes.
 
 Split milestones into reviewable parts where needed. Each part preserves a usable, tested
-app and merges before the next starts (except the parallel cases in [parallel work](workflows/coordination.md#parallel-work)).
+app and merges before the next starts (except the parallel cases in [parallel work](#parallel-work)).
 Write a brief for each implementation part before code starts; give it to the lead agent with the prompt in
 [the lead agent prompt](workflows/planning.md#lead-agent-prompt).
 
@@ -37,12 +37,23 @@ Write a brief for each implementation part before code starts; give it to the le
 | later | not written | Desktop app (Windows, Linux) and coding agents from the app (idea only: [ideas/desktop-app-and-cli-agents.md](ideas/desktop-app-and-cli-agents.md)) | separate milestone | M9 and external project folders (D23) |
 
 "Checkpoint: plan" means that the work stops after the plan and waits for the owner's
-approval ([Roles](workflows/coordination.md#roles) says who does each step) ([planning](workflows/planning.md#plan)). Every slice also needs the owner's review of migrations and
+approval ([planning](workflows/planning.md#plan)). Every slice also needs the owner's review of migrations and
 `Needs human review` items before merge.
 
 Every slice with a screen (M0–M5d, M6, Inbox, M7, M8, M8b, M8c, T2) also has a **UI design checkpoint**:
 the plan proposes the actual UI and the owner approves it before UI code is written. Sketches
 and mockups in `docs/design/` are starting points for that discussion, never specs.
+
+## Parallel work
+
+Allowed in parallel, in separate git worktrees and branches:
+
+- Frontend and backend of the same slice **after** the API shape for that slice is merged or
+  agreed in the plan (the generated client is the contract).
+- Documentation-only changes.
+
+Not in parallel: two slices that touch the same tables or migrations (drizzle-kit migrations
+would conflict), or anything in the same `*.rules.ts` file at the same time.
 
 ## M3 delivery parts
 
@@ -103,7 +114,7 @@ their future UI. Do not expose an action that needs an approval card before that
 Each new screen or request-owning card flow gets its state table and order tests.
 
 The listed dependencies are prerequisites, not permission for parallel work on shared schemas.
-Follow [parallel work](workflows/coordination.md#parallel-work) for parallel work. A dependency on a milestone means all its required
+Follow [parallel work](#parallel-work) for parallel work. A dependency on a milestone means all its required
 parts; a dependency on a named part means only that part and its prerequisites.
 Final integration criteria belong to the last consuming part, while each earlier part proves
 its own behaviour at merge. Security, recovery and performance checks start with the code they protect.

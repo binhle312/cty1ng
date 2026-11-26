@@ -118,7 +118,7 @@ Keep contract differences and evidence gaps visible even when there are no confi
 Link the evidence table and cite file locations for actionable findings.
 A finding says what is wrong, not which text or layout to use (`AGENTS.md` §7).
 State "no defect found in the reviewed paths" only for paths the table covers.
-Give one round row for `delivery-quality.md` §6 to the agent that keeps the records ([Roles](workflows/coordination.md#roles)), or write it when the session allows; that agent commits it.
+Give one round row for `delivery-quality.md` §6 to the lead agent, which keeps the records, or write it when the session allows; that agent commits it.
 
 **Complete when:** each prior finding has a disposition, every unresolved row appears in the report, and the conclusions fit the evidence.
 

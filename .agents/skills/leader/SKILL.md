@@ -85,17 +85,15 @@ Give each other build to a worker, including a simple code change.
      starts after that task is done. Name the files of each task, and the order if one exists.
    - **The workers:** the worker team of each task, with the subagents that its worker starts, and
      each task that you do [yourself](#the-lead-agents-own-work).
-   - **The reviewers:** the [two outside reviewers](#outside-reviewers), a new pair at each
-     checkpoint report of a team and at the final report, and for your own code change. Give the
-     number of checkpoints that you expect for each task. A big review has
-     [more than one part](#context-of-each-worker), and each part has its own reviewers.
+   - **The reviewers:** the [two outside reviewers](#outside-reviewers) of each worker team and of
+     your own code change.
    - **The models:** the model and the effort of each worker, with one reason from its task. See
      [Workers](#workers).
 
    Make the plan as short as the work. For a code change that you make yourself, a few lines are
    enough. Work that starts no worker and no reviewer needs no plan: do it.
 
-   After the OK, ask the owner before you change a task, a count, a model or an effort. A new
+   After the OK, ask the owner before you change a task, a model or an effort. A new
    session with the same task, model and effort is not a change: one that replaces a worker or a
    reviewer at the [limit](#context-of-each-worker) or one that ended, and the new pair of outside
    reviewers at the next report. A move to the
@@ -107,14 +105,8 @@ Give each other build to a worker, including a simple code change.
    worker's plan, the diff, the project's check results, including the test results, and, for
    pushed work, the remote checks of the pushed head. Read the [context use](#context-of-each-worker)
    of each Codex session after each turn, and about each minute while a turn runs.
-7. **Review:** start the [two outside reviewers](#outside-reviewers) as that part says. Send the
-   findings that you accept to the worker session, or fix them in your own change. The same
-   reviewers check the fixes.
-
-   If the review message lets the reviewer run checks, do the [order check](#order-check). An
-   outside reviewer runs read-only: give it the test results that exist, from the worker and its
-   test verifier, or from your own checks.
-   For Codex, use the [review run in `references/codex.md`](references/codex.md#review-run).
+7. **Review:** start the [outside reviewers](#outside-reviewers). Send the findings that you
+   accept to the worker session, or fix them in your own change.
 
 8. **Report** to the owner. Merge only when the owner asks for the merge of that work.
 
@@ -129,6 +121,7 @@ Stop the work that depends on the item, and tell the owner, when one of these oc
 - A bug does not reproduce.
 - A fix has the same cause as an earlier fix.
 - An approval that the project asks for is missing.
+- A worker and a reviewer disagree about a finding, and the evidence does not decide it.
 
 Other work goes on. An ordinary obstacle, such as an error, a timeout or a failed tool, is not a
 stop: find its cause, and try again another way.
@@ -175,34 +168,32 @@ its own work with subagents that it starts (owner, 2026-11-25).
 | Member | Its job | Codex | When Codex cannot run |
 | --- | --- | --- | --- |
 | Implementer | The worker session of a coding task: its plan first, then the code, the tests and the commits; it fixes the findings | The worker column of the model table | A building role, such as `implementer` |
-| Test verifier | A subagent of the worker: tests each acceptance criterion, PASS, FAIL or NOT VERIFIED, with evidence | The worker starts a subagent with the role `test-verifier` | You start a test role, such as `test-verifier`, after each build turn and each fix turn |
-| Team reviewer | A subagent of the worker: reviews the change and its evidence, and changes no file | The worker starts a subagent with the role `reviewer` | You start a review role that cannot edit files, such as `reviewer`, after each build turn and each fix turn |
+| Test verifier | A subagent of the worker: tests each acceptance criterion, PASS, FAIL or NOT VERIFIED, with evidence | The worker starts a subagent with the role `test-verifier` | You start a test role, such as `test-verifier` |
+| Team reviewer | A subagent of the worker: reviews the change and its evidence, and changes no file | The worker starts a subagent with the role `reviewer` | You start a review role that cannot edit files, such as `reviewer` |
 | Default worker | The worker session of a task that is not code and is not [your own work](#the-lead-agents-own-work), such as documents, research or a measurement; its only subagent is the team reviewer | The worker column of the model table | A general subagent |
 
-- The worker ends its turn with a report at each checkpoint of its plan. After each build turn,
-  before it reports, it starts its test verifier and its team reviewer at the same time, by role
-  name, and fixes their findings; after each fix turn, it asks the same ones again. Not in the plan
-  turn. The worker brief says so. If
-  the Codex configuration has no such role, the worker gives the same job to a subagent with no
-  role.
+- The worker ends its turn with a report at each checkpoint of its plan. After each build turn and
+  each fix turn, it runs its team checks and fixes their findings before it reports. The part
+  `<your_team>` of the worker brief tells it how.
 - Run at most 2 worker teams at the same time (owner, 2026-11-25; the owner can change it). A new
   session at the limit adds no team. Your plan gives the order of the tasks that wait.
 
 ### Outside reviewers
 
 At each checkpoint report of a worker team and at its final report, start two new reviewers at the
-same time, so that the worker stays on the right track (owner, 2026-11-25). Not for a plan, a
-handoff or a report of fixes: the same two check the fixes of their findings. A code change that
-you make yourself gets the same two reviewers after you commit it. Neither built the work. Each
-reads, changes no file and makes no commit.
+same time, so that the worker stays on the right track (owner, 2026-11-25). A code change that you
+make yourself gets two new reviewers after you commit it. Not for a plan, a handoff or a report of
+fixes: the same two check the fixes of their findings. Neither built the work.
 
 - **From Anthropic:** a [Claude Code subagent](#claude-code-subagents) on Opus, at `high`, with a
   review role that cannot edit files, such as `reviewer`, if Claude Code has one.
 - **From OpenAI:** a new read-only Codex session on the
   [reviewer model in `references/codex.md`](references/codex.md#pick-the-models).
 
-When Codex cannot run, start two new Claude Opus reviewers: the one from Anthropic, and one in
-place of the one from OpenAI. Write both briefs from `references/reviewer-brief.md`.
+Write both briefs from `references/reviewer-brief.md`. Each one runs read-only. Its limits: it
+changes no file and makes no commit or push. Give it the test results that exist, from the worker
+team or from your own checks. If its brief lets it run checks, do the [order check](#order-check)
+first. For Codex, use the [review run in `references/codex.md`](references/codex.md#review-run).
 
 ### Claude Code subagents
 
@@ -210,7 +201,8 @@ These rules apply to each Claude Code subagent that you start: the Anthropic rev
 subagent that [takes a Codex place](#when-codex-cannot-run).
 
 - Start it in the background with the Agent tool, and send each next message to the same subagent.
-- Give it its model: a role file can name a weaker one.
+- Give it the model and the effort that this skill names for it: a role file can name others. If
+  this skill names none, the role file or the default of Claude Code decides.
 - It has no sandbox. If its brief says to change no file or to commit nothing, check `git status`
   and the commits after each turn.
 - You cannot read its context use. Keep its task small.
@@ -271,14 +263,17 @@ error, such as a wrong option or a sandbox refusal, is an ordinary obstacle: fin
 - Use the roles of the [Teams](#teams) table if Claude Code has them, else a general subagent, with
   the rules of [Claude Code subagents](#claude-code-subagents).
 - Give each one the same brief, the same first turn and the same worktree rules, but delete the
-  part "Your team" of the worker brief: a subagent cannot start subagents. So after each build
-  turn and each fix turn, not after the plan turn, you start the team reviewer, and for a coding
-  task also the test verifier, on a model that is not weaker than the implementer. Write their
-  briefs from `references/reviewer-brief.md`. For the test verifier, the checks are the acceptance
-  criteria (PASS, FAIL or NOT VERIFIED), and its limit is: it may run the tests and let them write
-  their output files, it changes no project file, and it commits nothing. Send their findings to
-  the implementer. Start the outside reviewers of a report only after these checks pass.
-- The OpenAI reviewer cannot run: a second new Claude Opus subagent takes its place.
+  part `<your_team>` of the worker brief: a subagent cannot start subagents.
+- Run the team checks yourself, after each build turn and each fix turn, not after the plan turn.
+  Start the team reviewer, and for a coding task also the test verifier, or send the same ones a
+  new message. Their models are the defaults of their roles (owner, 2026-11-26). Write their briefs
+  from `references/reviewer-brief.md`. The limits of the team reviewer: it changes no file and
+  makes no commit. The test verifier tests each acceptance criterion (PASS, FAIL or NOT VERIFIED).
+  Its limits: it may run the tests and let them write their output files, it changes no project
+  file, and it makes no commit. Send their findings to the implementer.
+- Start the outside reviewers of a checkpoint after the team checks ran and the implementer fixed
+  their findings for that checkpoint (owner, 2026-11-26).
+- The OpenAI reviewer cannot run: start a second new Claude Opus reviewer in its place.
 
 ### Get the plan first
 
@@ -335,7 +330,8 @@ of each Codex session at each moment. You cannot read it for a
   - the next steps, in order;
   - what the new worker must not do again, with the reason.
 - Split each review before it starts, by files or by checks, so that each part ends under the limit
-  (owner, 2026-11-24). A worker's handoff does not save a review that is too big: the new reviewer
+  (owner, 2026-11-24). Each part gets its own two outside reviewers. A worker's handoff does not
+  save a review that is too big: the new reviewer
   reads the brief, the worker's handoff and the files again, and stops at the limit before it reports.
 
 ## Rules for the worker
