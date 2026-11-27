@@ -1036,9 +1036,11 @@ batch; the tokens per run are in the records.
 ### Goal
 
 The owner (2026-11-27): "we should focus on the plan to reduce the idle time of worker team when
-they have to wait others to finish." The owner also said "no independent worktree for each worker
-team": two teams do not change one file and resolve the conflicts at the merge. Each team keeps its
-own worktree and branch, and two tasks never change the same file.
+they have to wait others to finish." The owner also said "alright, no independent worktree for each worker
+team" in answer to the lead agent's idea that two teams change one file and resolve the conflicts
+at the merge. The lead agent's reading: drop that idea; each team keeps its own worktree and branch,
+and two tasks never change the same file. The owner did not confirm this reading in other words;
+it is a question for the owner (Opus diff review F8).
 
 Why: in revision 11 test run 5, Task 2 (a README list of the functions in `src/text.mjs`) needed
 only the name `slugify(text)` from Task 1. The plan had that name, but worker 2 started at 18:52:33,
@@ -1114,11 +1116,9 @@ All in `.agents/skills/leader/` at `main` (`771d530`).
 ### The change (the lead agent's own change; not minor)
 
 The lead agent writes the text (owner, 2026-11-27). The text is in the skill files; this section
-keeps only its points. At the build, the lead agent added three points of the advisor's judgment of
-r3: the part that waits in way 2 starts after both tasks ended, and its new branch starts from one
-ended commit and merges the other; the worker of an early start reports and waits, and its team
-checks cover only the criteria that do not need the other task's code; the `handoff.md` row of the
-skill lists the commit at which each task ended.
+keeps only its points. After diff review round 1, the advisor ruled a cut back to the owner's five
+decisions (see "Diff review round 1"): the early report that was not a checkpoint and the
+files-only diff are gone.
 
 1. `SKILL.md`, Plan stage:
    - "The tasks" says: small tasks with one outcome; different worker teams; each task checked
@@ -1126,37 +1126,34 @@ skill lists the commit at which each task ended.
      task … waits for another task".
    - A new bullet "The waits": if a task needs the result of another task, keep the place of its
      team busy. Use the first way that fits and pays (the work that it starts early takes longer
-     than its cost); if none fits, the task starts after the other task ended, and the plan gives
-     the reason.
-     1. Shared names first: the plan writes the names, inputs and outputs that the tasks share. The
-        task that uses them starts with the task that makes them. Its worker builds only what does
-        not need the other task's code, runs its team checks, and reports: this report is not a
-        checkpoint, so no outside reviewer starts. Cost: a merge.
-     2. Split: the task becomes two tasks, each with its own files, checks and reviews. The part that
-        needs nothing starts now; the small part that waits starts after the other task ended, and
-        builds on both. Cost: one more task. Two tasks never change the same file, so the split
-        gives each part its own files.
+     than its cost); if no way fits and pays, the task starts after the other task ended, and the
+     plan gives the reason.
+     1. Shared names first, when a task needs one task that has not ended: the shared names, inputs
+        and outputs are a criterion of the task that makes them. The task that uses them starts with
+        that task. Its early checkpoints are ordinary checkpoints (team checks and outside reviews),
+        and each criterion that needs the other task's code goes to its last checkpoint. Cost: a
+        merge, and the reviews of the early checkpoints.
+     2. Split: two tasks, each with its own files, checks and reviews. The part that needs nothing
+        starts now; the small part that waits starts after the other task and the first part ended,
+        and builds on both. Cost: one more task.
      3. Another task: give the free team another task of the plan that waits for nothing.
-   - After the other task ended, the lead agent sends the worker the commit at which that task
-     ended; the worker merges it into its own branch, and the last checkpoint runs there with its
-     team checks and outside reviews.
-   - A task ended when its last checkpoint is committed, its outside reviewers have no open finding
-     on it, and each fix is committed; its last commit then is "the commit at which it ended", and
-     the lead agent writes it in `handoff.md`.
-   - Before a task builds on the code of other tasks, its own branch holds the code of each: a new
-     branch starts from the commit at which that task ended, or from a base that already holds it,
-     and a branch that already has work merges that commit into itself. This merge is not the merge
-     of the work into the main branch.
+   - A task ended when both outside reviewers reported on its last checkpoint and have no open
+     finding, and its last checkpoint and each fix are committed; its last commit is then "the
+     commit at which it ended", and the lead agent writes it in `handoff.md` (also in the
+     `handoff.md` row of the skill).
+   - A task that starts after other tasks ended starts its branch from the commit at which one of
+     them ended, and its worker merges each other one before its first change. In way 1, the lead
+     agent sends the commit to the worker when the other task ended, and the worker merges it before
+     the last checkpoint. These merges are not the merge of the work into the main branch.
    - The shared names are part of the approved plan, so a change of one is a change of the plan.
-2. `references/worker-brief.md`, `<limits>` guidance: for a task that starts before another task
-   ended: the shared names, inputs and outputs; build only what does not need that task's code; do
-   not write that code and do not change that task's files; tests that need it can fail until the
-   merge, and the report names them. For a task that builds on another task: the commit at which
-   that task ended, and that the worker merges it when the lead agent sends it.
+2. `references/worker-brief.md`, `<limits>` guidance: for a task that uses the shared names of a
+   task that has not ended: the names, inputs and outputs; do not write that task's code or change
+   its files; each criterion that needs that code goes to the last checkpoint, which starts when the
+   lead agent sends the commit, merged first. For a task that builds on tasks that ended: their
+   commits; start from the first one and merge each other one before the first change.
 3. `references/reviewer-brief.md`, after the diff line: for a task that builds on other tasks, the
    base is a commit that holds the code of each of them and none of this task's work, such as the
-   commit at which that task ended, so that the diff holds only this task's work. If no such commit
-   exists, the diff covers only the files of this task (two tasks never change the same file).
+   commit at which that task ended.
 4. `GUIDE.md`, stage 5 sketch: add "how a task that waits keeps its place busy" (lines of 98
    characters or less).
 5. This section, with the plan review and the test results.
@@ -1172,16 +1169,20 @@ Branch `leader-wait-teams` in worktree `../cty1ng-leader-wait`, from `main`; dra
 - **C2** "The waits" has the three ways in the order of decision 1 and in its form (way 2 adds a
   task), "the first way that fits and pays" for each way, the fallback with its reason, and the
   owner's date.
-- **C3** In way 1, the early report runs the team checks and starts no outside reviewer; the last
-  checkpoint starts after the other task ended, on the branch with that task's commit merged. (In r1,
-  the early report had no team checks; both plan reviewers found that it conflicts with the worker
-  brief.)
+- **C3** In way 1, the shared names are a criterion of the task that makes them; the early
+  checkpoints are ordinary checkpoints; each criterion that needs the other task's code goes to the
+  last checkpoint, which starts after the other task ended, on the branch with that task's commit
+  merged. (r1 had an early report with no team checks, and r2 an early report with team checks and no
+  outside reviewer; the reviews found both in conflict with the checkpoint rules, and the advisor
+  ruled the cut.)
 - **C4** One sentence covers each case: the task's own branch holds the code of each task that it
   builds on (a new branch starts from the commit at which that task ended, or a base that holds
   it; a branch with work merges it into itself). "Ended" and its commit have one definition, and
   `handoff.md` holds the commit.
 - **C5** The worker brief `<limits>` and the reviewer brief's diff base give the task fields; the
-  GUIDE stage 5 sketch names the rule; no other file holds a copy of the rule text.
+  GUIDE stage 5 sketch names the rule; no other file holds a copy of the rule text. Not claimed: the
+  fact map skips the whole worker and reviewer templates and the stages sketch (its three `BLOCK`
+  exceptions), so a change elsewhere in them is seen only by the copy check phrases and by reading.
 - **C6** Not changed: at most 2 teams and the order of the tasks that wait, own worktree and branch,
   the order check, team plans before the first build message, the team checks after each build
   turn. The copy check finds each of these phrases.
@@ -1207,8 +1208,10 @@ Static (the lead agent):
 
 Runs: the revision 11 harness, copied as `gate-r12.sh` (`tmp/leader-skill/measure/`): the task
 "wait" only; a turn ends after 5400 s (2700 s in revision 11); up to 8 resumes; the start time of each
-turn in `end.txt`; and the scripted owner of decision 4 (`reply()`: if a line of the last turn's text
-has "commit" and "?", the answer starts with "Yes, commit. Your question: " and those lines). The
+turn in `end.txt`; and the scripted owner of decision 4 (`reply()`: it reads every result of the
+turn; if the text has "commit" and a "?", the answer starts with "Yes, commit, with the files and the
+branch of your question: " and quotes each line with "commit" or "branch" and the list lines after
+it). The
 checks: `check-r11.py` for the gate items, and `check-wait.py` for the task items; `check-wait.py`
 counts an edit before the OK on each path inside the run clone and its worktrees, except `tmp/`,
 `.agents/` and `.claude/`, takes the commit at which Task 1 ended from `handoff.md`, and exits with 1
@@ -1228,10 +1231,9 @@ on a failed item. Not seen by it: a branch switch during a build that is undone 
   PR says "not shown by a run", and one rerun at most is allowed for it.
   - Way 1: (1) the plan names `slugify(text)`, its input and its output; (2) both team plans are
     accepted before the first build message to either team (revision 11 criterion 10); (3) the
-    first build message of worker 2 comes before Task 1 ended; (4) no outside reviewer of Task 2
-    starts before Task 1 ended (the Codex log and the stream), the message for Task 2's last
-    checkpoint comes after Task 1 ended, and that checkpoint runs on a branch that holds the commit
-    at which Task 1 ended. The team checks of the early report: from the worker's report only.
+    first build message of worker 2 comes before Task 1 ended; (4) the message for Task 2's last
+    checkpoint comes after Task 1 ended, that checkpoint holds each criterion that needs `slugify`,
+    and it runs on a branch that holds the commit at which Task 1 ended.
   - Way 2: the plan splits Task 2 into two tasks with their own files; the first part starts before
     Task 1 ended; item (2) as in way 1; the branch of the part that waits holds the commits at which
     Task 1 and the first part ended.
@@ -1312,12 +1314,35 @@ revision. Answers (A = accepted and changed in this revision):
 | Failed checks exit with 0 (Astra N4) | A |
 | `--help` exit code not in the task; Task 1's tip in place of the ended commit (Opus N6) | A: the task text says exit code 0; the check reads the ended commit from `handoff.md` |
 
-For `Needs human review`: the `/goal` order as the OK; both plan reviewers ended at "do not agree",
+For `Needs human review`: the §9 cut after diff review round 1 was made with no owner decision, by
+the advisor's ruling; way 1 now has outside reviews of its early checkpoints; "ended" got the clause
+"both outside reviewers reported" (a patch on a repeated cause); plan r3 changed the plan after the
+last round of the plan review, which `SKILL.md` allows only for the owner's decisions; the reading
+of "no independent worktree"; the `/goal` order as the OK; both plan reviewers ended at "do not agree",
 neither read r3, and the advisor judged r3; the lead agent rewrote the record of two owner decisions
 in r2, and r3 put it back; the files-only diff for a task with no clean base goes past decision 3;
 the C3 change (team checks at the early report); item 9 not verified by a run; the scripted owner
 also answers "Yes, commit" to a text that only mentions a commit and asks something else (a limit of
 the test, Astra N2).
+
+### Diff review round 1 (`771d530..4213533`)
+
+Two new outside reviewers: an Opus 5.5 subagent (2 major, 6 minor) and Codex `gpt-6.2-astra` (4
+major, 2 minor); reports in `tmp/reviews/leader-r12/` (`opus-diff1.report.md`,
+`astra-diff1.report.md`). Each fix answers "Same cause as an earlier fix?". The search: the
+prevention actions of `docs/delivery-quality.md` §7, `docs/lessons-learned/` (README and
+`fixes-that-make-new-findings.md`, `claim-bigger-than-its-proof.md`), and the plan review answers of
+this section.
+
+| Finding | Same cause as an earlier fix? | Fix |
+| --- | --- | --- |
+| The early report is "not a checkpoint", against the checkpoint rules and the backup (Astra F1, F5; Opus F3, F6) | Yes: plan review round 1 (Opus F1, Astra F1) fixed the same report, and the fix made this finding; the repeat "review fixes made the next findings" of §7 | §9 stop: no patch. The advisor (the final judge by the owner's order) ruled a cut back to decision 2A with no new rule: early checkpoints are ordinary; the criteria that need the other task go to the last checkpoint |
+| A task that builds on two tasks; the base of the files-only diff (Opus F2, Astra F4) | Yes: plan review rounds 1 and 2 (Opus F3, Astra F2) | §9 stop: cut. Way 1 only when a task needs one task that has not ended; a task that starts after other tasks ended merges them before its first change, so a clean base exists; the files-only diff (past decision 3) is gone |
+| "Ended" while a reviewer still reads; a fix after a task ended (Astra F3, Opus F5) | Yes: plan review rounds 1 and 2 (Opus F4, Astra N3) | §9: the skill has no point at which it accepts a task today, so the advisor allowed one clause, "both outside reviewers reported", as a patch on a repeated cause (under `Needs human review`). A fix after a task ended is a written limit (Risks) |
+| The shared names reach only the task that uses them (Opus F1); the early-start line also fits an independent task (Astra F2) | No: no earlier fix touched who holds the shared names (search above) | The shared names are a criterion of the task that makes them; the brief line names a task that uses the shared names of a task that has not ended |
+| "fits and pays" against "If no way fits" (Opus F4); two descriptions of `reply()` in this plan (Astra F6) | No: wording, first found here | Fixed |
+| The copy check and the fact map are weaker than claimed (Opus F7) | Yes: the repeat "a claim is bigger than its proof" (`claim-bigger-than-its-proof.md`); its fixed answer applies, with no stop | The three phrases that it showed are in the copy check (planted changes now fail); `Not claimed:` under C5 for the templates and the sketch |
+| The plan's words for the owner's "no independent worktree" (Opus F8) | No | The Goal names it as the lead agent's reading, and it is a question for the owner |
 
 ### Risks
 
@@ -1330,6 +1355,8 @@ the test, Astra N2).
   merges first.
 - A change of a shared name after the OK is a change of the plan, so both teams wait for the owner.
 - A long Task 2 can make a turn reach the 5400 s limit; the run then shows it in `end.txt`.
+- A fix to a task after it ended (for example from the owner's review) does not reach the task that
+  merged its ended commit; the skill gives no step for it.
 
 ## Open questions
 
