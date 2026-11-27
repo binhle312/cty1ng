@@ -1345,8 +1345,9 @@ was not a pure cut: it limited way 1 to "a task that needs one task that has not
 Astra N2, N3). The advisor had advised both clauses, and ruled that a return to approved text is not
 a patch: the next commit deletes the limit and puts back the decision 3 sentences of `4213533`. With
 at most 2 teams, a task that starts early runs beside one other task only, so the limit was not
-needed. Each new sentence of that commit is a sentence of `4213533` or `984fb19`, or joins a clause
-of `4213533` with a clause of `984fb19`, with no new words (a script compared the sentences). By the
+needed. A script compared the sentences: 4 of the 7 new sentences are in `4213533` or `984fb19`;
+2 join a clause of `4213533` with a clause of `984fb19`; and the worker brief sentence with "a
+base that already holds them" has the lead agent's own words (Fix check 2). By the
 stop rule, no other text changes:
 
 | Finding | Same cause? | State |
@@ -1384,12 +1385,22 @@ Two runs of the 10 that the owner allowed; the records are in
 | M4: worker 2's idle time between its turns | 7.5 min | 42.4 min |
 | Hidden checks on Task 2's branch | 6 of 6, `npm test` passes | 6 of 6, `npm test` passes |
 
-Run 2 by cause: the early start saved about 8 min of M1; the outside reviews of Task 2's early
-checkpoint held the merge about 12 min after Task 1 ended (02:39:55 → 02:52:10), so Task 2's code
-with `slugify` came about 5 min later than in run 1 (OK + 22.0 against OK + 17.2). Most of the rest
-came after the merge: the last checkpoint's review found two size limits (one output line above
-about 512 MB; more than about 134 M input lines), the worker rewrote and restored the output code,
-and the lead agent stopped three times for the owner.
+Run 2 by cause:
+
+- The early start: worker 2's first build message came at OK + 5.2 min (run 1: OK + 13.0).
+- The hold: Task 1 ended at 02:39:55 (its second reviewer's file). The Codex reviewer of Task 2's
+  early checkpoint started at 02:40:57, after Task 1 had ended, and the merge of Task 1 came at
+  02:52:10 (OK + 22.0), after that review and its fix check. In run 1, worker 2's first build turn
+  ended at OK + 17.2. The two points are not the same event, so the plan gives no difference.
+- The first stop: when the worker first ran the command tests, at the last checkpoint (the early
+  build could not run them), it took a fault of its sandbox for a fault of Node and rewrote the input
+  and output code; the lead agent restored it. Whether a run of the tests before the merge would have
+  prevented this: not known.
+- Then the last checkpoint's reviews found two size limits (one output line above about 512 MB; more
+  than about 134 M input lines), and the lead agent stopped two more times for the owner.
+- The cost rule: the plan chose this task because its early work is longer than a merge. After the
+  cut, way 1 also costs the reviews of the early checkpoints, so this task may not fit "fits and
+  pays", and run 2 does not show way 1 on a task where it pays.
 
 C8, item by item on run 2: items 5 to 8 pass by script (`check-wait.py`: no shared file, two
 worktrees and branches, the ended commit `4583aea` is an ancestor of Task 2's branch, the hidden
@@ -1416,9 +1427,9 @@ too high; not checked again.
 
 - C8 is not shown as a pass: way 1 items 1 to 8 pass, but Task 2 did not end in run 2 (Test
   results). The lead agent cannot make C8 smaller; the owner decides.
-- In run 2, the outside reviews of the early checkpoint cost more time than the early start saved
-  (about 12 min against 8 min, one sample). The advisor's cut made early checkpoints ordinary, and
-  the Codex plan reviewer of that run proposed one final checkpoint. No text changed; a question
+- In run 2, the outside review of the early checkpoint started after Task 1 had ended, and the
+  merge waited for it (Test results, one sample). The advisor's cut made early checkpoints ordinary,
+  and the Codex plan reviewer of that run proposed one final checkpoint. No text changed; a question
   for the owner.
 - The Claude costs of revision 11 may be too high (`check-r11.py` sums cumulative values).
 - Fix check 2: Astra found decision 3 still smaller in two places (above); Opus found none. Not
