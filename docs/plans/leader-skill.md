@@ -981,6 +981,42 @@ script names the build and install commands, and the trace includes the subagent
 this status line (R3-6). A headless stream holds each subagent call with `parent_tool_use_id` and
 its model id (`claude-opus-5-5` in the revision 10 backup run). Reports: `tmp/reviews/leader-r11/`.
 
+### Test results (2026-11-27)
+
+All runs used the skill files of `fc0b32e` (the later commits change only records). Records:
+`tmp/leader-skill/measure/results-r11.md` and `runs/` (not in the PR). Price: the Claude cost that
+each run reports (API price). Codex: the account check went from 2.0% to 6.0% of the week for the
+batch; the tokens per run are in the records.
+
+| Run | Task | Result | Time | Price (USD) |
+| --- | --- | --- | --- | --- |
+| 2 | Hard, full | Pass; bug found | 44 min | 44.13 |
+| 3 | Small | Pass | 3 min | 6.21 |
+| 4 | Backup | Pass | 33 min | 63.34 |
+| 5 | Two tasks | 2 of 3 pass, 1 not tested | 34 min | 33.27 |
+| R1 | Slug, full | Done | 25 min | 27.07 |
+| R2 | Slug, no plan review | Done | 17 min | 13.32 |
+| R3 | Slug, no team | Done | 26 min | 21.86 |
+| R4 | Slug, no checkpoint reviewers | Done | 19 min | 26.99 |
+| R5 | Hard, no plan review | Done; bug found | 36 min | 34.90 |
+| R6 | Hard, no team | Done; bug found | 33 min | 16.26 |
+| R7 | Hard, no checkpoint reviewers | Done; bug found | 23 min | 24.61 |
+
+- Run 5: "both team plans before the first build message" was not tested. The test leader put both
+  tasks on one branch, one after the other; the rule for a team that waits held.
+- Removal test: in all four hard-task runs, the explorer and the test leader found the `toCents`
+  bug and raised the 0-people case before the plan, and the hidden tests pass (3 of 3) in each. The
+  checkpoint reviewers found test gaps in each run that had them. Only the plan review named the
+  false "no remote" in the task text (a test artifact; R2, with no plan review, did not name it).
+  One run per cell: signs, not proof. No rule changes from the table without the owner's decision.
+- The owner's global Git rule loads in the test runs and asks for the owner's own yes before each
+  commit, so 6 runs ended with the work built and not committed. In R3, the Codex worker refused a
+  commit that the test leader approved for the scripted owner.
+- Test strategy changes by the owner (2026-11-27): "No need to run that often when we have that
+  plenty of room for usage" (the account check once before and once after the batch, and the tokens
+  per run); "yeah, we can use 2 in its place and skip it" (run 2 is the removal cell hard x full, so
+  7 removal runs, not 8).
+
 ### Risks
 
 - More time and cost before each build: two reviewers and up to 2 rounds. The removal test
