@@ -665,7 +665,7 @@ two Opus reviewers; real Codex runs both teams with the pid file, and the same p
 
 ## Revision 11 (2026-11-27): facts first, and two reviewers agree on the plan
 
-Status: draft. Plan review done: 4 rounds, both reviewers agree at `c41014c`. Waiting on the owner's review. Built in a new PR from `main` after
+Status: approved by the owner on 2026-11-27 ("2A, approve"), with the owner decisions below. Plan review: 4 rounds, both reviewers agree at `c41014c`. Built in a new PR from `main` after
 the merge of #156 (owner, 1A; #156 merged on 2026-11-27, `b894bc6`).
 
 The owner's order, 2026-11-27: "When receive the human word (goals, ideas, etc..), leader spawn
@@ -740,6 +740,11 @@ come after the explorer; 3A after 2 rounds with no agreement, the owner decides 
   report if it gave one, and each message or answer that it did not get". So a plan reviewer that
   ended before it reported starts again from the saved brief and plan revision. The 50% step keeps
   its own list, because there the old session writes a handoff first.
+- **Owner's OK** (owner decision 2): if the owner changes the plan at the OK, and the change adds,
+  removes or changes a task, a criterion or the definition of done, the changed plan goes back to
+  the same two reviewers by the plan review rules; then the owner approves the changed plan. Each
+  other change (a word fix, a pick between options of the plan): the owner sees the changed plan and
+  approves it.
 - **After the OK:** a change of the plan that the lead agent proposes (a new task, or its own change
   that grows into a worker task) is a change of the plan: ask the owner, as now.
 - One term in all files: "the criteria of the approved plan".
@@ -766,6 +771,20 @@ come after the explorer; 3A after 2 rounds with no agreement, the owner decides 
    needs one more owner message: the OK after the owner sees the plan. Recommended: keep this rule;
    both reviewers agree. The other choice: an OK in the task approves a plan that both reviewers
    agree with, and only an open point waits for the owner.
+
+### Owner decisions (2026-11-27)
+
+The owner's words: "1. A. You will write it as Opus 5.5 is good at writing than Sol. Remember to
+ping reviewers when you done", "3. A", "4. A", "5 A", then "2A, approve".
+
+1. The lead agent (Opus 5.5) writes the text of revision 11, not a Codex worker team. When the text
+   is done, the two outside reviewers review the diff.
+2. A change at the OK that adds, removes or changes a task, a criterion or the definition of done
+   goes back to the two reviewers (the rule "Owner's OK" above); other changes do not. This replaces
+   the recommendation of owner point 2.
+3. The worker session gives the plan in its own words; its subagents start only after a build turn.
+4. FX8 (the guide sketches) is in this PR; the other five follow-ups stay for a later PR.
+5. An OK in the task text does not approve a plan.
 
 ### Files
 
