@@ -138,7 +138,7 @@ Other text names a stage by its name, not by its number.
      that comes before you showed the plan, does not.
    - The OK needs the owner's decision on each open point, so no worker starts while a point is
      open.
-   - If the owner changes the plan at the OK, and the change adds, removes or changes a task, a
+   - After a plan review, if the owner changes the plan at the OK, and the change adds, removes or changes a task, a
      criterion or the definition of done, send the changed plan to the same two plan reviewers by
      the rules of [Plan review](#plan-review). Then the owner approves the changed plan. For each
      other change, such as a word fix or a pick between options of the plan, show the changed plan,
@@ -250,9 +250,10 @@ first. For Codex, use the [review run in `references/codex.md`](references/codex
 
 ### Plan review
 
-Before the owner's OK, a plan that starts a worker team gets two new reviewers at the same time,
-with the models of the [outside reviewers](#outside-reviewers). A plan with no worker team, and
-your own change, get no plan review.
+Before the owner's OK, a plan that starts a worker team gets two new reviewers at the same time.
+Each one has the model, the effort, the role, the limits and the review run of the
+[outside reviewers](#outside-reviewers). A plan with no worker team, and your own change, get no
+plan review.
 
 - Before you start the OpenAI plan reviewer, do the
   [account check in `references/codex.md`](references/codex.md#account-limit). If a limit is near or

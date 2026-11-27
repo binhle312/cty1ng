@@ -77,7 +77,7 @@ The skill was tested on Linux (WSL2) only.
  7 the plan, the verdicts and each open point ══▶ HUMAN decides each open point and
                                                   gives the OK; a change of a task, a
       │                                           criterion or the definition of done
-      │                                           goes back to stage 6
+      │                                           goes back to the plan review
       ▼
  8 worker: plan in its own words ──▶ lead agent accepts ──▶ worker builds, and its
    test-verifier and reviewer subagents check, after each build and each fix
@@ -89,7 +89,7 @@ The skill was tested on Linux (WSL2) only.
       ▼
  11 report ══▶ the merge, only when the HUMAN asks for it
 
- The lead agent's own change, after stage 3: the advisor rates it. A minor change needs no plan,
+ The lead agent's own change, after the explorer: the advisor rates it. A minor change needs no plan,
  no OK and no reviewers: the advisor agrees on the solution and checks the diff, and the next
  report tells the HUMAN. A major or critical change gets a short plan, the HUMAN's OK and the two
  outside reviewers, with no plan review.
