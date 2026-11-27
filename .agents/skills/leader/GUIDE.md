@@ -89,10 +89,10 @@ The skill was tested on Linux (WSL2) only.
       ▼
  11 report ══▶ the merge, only when the HUMAN asks for it
 
- The lead agent's own change, after the explorer: the advisor rates it. A minor change needs no plan,
- no OK and no reviewers: the advisor agrees on the solution and checks the diff, and the next
- report tells the HUMAN. A major or critical change gets a short plan, the HUMAN's OK and the two
- outside reviewers, with no plan review.
+ The lead agent's own change, after the explorer: the advisor rates it. A minor change needs
+ no plan, no OK and no reviewers: the advisor agrees on the solution and checks the diff, and
+ the next report tells the HUMAN. A major or critical change gets a short plan, the HUMAN's OK
+ and the two outside reviewers, with no plan review.
 ```
 
 `══▶` is a gate: the work that depends on it waits for the human.
