@@ -1358,8 +1358,22 @@ stop rule, no other text changes:
 | The records C4, `Needs human review` and the status Now line were stale (Opus N4) | No | Fixed in the same commit |
 | The run can pass without proving the new C3 (Astra N4) | No | Open minor point |
 
+### Fix check 2 (`984fb19..d422578`, narrow)
+
+One question to the same two: is any owner decision still smaller in the skill text than in the
+record? Opus: none (`opus-fix2.report.md`). Astra: yes, decision 3, in two places
+(`astra-fix2.report.md`). By the stop rule, no text changes after this check:
+
+| Finding | Same cause? | State |
+| --- | --- | --- |
+| The worker brief says "a base that already holds them"; decision 3 allows a base that holds one of them, and the worker merges the others (Astra) | Yes: a task that builds on two tasks. The words "holds them" are the lead agent's, in `d422578` | Not ready. Proposed text, not applied: "Start from one of them, or from a base that already holds one of them, and merge each other one before your first change." |
+| "Before its first change" is earlier than "before a task builds on the code of other tasks" in decision 3 (Astra) | Yes: a task that builds on two tasks. The words came from `984fb19`, which both reviewers accepted in fix check 1 | Not ready. Proposed text, not applied: "and its worker merges each other one before it builds on that code." |
+| The way 1 brief line is singular (Opus R1) | Yes: a task that builds on two tasks | Open minor point |
+
 ### Needs human review
 
+- Fix check 2: Astra found decision 3 still smaller in two places (above); Opus found none. Not
+  fixed, by the stop rule.
 - The §9 cut after diff review round 1 was made with no owner decision, by the advisor's ruling. For
   one commit (`984fb19`), it made decisions 1 and 3 smaller, on the advisor's advice; the next commit
   puts them back.
@@ -1368,7 +1382,7 @@ stop rule, no other text changes:
   checkpoint.
 - Way 1 has outside reviews of its early checkpoints.
 - "Ended" got the clause "both outside reviewers reported", a patch on a repeated cause.
-- Two points are not ready (Fix check 1): the reviewers' base at an early checkpoint of way 1, and
+- Two more points are not ready (Fix check 1): the reviewers' base at an early checkpoint of way 1, and
   the clean base when a branch with work merges a second task. Proposed texts are above.
 - Open minor points: Opus N3, F5, F6; Astra F5 (the brief restates the last-checkpoint rule), N4.
 - Plan r3 changed the plan after the last round of the plan review, which `SKILL.md` allows only for
