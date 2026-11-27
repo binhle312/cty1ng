@@ -665,7 +665,7 @@ two Opus reviewers; real Codex runs both teams with the pid file, and the same p
 
 ## Revision 11 (2026-11-27): facts first, and two reviewers agree on the plan
 
-Status: draft, plan review round 2, then the owner's review. Built in a new PR from `main` after
+Status: draft. Plan review done: 4 rounds, both reviewers agree at `c41014c`. Waiting on the owner's review. Built in a new PR from `main` after
 the merge of #156 (owner, 1A; #156 merged on 2026-11-27, `b894bc6`).
 
 The owner's order, 2026-11-27: "When receive the human word (goals, ideas, etc..), leader spawn
@@ -704,8 +704,8 @@ come after the explorer; 3A after 2 rounds with no agreement, the owner decides 
 - **Stage 4, the gate:** "Before the owner's OK, start no build and no worker. The only reviewers
   that start before the OK are the plan reviewers, and a review that the project's rules ask for
   before an approval." An OK that comes before the owner saw the plan does not approve it: the
-  owner approves the plan after seeing it, with each reviewer's verdict and each open point, and
-  decides each open point before the work that it affects starts.
+  owner approves the plan after seeing it, with each reviewer's verdict and each open point. The
+  OK needs the owner's decision on each open point, so no worker starts while a point is open.
 - **Stage 5:** if you have no advisor tool, check the plan yourself for gaps, risks and criteria
   that no test can check, and say so in the plan.
 - **Plan review** (a new part of "Outside reviewers"):
@@ -721,8 +721,8 @@ come after the explorer; 3A after 2 rounds with no agreement, the owner decides 
     plan: each criterion and each definition of done has AGREE, and each missing criterion or risk
     that a reviewer named is in the plan or answered. Round 2 runs only if a point is open: the
     lead agent changes the plan or gives a reason for each point, and sends the new revision to
-    the same two. After round 2, the owner gets each open point with the view of each party, and
-    decides each one before the work that it affects starts.
+    the same two. After round 2, the owner gets each open point with the view of each party (the
+    gate says when the owner decides).
   - The checkpoint reviewers stay as they are.
 - **Stop and tell the owner:** the line "a reviewer disagrees about a finding" gets "for a plan
   review, after 2 rounds".
@@ -804,7 +804,9 @@ own records are allowed before the OK).
    asked after the plan draft and before the plan reviewers; an Opus 5.5 subagent (the model id in
    the stream) and a read-only Astra session review the plan; the plan with the verdicts comes
    before the owner's OK; before the OK, no worker, no commit, no change to a project file, and no
-   build or install command in the ordered trace. If the lead agent decides the 0-people case
+   build or install command in the ordered trace (the script's list: a package-manager install or
+   build, `make`, and a `codex exec` with no read-only sandbox; the trace includes the subagents'
+   calls, which the stream marks with `parent_tool_use_id`). If the lead agent decides the 0-people case
    itself and asks no question, the run fails: that is a finding about the clarify stage.
 3. Small task run: "fix one word in `README.md`". Pass: the explorer runs, the advisor rates the
    change, and no plan review and no Codex call happen.
@@ -838,7 +840,7 @@ own records are allowed before the OK).
      (`total_cost_usd`); the Codex use (the change of the account check's used percent, and the
      tokens of the sessions whose folder is the test project). Each variant has an event that shows
      that the run came to the place of the removed part: no plan review, the plan shown to the
-     owner; no team subagents, the first build message to a worker; no checkpoint reviewers, the
+     owner; no team subagents, the first build-turn report of a worker; no checkpoint reviewers, the
      first checkpoint report of a worker. A run that stops before that event is "inconclusive" for
      that variant.
    - Eight runs can show no difference, and one run for each cell is a sign, not proof. No rule
@@ -856,8 +858,8 @@ two reviewers disagree on purpose; the text checks cover it.
 3. No sentence of the skill, its guide or the project documents still says that no reviewer starts
    before the OK, except the old revisions of this plan.
 4. An OK that comes before the owner saw the plan does not approve it: the owner approves the plan
-   after seeing it with the verdicts and each open point, and decides each open point before the
-   work that it affects starts (run 5, and a text check for the open points).
+   after seeing it with the verdicts and each open point, and no worker starts while a point is
+   open (run 5, and a text check for the open points).
 5. The criteria of the approved plan have one home (`goal.md` keeps them only for a task with no plan); the worker brief, "Get the plan first" and the
    verifier text use them.
 6. The reviewer brief template serves its four users with no false fixed line: the lead agent fills
@@ -886,8 +888,13 @@ Astra does not agree: 4 major (the owner decides each open point; the old split 
 line lost the commits; a build before the OK that changes no tracked file) and 2 minor (the
 "inconclusive" event; this record). The lead agent accepted all of them, and Opus's points (the
 module and export of `splitBill`; owner point 5) except one: the gate run still needs a question,
-because a real open question that the lead agent decides alone is a finding. Round 4 reads this
-revision. Reports: `tmp/reviews/leader-r11/`.
+because a real open question that the lead agent decides alone is a finding (`c41014c`). Round 4
+(`c41014c`): both agree. Their minor points, accepted after round 4 and read by no reviewer: no
+worker starts while an open point is undecided (Opus P1), with the timing rule at the gate only
+(Astra R4-1); the removal event for the team subagents is the first build-turn report (P2); the
+script names the build and install commands, and the trace includes the subagents' calls (P3);
+this status line (R3-6). A headless stream holds each subagent call with `parent_tool_use_id` and
+its model id (`claude-opus-5-5` in the revision 10 backup run). Reports: `tmp/reviews/leader-r11/`.
 
 ### Risks
 
