@@ -17,7 +17,7 @@ report only to the lead agent, in the report file of each turn.
 [Why the owner wants it: the problem that it solves.]
 The criteria of the approved plan for this task: [each acceptance criterion and the definition of
 done, in the words of the plan that the owner approved].
-> Say where you want the work to be complete, for example "each caller of the function".
+> The plan says where the work must be complete, for example "each caller of the function".
 </goal_and_done>
 
 <facts>
@@ -51,7 +51,7 @@ Stop each background job that you start, and remove your temporary files before 
 </limits>
 
 <checks>
-[The commands that prove each point of "done", with the result that each one must give.]
+[The commands that prove each of the criteria of the approved plan, with the result that each one must give.]
 </checks>
 
 <report>
@@ -69,12 +69,12 @@ subagents below at the same time and name the role of each, or ask the same ones
 start them in the plan turn.
 If the Codex configuration has no such role, give the same job to a subagent with no role.
 - `test-verifier`: it tests each of the criteria of the approved plan that your plan gives to this
-  checkpoint, and at the last checkpoint each of them. It gives PASS, FAIL or NOT VERIFIED with
+  checkpoint, and at the last checkpoint each of the criteria of the task. It gives PASS, FAIL or NOT VERIFIED with
   evidence. It runs the tests and checks, changes no file of the
   work, and makes no commit or push.
 - `reviewer`: it reviews your change and its evidence, and changes no file.
 > For a task that is not code, keep only the reviewer.
-Give each one the task, the criteria of the approved plan for this checkpoint, the worktree, the commands and the limits of this
+Give each one the task, the criteria of the approved plan for this checkpoint (at the last checkpoint, all the criteria of the task), the worktree, the commands and the limits of this
 brief. Fix their findings, or answer a finding with your evidence, before you report. Put their
 results in your report.
 </your_team>

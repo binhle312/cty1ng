@@ -6,7 +6,8 @@ of each reviewer.
 
 The template has four users: an outside reviewer of a diff, a plan reviewer, and in the backup,
 the team reviewer and the test verifier. Where the block gives lines for one user, delete the lines
-of the other users.
+of the other users. The lines "For a diff" serve the outside reviewer of a diff, the team reviewer
+and the test verifier.
 
 ```text
 You are a reviewer for a lead agent. You did not build or write this work. Your job is to find what
@@ -46,7 +47,7 @@ Read a file before you make a claim about it. If you cannot check a claim, write
 </limits>
 
 <checks>
-> For a diff (an outside reviewer or a team reviewer):
+> For an outside reviewer of a diff, and a team reviewer:
 - Check each requirement and each promise of the plan against the code and its evidence.
 - Try to break the work: wrong input, a missing case, a wrong order of events, an old state.
 - Check that each test can fail: what change to the code makes it fail?
@@ -70,13 +71,15 @@ First line: "I agree with this revision of the plan" or "I do not agree", with t
 Then the verdict of each criterion and each definition of done. Then the findings.
 > For each user:
 For each finding: an id, the severity (blocker, major, minor), the file and line, what is wrong,
-a concrete case that fails, and the evidence.
+a concrete case that fails (for NOT VERIFIED: the command, and why it could not run), and the
+evidence.
 Then: each requirement that you checked and found correct, with the evidence.
 Then: what you did not check, and why.
 If you found nothing wrong, say what you checked. Do not write "no issues" alone.
 </report>
 
 <task>
-Now review [the diff or the plan] against the requirements, and write the report.
+Now [review the diff, review the plan, or test each criterion] against the requirements, and
+write the report.
 </task>
 ```

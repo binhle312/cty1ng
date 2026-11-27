@@ -36,11 +36,11 @@ The skill was tested on Linux (WSL2) only.
       briefs, answers, findings   ▼    ▲   plans,     review briefs   ▼    ▲   findings
                                            reports
  ╔══════════════════════════════════════════╗     ┌──────────────────────────────────────┐
- ║ Teams: one Codex worker session per task ║     │ Outside reviewers: two new ones each │
- ║ (at most 2 teams at the same time)       ║     │ time, at the same time:              │
- ║                                          ║     │ - plan reviewers: before the OK, for │
- ║ Implementer: the session itself; plan    ║     │   a plan that starts a worker team   │
- ║   first, builds, tests, commits, fixes   ║     │ - checkpoint reviewers: at each      │
+ ║ Teams: one Codex worker session per task ║     │ Two outside reviewers at a time; the │
+ ║ (at most 2 teams at the same time)       ║     │ same two check round 2 and fixes:    │
+ ║                                          ║     │ - new plan reviewers: before the OK, │
+ ║ Implementer: the session itself; plan    ║     │   for a plan with a worker team      │
+ ║   first, builds, tests, commits, fixes   ║     │ - new checkpoint reviewers: at each  │
  ║   └─ its own subagents, at the same time:║     │   checkpoint report                  │
  ║      ├─ test-verifier                    ║     │                                      │
  ║      └─ reviewer                         ║     │ From Anthropic: Claude Opus, high,   │
@@ -92,7 +92,8 @@ The skill was tested on Linux (WSL2) only.
  The lead agent's own change, after the explorer: the advisor rates it. A minor change needs
  no plan, no OK and no reviewers: the advisor agrees on the solution and checks the diff, and
  the next report tells the HUMAN. A major or critical change gets a short plan, the HUMAN's OK
- and the two outside reviewers, with no plan review.
+ and the two outside reviewers, with no plan review. With no advisor tool, each own change
+ takes that path.
 ```
 
 `══▶` is a gate: the work that depends on it waits for the human.
