@@ -47,6 +47,13 @@ test is wrong, say so in the report, and do not work around it.
 [The limits of the machine: commands that only one agent can run at a time, fixed ports, the
 network, packages.]
 [The limits of parallel work: other agents in other worktrees, and files that they change.]
+[For a task that starts before another task ended: the shared names, inputs and outputs. Build
+only what does not need the code of that task; do not write that code, and do not change its files.
+Then report, and wait for the lead agent's message. The team checks of this report cover only the
+criteria that do not need that code. Tests that need it can fail until the merge: name them in the
+report.]
+[For a task that builds on another task: the commit at which that task ended, and that you merge it
+into your branch when the lead agent sends it.]
 Stop each background job that you start, and remove your temporary files before you report.
 </limits>
 

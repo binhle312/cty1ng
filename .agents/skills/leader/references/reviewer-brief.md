@@ -31,6 +31,9 @@ decisions, the project rules that apply. Give the text, not a link to the lead a
 Worktree: [absolute path]. Branch: [branch name].
 > For a diff:
 Diff: [base commit or branch]..[head commit].
+> For a task that builds on other tasks, the base is a commit that holds the code of each of them
+> and none of this task's work, such as the commit at which that task ended. If no such commit
+> exists, limit the diff to the files of this task.
 > For a plan:
 Plan: [the file of the plan revision, such as `plan-r2.md`, or the file and its commit].
 </review_target>

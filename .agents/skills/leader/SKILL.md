@@ -109,10 +109,33 @@ Other text names a stage by its name, not by its number.
 
    - **The tasks:** break the owner's goal into small tasks, each with one outcome and its own
      checks, so that each worker and each reviewer ends well under the
-     [limit](#context-of-each-worker) (owner, 2026-11-25). Make the tasks independent: no task
-     changes a file of another task or waits for another task. Give them to different
-     [worker teams](#teams), and check each task apart. A task that needs the result of another task
-     starts after that task is done. Name the files of each task, and the order if one exists.
+     [limit](#context-of-each-worker) (owner, 2026-11-25). Give them to different
+     [worker teams](#teams), and check each task apart. Two tasks never change the same file. Name
+     the files of each task.
+   - **The waits:** if a task needs the result of another task, keep the place of its team busy
+     (owner, 2026-11-28). Use the first way that fits and pays: the work that it starts early takes
+     longer than its cost.
+
+     1. Shared names first: write in the plan the names, inputs and outputs that the tasks share,
+        such as a function, its arguments and its result. The task that uses them starts with the
+        task that makes them. Its worker builds only what does not need the other task's code, runs
+        its team checks on the criteria that do not need that code, and reports. This report is not
+        a checkpoint, so no outside reviewer starts. Cost: a merge.
+     2. Split: make two tasks, each with its own files, checks and reviews. The part that needs
+        nothing starts now. The small part that waits starts after the other task and the first part
+        ended, and builds on both. Cost: one more task.
+     3. Another task: give the free team another task of the plan that waits for nothing.
+
+     If no way fits, the task starts after the other task ended; give the reason. A task ended when
+     its last checkpoint is committed, its outside reviewers have no open finding on it, and each fix
+     is committed. Its last commit is then the commit at which it ended: write it in `handoff.md`.
+     Before a task builds on the code of other tasks, its own branch holds the code of each. A new
+     branch starts from the commit at which one of them ended, or from a base that already holds it,
+     and merges the commit of each other one. A branch that already has work merges that commit into
+     itself when you send it to the worker, after the other task ended; then the last checkpoint runs
+     there, with its team checks and outside reviews. This merge is not the merge of the work into
+     the main branch. The shared names are part of the approved plan, so a change of one is a change
+     of the plan.
    - **The criteria:** for each task, its acceptance criteria and its definition of done. After the
      owner's OK, they are the criteria of the approved plan.
    - **The workers:** the worker team of each task, with the subagents that its worker starts, and
@@ -199,7 +222,7 @@ as `tmp/leader/<task>/`. The write rules below apply to your task's own folder.
 | File | What it holds | When to write it |
 | --- | --- | --- |
 | `goal.md` | The goal in the owner's words; for a task with a plan, where the plan is, for its criteria; for a task with no plan, the completion criteria; the scope, and the owner's constraints and standing instructions | At the start, and after each owner decision that changes it |
-| `handoff.md` | The worktree, the branch and the PR, if one exists; the plan, and the owner's OK of it or "no OK yet"; until the OK, the facts of the explorer and of your reads, with paths and lines; the plan review state: the plan revision, the round, the path of each report that arrived, the reviewer that has not reported, your answer to each point, and the next step; the current state with commits; the checks and their results; the owner's decisions in the owner's words, each with the question that it answers; the failed attempts with their reasons; the session list of your workers and reviewers; the next action; the open questions. Give the commit where you checked each claim. | Write it in full each time, not as a patch: at the start, at the end of each stage, after each owner decision, and when each plan review report arrives, and before you stop to wait for the owner |
+| `handoff.md` | The worktree, the branch and the PR, if one exists; the plan, and the owner's OK of it or "no OK yet"; until the OK, the facts of the explorer and of your reads, with paths and lines; the plan review state: the plan revision, the round, the path of each report that arrived, the reviewer that has not reported, your answer to each point, and the next step; the current state with commits; the commit at which each task ended; the checks and their results; the owner's decisions in the owner's words, each with the question that it answers; the failed attempts with their reasons; the session list of your workers and reviewers; the next action; the open questions. Give the commit where you checked each claim. | Write it in full each time, not as a patch: at the start, at the end of each stage, after each owner decision, and when each plan review report arrives, and before you stop to wait for the owner |
 
 Give the owner the absolute folder path in each report. Never give your folder to a worker as a writable
 folder.

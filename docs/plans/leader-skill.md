@@ -1113,9 +1113,12 @@ All in `.agents/skills/leader/` at `main` (`771d530`).
 
 ### The change (the lead agent's own change; not minor)
 
-The lead agent writes the text (owner, 2026-11-27). Until the build, the draft text is in
-`tmp/leader-skill/r12/draft/leader/` (not in the repository); after it, the text is in the skill
-files. This section keeps only its points.
+The lead agent writes the text (owner, 2026-11-27). The text is in the skill files; this section
+keeps only its points. At the build, the lead agent added three points of the advisor's judgment of
+r3: the part that waits in way 2 starts after both tasks ended, and its new branch starts from one
+ended commit and merges the other; the worker of an early start reports and waits, and its team
+checks cover only the criteria that do not need the other task's code; the `handoff.md` row of the
+skill lists the commit at which each task ended.
 
 1. `SKILL.md`, Plan stage:
    - "The tasks" says: small tasks with one outcome; different worker teams; each task checked
@@ -1309,9 +1312,12 @@ revision. Answers (A = accepted and changed in this revision):
 | Failed checks exit with 0 (Astra N4) | A |
 | `--help` exit code not in the task; Task 1's tip in place of the ended commit (Opus N6) | A: the task text says exit code 0; the check reads the ended commit from `handoff.md` |
 
-For `Needs human review`: the `/goal` order as the OK; the agreement of both plan reviewers was not
-reached after round 2, and the advisor judged r3; the C3 change (team checks at the early report);
-item 9 not verified by a run.
+For `Needs human review`: the `/goal` order as the OK; both plan reviewers ended at "do not agree",
+neither read r3, and the advisor judged r3; the lead agent rewrote the record of two owner decisions
+in r2, and r3 put it back; the files-only diff for a task with no clean base goes past decision 3;
+the C3 change (team checks at the early report); item 9 not verified by a run; the scripted owner
+also answers "Yes, commit" to a text that only mentions a commit and asks something else (a limit of
+the test, Astra N2).
 
 ### Risks
 
