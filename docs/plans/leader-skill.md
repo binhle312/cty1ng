@@ -1176,8 +1176,9 @@ Branch `leader-wait-teams` in worktree `../cty1ng-leader-wait`, from `main`; dra
   outside reviewer; the reviews found both in conflict with the checkpoint rules, and the advisor
   ruled the cut.)
 - **C4** One sentence covers each case: the task's own branch holds the code of each task that it
-  builds on (a new branch starts from the commit at which that task ended, or a base that holds
-  it; a branch with work merges it into itself). "Ended" and its commit have one definition, and
+  builds on (a new branch starts from the commit at which one of them ended, or a base that holds
+  it, and its worker merges each other one before its first change; a branch with work merges it
+  into itself). "Ended" and its commit have one definition, and
   `handoff.md` holds the commit.
 - **C5** The worker brief `<limits>` and the reviewer brief's diff base give the task fields; the
   GUIDE stage 5 sketch names the rule; no other file holds a copy of the rule text. Not claimed: the
@@ -1314,16 +1315,7 @@ revision. Answers (A = accepted and changed in this revision):
 | Failed checks exit with 0 (Astra N4) | A |
 | `--help` exit code not in the task; Task 1's tip in place of the ended commit (Opus N6) | A: the task text says exit code 0; the check reads the ended commit from `handoff.md` |
 
-For `Needs human review`: the §9 cut after diff review round 1 was made with no owner decision, by
-the advisor's ruling; way 1 now has outside reviews of its early checkpoints; "ended" got the clause
-"both outside reviewers reported" (a patch on a repeated cause); plan r3 changed the plan after the
-last round of the plan review, which `SKILL.md` allows only for the owner's decisions; the reading
-of "no independent worktree"; the `/goal` order as the OK; both plan reviewers ended at "do not agree",
-neither read r3, and the advisor judged r3; the lead agent rewrote the record of two owner decisions
-in r2, and r3 put it back; the files-only diff for a task with no clean base goes past decision 3;
-the C3 change (team checks at the early report); item 9 not verified by a run; the scripted owner
-also answers "Yes, commit" to a text that only mentions a commit and asks something else (a limit of
-the test, Astra N2).
+The items for `Needs human review` are in the subsection of that name below.
 
 ### Diff review round 1 (`771d530..4213533`)
 
@@ -1336,13 +1328,59 @@ this section.
 
 | Finding | Same cause as an earlier fix? | Fix |
 | --- | --- | --- |
-| The early report is "not a checkpoint", against the checkpoint rules and the backup (Astra F1, F5; Opus F3, F6) | Yes: plan review round 1 (Opus F1, Astra F1) fixed the same report, and the fix made this finding; the repeat "review fixes made the next findings" of §7 | §9 stop: no patch. The advisor (the final judge by the owner's order) ruled a cut back to decision 2A with no new rule: early checkpoints are ordinary; the criteria that need the other task go to the last checkpoint |
+| The early report is "not a checkpoint", against the checkpoint rules and the backup (Astra F1, F5; Opus F3) | Yes: plan review round 1 (Opus F1, Astra F1) fixed the same report, and the fix made this finding; the repeat "review fixes made the next findings" of §7 | §9 stop: no patch. The advisor (the final judge by the owner's order) ruled a cut back to decision 2A with no new rule: early checkpoints are ordinary; the criteria that need the other task go to the last checkpoint |
 | A task that builds on two tasks; the base of the files-only diff (Opus F2, Astra F4) | Yes: plan review rounds 1 and 2 (Opus F3, Astra F2) | §9 stop: cut. Way 1 only when a task needs one task that has not ended; a task that starts after other tasks ended merges them before its first change, so a clean base exists; the files-only diff (past decision 3) is gone |
 | "Ended" while a reviewer still reads; a fix after a task ended (Astra F3, Opus F5) | Yes: plan review rounds 1 and 2 (Opus F4, Astra N3) | §9: the skill has no point at which it accepts a task today, so the advisor allowed one clause, "both outside reviewers reported", as a patch on a repeated cause (under `Needs human review`). A fix after a task ended is a written limit (Risks) |
 | The shared names reach only the task that uses them (Opus F1); the early-start line also fits an independent task (Astra F2) | No: no earlier fix touched who holds the shared names (search above) | The shared names are a criterion of the task that makes them; the brief line names a task that uses the shared names of a task that has not ended |
 | "fits and pays" against "If no way fits" (Opus F4); two descriptions of `reply()` in this plan (Astra F6) | No: wording, first found here | Fixed |
 | The copy check and the fact map are weaker than claimed (Opus F7) | Yes: the repeat "a claim is bigger than its proof" (`claim-bigger-than-its-proof.md`); its fixed answer applies, with no stop | The three phrases that it showed are in the copy check (planted changes now fail); `Not claimed:` under C5 for the templates and the sketch |
 | The plan's words for the owner's "no independent worktree" (Opus F8) | No | The Goal names it as the lead agent's reading, and it is a question for the owner |
+| The worker brief restates the rules of the last checkpoint and of the merge (Opus F6) | Yes: the repeat "records that disagree" of §7 (each fact had copies) | Not fixed: an open minor point. The brief line is a task field of the template, but its words copy `SKILL.md` |
+
+### Fix check 1 (`4213533..984fb19`)
+
+The same two diff reviewers (`opus-fix1.report.md`, `astra-fix1.report.md`). Both found that the cut
+was not a pure cut: it limited way 1 to "a task that needs one task that has not ended" and dropped
+"or from a base that already holds it" from decision 3, with no `Needs human review` line (Opus N1,
+Astra N2, N3). The advisor had advised both clauses, and ruled that a return to approved text is not
+a patch: the next commit deletes the limit and puts back the decision 3 sentences of `4213533`. With
+at most 2 teams, a task that starts early runs beside one other task only, so the limit was not
+needed. Each new sentence of that commit is a sentence of `4213533` or `984fb19`, or joins a clause
+of `4213533` with a clause of `984fb19`, with no new words (a script compared the sentences). By the
+stop rule, no other text changes:
+
+| Finding | Same cause? | State |
+| --- | --- | --- |
+| The reviewers' base at an early checkpoint of way 1, before the other task ended (Astra N1) | Yes: the early report and the checkpoint rules | Not ready. Proposed text, not applied (`references/reviewer-brief.md`): "For an early checkpoint of a task that uses shared names, the base is the commit at which its branch started." |
+| No clean base when a branch with work merges a second task (Astra N2, second part) | Yes: a task that builds on two tasks | Not ready. Proposed text, not applied: "If no such commit exists, the diff starts at the commit at which this task's branch started, and it covers only the files of this task." |
+| An early checkpoint must pass its criteria, and a static import of a missing export fails at load (Opus N3) | Yes: the early report | Open minor point; the run shows whether it happens |
+| A fix after a task ended; an open minor point left for the owner blocks "ended" (Opus F5) | Yes: the end of a task | Open minor point; a written limit (Risks) |
+| The records C4, `Needs human review` and the status Now line were stale (Opus N4) | No | Fixed in the same commit |
+| The run can pass without proving the new C3 (Astra N4) | No | Open minor point |
+
+### Needs human review
+
+- The §9 cut after diff review round 1 was made with no owner decision, by the advisor's ruling. For
+  one commit (`984fb19`), it made decisions 1 and 3 smaller, on the advisor's advice; the next commit
+  puts them back.
+- Two clauses go past the words of decisions 1A and 2A (Astra N3): the shared names are a criterion
+  of the task that makes them, and each criterion that needs the other task's code goes to the last
+  checkpoint.
+- Way 1 has outside reviews of its early checkpoints.
+- "Ended" got the clause "both outside reviewers reported", a patch on a repeated cause.
+- Two points are not ready (Fix check 1): the reviewers' base at an early checkpoint of way 1, and
+  the clean base when a branch with work merges a second task. Proposed texts are above.
+- Open minor points: Opus N3, F5, F6; Astra F5 (the brief restates the last-checkpoint rule), N4.
+- Plan r3 changed the plan after the last round of the plan review, which `SKILL.md` allows only for
+  the owner's decisions; the advisor judged r3 in the owner's place, by the owner's order.
+- Both plan reviewers ended at "do not agree", and neither read r3.
+- The lead agent rewrote the record of two owner decisions in r2, and r3 put it back.
+- The reading of "no independent worktree" (Goal).
+- The `/goal` order as the OK of the plan.
+- Item 9 of the run checks is not verified by a run.
+- The scripted owner also answers "Yes, commit" to a text that only mentions a commit and asks
+  something else (a limit of the test, Astra N2 of plan round 2).
+- `pnpm check:status` ran `pnpm install` in the new worktree (hard links from the store).
 
 ### Risks
 
@@ -1357,6 +1395,8 @@ this section.
 - A long Task 2 can make a turn reach the 5400 s limit; the run then shows it in `end.txt`.
 - A fix to a task after it ended (for example from the owner's review) does not reach the task that
   merged its ended commit; the skill gives no step for it.
+- Not covered: a cap of more than 2 teams, where a task that starts early can run beside two tasks
+  that have not ended.
 
 ## Open questions
 

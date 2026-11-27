@@ -116,11 +116,11 @@ Other text names a stage by its name, not by its number.
      (owner, 2026-11-28). Use the first way that fits and pays: the work that it starts early takes
      longer than its cost.
 
-     1. Shared names first, when a task needs one task that has not ended: write the names, inputs
-        and outputs that the two share, such as a function, its arguments and its result, as a
-        criterion of the task that makes them. The task that uses them starts with that task. Its
-        early checkpoints are ordinary checkpoints, and each criterion that needs the other task's
-        code goes to its last checkpoint. Cost: a merge, and the reviews of the early checkpoints.
+     1. Shared names first: write the names, inputs and outputs that the tasks share, such as a
+        function, its arguments and its result, as a criterion of the task that makes them. The
+        task that uses them starts with that task. Its early checkpoints are ordinary checkpoints,
+        and each criterion that needs the other task's code goes to its last checkpoint. Cost: a
+        merge, and the reviews of the early checkpoints.
      2. Split: make two tasks, each with its own files, checks and reviews. The part that needs
         nothing starts now. The small part that waits starts after the other task and the first part
         ended, and builds on both. Cost: one more task.
@@ -129,12 +129,13 @@ Other text names a stage by its name, not by its number.
      If no way fits and pays, the task starts after the other task ended; give the reason. A task
      ended when both outside reviewers reported on its last checkpoint and have no open finding, and
      its last checkpoint and each fix are committed. Its last commit is then the commit at which it
-     ended: write it in `handoff.md`. A task that starts after other tasks ended starts its branch
-     from the commit at which one of them ended, and its worker merges each other one before its
-     first change. In way 1, the last checkpoint starts after the other task ended: send that
-     commit to the worker, which merges it into its own branch first. These merges are not the merge
-     of the work into the main branch. The shared names are part of the approved plan, so a change
-     of one is a change of the plan.
+     ended: write it in `handoff.md`. Before a task builds on the code of other tasks, its own branch
+     holds the code of each. A new branch starts from the commit at which one of them ended, or from
+     a base that already holds it, and its worker merges each other one before its first change. A
+     branch that already has work merges that commit into itself when you send it to the worker,
+     after the other task ended; then the last checkpoint runs there, with its team checks and
+     outside reviews. These merges are not the merge of the work into the main branch. The shared
+     names are part of the approved plan, so a change of one is a change of the plan.
    - **The criteria:** for each task, its acceptance criteria and its definition of done. After the
      owner's OK, they are the criteria of the approved plan.
    - **The workers:** the worker team of each task, with the subagents that its worker starts, and
