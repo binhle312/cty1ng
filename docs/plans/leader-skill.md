@@ -994,7 +994,7 @@ batch; the tokens per run are in the records.
 | 3 | Small | Pass | 3 min | 6.21 |
 | 4 | Backup | Pass | 33 min | 63.34 |
 | 5 | Two tasks | 2 of 3 pass, 1 not tested | 34 min | 33.27 |
-| R1 | Slug, full | Done | 25 min | 27.07 |
+| R1 | Slug, full | Done; no checkpoint review ran | 25 min | 27.07 |
 | R2 | Slug, no plan review | Done | 17 min | 13.32 |
 | R3 | Slug, no team | Done | 26 min | 21.86 |
 | R4 | Slug, no checkpoint reviewers | Done | 19 min | 26.99 |
@@ -1005,12 +1005,17 @@ batch; the tokens per run are in the records.
 - Run 5: "both team plans before the first build message" was not tested. The test leader put both
   tasks on one branch, one after the other; the rule for a team that waits held.
 - Removal test: in all four hard-task runs, the explorer and the test leader found the `toCents`
-  bug and raised the 0-people case before the plan, and the hidden tests pass (3 of 3) in each. The
-  checkpoint reviewers found test gaps in each run that had them. Only the plan review named the
-  false "no remote" in the task text (a test artifact; R2, with no plan review, did not name it).
-  One run per cell: signs, not proof. No rule changes from the table without the owner's decision.
+  bug and raised the 0-people case before the plan, before any part that a variant removes, and the
+  hidden tests pass (3 of 3) in each. So this test could not tell the variants apart. The checkpoint
+  reviewers found test gaps in run 2, R2, R3, R5 and R6, and no code defect in runs 4 and 5. R1 is
+  not a full baseline: its test leader planned the outside review after the commit, and the run
+  stopped at the commit question first. The prices vary more between like runs (R5 34.90, R6 16.26)
+  than between variants. The false "no remote" in the task text (a test artifact) was named in
+  every run. That the Codex team subagents ran comes from the test leader's reports only (the Claude
+  stream does not show them). One run per cell: signs, not proof. No rule changes from the table
+  without the owner's decision.
 - The owner's global Git rule loads in the test runs and asks for the owner's own yes before each
-  commit, so 6 runs ended with the work built and not committed. In R3, the Codex worker refused a
+  commit, so 5 runs (run 2, R1, R3, R4, R7) ended with the work built and not committed. In R3, the Codex worker refused a
   commit that the test leader approved for the scripted owner.
 - Test strategy changes by the owner (2026-11-27): "No need to run that often when we have that
   plenty of room for usage" (the account check once before and once after the batch, and the tokens
