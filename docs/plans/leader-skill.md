@@ -659,7 +659,9 @@ command sends the signal only if the process has the report file of its run (tes
 wrong report file sent no signal, the right one stopped the process, and after the end no signal);
 the verifier's criteria go in one section of its backup brief; the Windows stop command and the
 backup route of `review.md` become follow-ups. The review stops here: no reviewer checks this last
-commit. The clear, backup and real runs on the final head follow.
+commit. The clear, backup and real runs on `4f0cb12` pass (2026-11-27): with no OK, no worker and
+no reviewer starts, and the plan gives the account check; the backup runs the team checks and then
+two Opus reviewers; real Codex runs both teams with the pid file, and the same pair checks the fixes.
 
 ## Open questions
 
