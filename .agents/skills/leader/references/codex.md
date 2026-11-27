@@ -145,11 +145,11 @@ If the command finds no data, or a reset time has passed, the values are not kno
 
 ```bash
 pid="$(cat <pid file of that run>)"
-ps -p "$pid" -o comm=
-kill -INT "$pid"
+ps -p "$pid" -o args= | grep -qF -- "<report file of that run>" && kill -INT "$pid"
 ```
 
-Send the signal only if `ps` shows the Codex process: a pid file stays after its run ends.
+A pid file stays after its run ends, and the system can give its number to another process. So
+the command sends the signal only if the process still has the report file of that run.
 
 The session stays usable: send it the next message with `resume`.
 

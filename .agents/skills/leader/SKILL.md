@@ -284,8 +284,8 @@ error, such as a wrong option or a sandbox refusal, is an ordinary obstacle: fin
   new message. Their models are the defaults of their roles (owner, 2026-11-26). Write their briefs
   from `references/reviewer-brief.md`. The limits of the team reviewer: it changes no file and
   makes no commit or push. For the test verifier, the only requirements of its brief are the acceptance
-  criteria of the checkpoint, and at the last checkpoint all of them. Put them in `<facts>` and
-  `<checks>`, and ask for PASS, FAIL or NOT VERIFIED for each, with evidence: each FAIL or NOT
+  criteria of the checkpoint, and at the last checkpoint all of them. Put them in `<facts>`. In
+  `<checks>`, ask for PASS, FAIL or NOT VERIFIED for each criterion, with evidence: each FAIL or NOT
   VERIFIED is a finding. Its limits: it may run the tests and let them write their output
   files, it changes no project file, and it makes no commit or push. Send their findings to the
   implementer.

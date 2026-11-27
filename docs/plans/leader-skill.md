@@ -652,6 +652,15 @@ major, the copies, the gaps of the new rules, the pid file and the status claim 
 other minors become follow-ups in `docs/status.md`) and "Decision 2: Keep" (the document line of
 the advisor scale stays). The same pair checks that one commit.
 
+**Fix check 2** (`9d57cdb..246e9ea`; the same pair). Each fix is fixed, except the stop command:
+`kill` ran with no condition, and the process name cannot tell two Codex runs apart (Astra major,
+Opus minor). The lead agent stopped and asked the owner. The owner (2026-11-27): "A". The stop
+command sends the signal only if the process has the report file of its run (tested by hand: a
+wrong report file sent no signal, the right one stopped the process, and after the end no signal);
+the verifier's criteria go in one section of its backup brief; the Windows stop command and the
+backup route of `review.md` become follow-ups. The review stops here: no reviewer checks this last
+commit. The clear, backup and real runs on the final head follow.
+
 ## Open questions
 
-None. The owner answered each question on 2026-11-24 and 2026-11-26.
+None. The owner answered each question on 2026-11-24, 2026-11-26 and 2026-11-27.
