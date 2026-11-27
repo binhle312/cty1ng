@@ -867,7 +867,8 @@ own records are allowed before the OK).
    - The script, its wrapper, the hard task and the hidden tests are in `tmp/`, not in the PR.
 
 Not claimed by a run: round 2 and the owner's decision after 2 rounds (3A), because no task can make
-two reviewers disagree on purpose; the text checks cover it.
+two reviewers disagree on purpose; the text checks cover it. Also not claimed by a run: the
+owner's change at the OK that goes back to the reviewers (owner decision 2); a text check covers it.
 
 ### Acceptance criteria and definition of done
 

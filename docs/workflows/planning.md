@@ -96,7 +96,7 @@ one-page code design before any code (owner, 2026-11-04; `principle-design-first
 names the state owner, the modules, the data flow and the failure paths, and it compares at
 least two options with their costs. For a new requirement in an existing design, one option
 builds as if the requirement always existed. Before the owner approves it, a reviewer that did not write it
-tries to break it: the lead agent starts this review before the owner's OK. This project rule comes before the rule of the `leader` skill that starts no reviewer before the OK. The owner approves it in every such slice, checkpointed or not, from a short form (see
+tries to break it: the lead agent starts this review before the owner's OK. The plan review of the `leader` skill can be this review, when its brief asks for it. The owner approves it in every such slice, checkpointed or not, from a short form (see
 [human review](human-review.md)). The state table below is part of this design. A slice that
 stays inside one module skips this step, unless a new requirement changes its design.
 

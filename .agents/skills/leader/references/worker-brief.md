@@ -15,7 +15,8 @@ report only to the lead agent, in the report file of each turn.
 <goal_and_done>
 [The goal in the owner's words, in quotes.]
 [Why the owner wants it: the problem that it solves.]
-Done means: [each result that the lead agent will check, as a list].
+The criteria of the approved plan for this task: [each acceptance criterion and the definition of
+done, in the words of the plan that the owner approved].
 > Say where you want the work to be complete, for example "each caller of the function".
 </goal_and_done>
 
@@ -67,13 +68,13 @@ After each build turn and each fix turn, before you report, run your team checks
 subagents below at the same time and name the role of each, or ask the same ones again. Do not
 start them in the plan turn.
 If the Codex configuration has no such role, give the same job to a subagent with no role.
-- `test-verifier`: it tests each acceptance criterion of this checkpoint, as your plan names them,
-  and at the last checkpoint each criterion of the task. It gives PASS, FAIL or NOT VERIFIED with
+- `test-verifier`: it tests each of the criteria of the approved plan that your plan gives to this
+  checkpoint, and at the last checkpoint each of them. It gives PASS, FAIL or NOT VERIFIED with
   evidence. It runs the tests and checks, changes no file of the
   work, and makes no commit or push.
 - `reviewer`: it reviews your change and its evidence, and changes no file.
 > For a task that is not code, keep only the reviewer.
-Give each one the task, the acceptance criteria of this checkpoint, the worktree, the commands and the limits of this
+Give each one the task, the criteria of the approved plan for this checkpoint, the worktree, the commands and the limits of this
 brief. Fix their findings, or answer a finding with your evidence, before you report. Put their
 results in your report.
 </your_team>
@@ -95,8 +96,9 @@ you found in the report.
 Now read the files that you need. Then give back your plan in your own words:
 1. The goal, as you understand it.
 2. Each step, with the check that shows that the step is done. Name the checkpoints: the steps
-   after which you report, and the acceptance criteria that each one meets. A small task can have
-   one, at the end.
+   after which you report. A small task can have one, at the end.
+   Give each of the criteria of the approved plan in <goal_and_done> to a checkpoint. Do not change
+   a criterion: if one is wrong or no check can prove it, write a question.
 3. Each question that you need answered before you build.
 Change no file and start no subagent in this turn. The lead agent reads the plan, and then
 accepts it or sends corrections.
