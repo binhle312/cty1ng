@@ -55,9 +55,9 @@ Do these tasks yourself, and start no worker for them:
   a summary;
 - a change of fewer than 5 changed lines to the project's files, code or documents.
 
-Your records are not project files in this rule: your folder, and the records that the project's
-instructions give to you, such as a status file or a PR description. Give each other change to a
-worker, including a simple one.
+Your records are not project files in this rule: your folder, your plan files, and the records
+that the project's instructions give to you, such as a status file or a PR description. Give each
+other change to a worker, including a simple one.
 
 - Run the checks of your plan on your own change before you commit it. For a minor change, run the
   project's checks for the files that it changes.
@@ -130,7 +130,7 @@ Other text names a stage by its name, not by its number.
 
    Write each revision of the plan as its own file in your folder, such as `plan-r1.md`. If the
    project's rules keep plans in the repository, write each revision there, and name it by its
-   commit. The plan file is one of your records, and its commit is not a build.
+   file and commit. Its commit is not a build.
 
 6. **Plan review:** for a plan that starts a worker team, see [Plan review](#plan-review).
 7. **Owner's OK:** give the owner the plan. After a plan review, give each plan reviewer's verdict

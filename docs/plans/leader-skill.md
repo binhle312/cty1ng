@@ -701,7 +701,7 @@ come after the explorer; 3A after 2 rounds with no agreement, the owner decides 
 - **The lead agent's own work:** the explorer text moves to stage 3, as a link. The explorer runs
   for each new task, also for a change of the lead agent; then the advisor rates that change, and it
   keeps its path (minor, major or critical, 4A).
-- **Stage 4, the gate:** "Before the owner's OK, start no build and no worker. The only reviewers
+- **Owner's OK stage, the gate:** "Before the owner's OK, start no build and no worker. The only reviewers
   that start before the OK are the plan reviewers, and a review that the project's rules ask for
   before an approval." Only an OK that comes after the owner saw this revision of the plan, with
   each reviewer's verdict and each open point, approves it; an OK in the task, or an OK of an
@@ -754,8 +754,8 @@ come after the explorer; 3A after 2 rounds with no agreement, the owner decides 
   is a change, also a pick of a change that the lead agent gave after the last round.
 - **Plan stage:** each revision of the plan is its own file in the lead agent's folder, such as
   `plan-r1.md`; if the project's rules keep plans in the repository, each revision is written
-  there and named by its file and commit. The plan file is one of the lead agent's records, and its
-  commit is not a build.
+  there and named by its file and commit. The plan files are records of the lead agent (the list in
+  "The lead agent's own work"), and a commit of one is not a build.
 - **After the OK:** a change of the plan that the lead agent proposes (a new task, or its own change
   that grows into a worker task) is a change of the plan: ask the owner, as now.
 - One term in all files: "the criteria of the approved plan".
@@ -832,10 +832,10 @@ commit before the OK there is still a failure.
 
 ### Fix check 2 decision (2026-11-27)
 
-Fix check 2 (`ba3fb01..721f133`): both reviewers agree that the redesign does what the owner
-decided, and cases (a) to (e) each give one order. Astra FC2-1 (major): at the OK, the owner gives
-an existing task to a worker; the plan now starts a worker team, but the rule named only a change of
-a task, a criterion or the definition of done, so no review ran. Opus N-b: the rule called "a pick
+Fix check 2 (`ba3fb01..721f133`), a review of the text: both reviewers found that cases (a) to (e)
+each give one order. Astra FC2-1 (major): at the OK, the owner gives an existing task to a worker;
+the plan now starts a worker team, but the rule named only a change of a task, a criterion or the
+definition of done, so the text sent it to no review (a path in the text, not a run). Opus N-b: the rule called "a pick
 between options of the plan" a change, against the pick rule. Same cause again: the rule named the
 changes that need a review, and each list missed a case. The owner's words: "B".
 

@@ -75,9 +75,11 @@ The skill was tested on Linux (WSL2) only.
       │
       ▼
  7 the plan, the verdicts and each open point ══▶ HUMAN decides each open point and
-                                                  gives the OK; each other change of a
-      │                                           worker team plan, except a word fix,
-      │                                           goes back to the plan review
+                                                  gives the OK; a change of a worker team
+      │                                           plan goes back to the plan review; not
+      │                                           a change: a pick of the reviewed text
+      │                                           or of a reviewer's view, and a word fix
+      │                                           that keeps the meaning
       ▼
  8 worker: plan in its own words ──▶ lead agent accepts ──▶ worker builds, and its
    test-verifier and reviewer subagents check, after each build and each fix
