@@ -1370,8 +1370,57 @@ record? Opus: none (`opus-fix2.report.md`). Astra: yes, decision 3, in two place
 | "Before its first change" is earlier than "before a task builds on the code of other tasks" in decision 3 (Astra) | Yes: a task that builds on two tasks. The words came from `984fb19`, which both reviewers accepted in fix check 1 | Not ready. Proposed text, not applied: "and its worker merges each other one before it builds on that code." |
 | The way 1 brief line is singular (Opus R1) | Yes: a task that builds on two tasks | Open minor point |
 
+### Test results
+
+Two runs of the 10 that the owner allowed; the records are in
+`tmp/leader-skill/measure/results-r12.md`. One sample of each: a sign, not proof.
+
+| Measure | wait-off (`771d530`) | wait-full (`74dfe63`) |
+| --- | --- | --- |
+| Shape | one branch, one worktree; Task 2 after Task 1 | way 1: two worktrees and branches; both teams build at once |
+| M1: OK turn → worker 2's first build message | 13.0 min | 5.2 min |
+| M2: OK turn → last Codex event | 30.2 min (ended) | 65.0 min (at the stop; Task 2 not ended) |
+| M3: Claude cost; Codex tokens | $14.86; 9.66 M | $30.64; 16.59 M |
+| M4: worker 2's idle time between its turns | 7.5 min | 42.4 min |
+| Hidden checks on Task 2's branch | 6 of 6, `npm test` passes | 6 of 6, `npm test` passes |
+
+Run 2 by cause: the early start saved about 8 min of M1; the outside reviews of Task 2's early
+checkpoint held the merge about 12 min after Task 1 ended (02:39:55 → 02:52:10), so Task 2's code
+with `slugify` came about 5 min later than in run 1 (OK + 22.0 against OK + 17.2). Most of the rest
+came after the merge: the last checkpoint's review found two size limits (one output line above
+about 512 MB; more than about 134 M input lines), the worker rewrote and restored the output code,
+and the lead agent stopped three times for the owner.
+
+C8, item by item on run 2: items 5 to 8 pass by script (`check-wait.py`: no shared file, two
+worktrees and branches, the ended commit `4583aea` is an ancestor of Task 2's branch, the hidden
+checks; `check-r11.py`: no worker, build command, edit or commit before the OK). Items 1 to 4 pass by
+reading: (1) the approved plan's T1-C1 is `slugify(text)` with its input and output; (2) both worker
+plan turns ended at 02:34:46 and 02:34:51, and both build turns started at 02:35:28 (the Codex
+session files); (3) worker 2's build started before Task 1 ended (02:39:55, the review files);
+(4) the merge of `4583aea` at 02:52:10 (`2abc131`), and the last checkpoint after it. Task 2 did not
+end in the run: the lead agent's last stop had no "?", and the question test of `gate-r12.sh` ended
+the run. So C8 is not shown as "passes"; it is a question for the owner.
+
+The reviewers of the early checkpoint got the diff from the branch start (`239cdac..b562641`), the
+text proposed for Astra N1 of fix check 1. Its tests could not run before the merge (a static import
+of `slugify`): the Opus reviewer used a stand-in in memory, and the Codex reviewer left the run-time
+check to the last checkpoint (Opus N3 of fix check 1, seen).
+
+Measurement errors found and corrected after the runs: the script took a subagent's session file for
+worker 2 of run 1 (M1 15.9 → 13.0, M4 9.1 → 7.5); M3 summed the cost of each turn, but the value
+adds up across resumes, so the run cost is its last value (run 1 $20.06 → $14.86, run 2 $82.02 →
+$30.64). `check-r11.py` sums the turns too, so the Claude costs of revision 11 in this plan may be
+too high; not checked again.
+
 ### Needs human review
 
+- C8 is not shown as a pass: way 1 items 1 to 8 pass, but Task 2 did not end in run 2 (Test
+  results). The lead agent cannot make C8 smaller; the owner decides.
+- In run 2, the outside reviews of the early checkpoint cost more time than the early start saved
+  (about 12 min against 8 min, one sample). The advisor's cut made early checkpoints ordinary, and
+  the Codex plan reviewer of that run proposed one final checkpoint. No text changed; a question
+  for the owner.
+- The Claude costs of revision 11 may be too high (`check-r11.py` sums cumulative values).
 - Fix check 2: Astra found decision 3 still smaller in two places (above); Opus found none. Not
   fixed, by the stop rule.
 - The §9 cut after diff review round 1 was made with no owner decision, by the advisor's ruling. For
