@@ -26,26 +26,29 @@ The skill was tested on Linux (WSL2) only.
                        │ Human                        │
                        │ approves, decides, merges    │
                        └──────────────────────────────┘
-     task, answers, OK of the plan   ▼    ▲   questions, plan, report
+     task, answers, OK of the plan   ▼    ▲   questions, plan and verdicts, report
                        ┌──────────────────────────────┐       ┌──────────────────────────┐
- ┌──────────────┐ asks │ Lead agent                   │ asks  │ Explorer (The lead       │
- │ Advisor tool │ ◀─── │ the Claude Code conversation │ ────▶ │ agent's own work): Claude│
- │ built into   │ ───▶ │ carries each result from one │ ◀──── │ Code `Explore` on Haiku, │
- │ Claude Code  │advice│ session to the next          │ facts │ facts for the plan       │
+ ┌──────────────┐ asks │ Lead agent                   │ asks  │ Explorer (the Explore    │
+ │ Advisor tool │ ◀─── │ the Claude Code conversation │ ────▶ │ stage): Claude Code      │
+ │ built into   │ ───▶ │ carries each result from one │ ◀──── │ `Explore` on Haiku, the  │
+ │ Claude Code  │advice│ session to the next          │ facts │ facts of each new task   │
  └──────────────┘      └──────────────────────────────┘       └──────────────────────────┘
       briefs, answers, findings   ▼    ▲   plans,     review briefs   ▼    ▲   findings
                                            reports
  ╔══════════════════════════════════════════╗     ┌──────────────────────────────────────┐
- ║ Teams: one Codex worker session per task ║     │ Outside reviewers, at each checkpoint│
- ║ (at most 2 teams at the same time)       ║     │ report, at the same time:            │
- ║                                          ║     │                                      │
- ║ Implementer: the session itself; plan    ║     │ From Anthropic: Claude Opus, high,   │
- ║   first, builds, tests, commits, fixes   ║     │   the `reviewer` role                │
- ║   └─ its own subagents, at the same time:║     │ From OpenAI: Codex gpt-6.2-astra,    │
- ║      ├─ test-verifier                    ║     │   high, read-only                    │
- ║      └─ reviewer                         ║     │                                      │
- ║ A task that is not code: a default       ║     │ Neither built the work; neither      │
- ║ worker, with the reviewer subagent only  ║     │ changes a file                       │
+ ║ Teams: one Codex worker session per task ║     │ Two outside reviewers at a time; the │
+ ║ (at most 2 teams at the same time)       ║     │ same two check round 2 and fixes:    │
+ ║                                          ║     │ - new plan reviewers: before the OK, │
+ ║ Implementer: the session itself; plan    ║     │   for a plan with a worker team      │
+ ║   first, builds, tests, commits, fixes   ║     │ - new checkpoint reviewers: at each  │
+ ║   └─ its own subagents, at the same time:║     │   checkpoint report                  │
+ ║      ├─ test-verifier                    ║     │                                      │
+ ║      └─ reviewer                         ║     │ From Anthropic: Claude Opus, high,   │
+ ║ A task that is not code: a default       ║     │   the `reviewer` role                │
+ ║ worker, with the reviewer subagent only  ║     │ From OpenAI: Codex gpt-6.2-astra,    │
+ ║                                          ║     │   high, read-only                    │
+ ║                                          ║     │ Neither built the work; neither      │
+ ║                                          ║     │ changes a file                       │
  ╚══════════════════════════════════════════╝     └──────────────────────────────────────┘
   The sessions do not talk with each other. If Codex fails because of its account, Claude
   Code subagents take each Codex place (When Codex cannot run).
@@ -57,24 +60,42 @@ The skill was tested on Linux (WSL2) only.
  /leader <task>
       │
       ▼
- 1 route ──▶ 2 read the project's rules ──▶ 3 questions ══▶ HUMAN answers
-                                              (again, until the lead agent knows
-                                               exactly what must be done)
+ 1 route ──▶ 2 read the project's rules ──▶ 3 explore: the explorer gathers the facts
                                                   │
                                                   ▼
- 4 plan: the tasks, the worker team of each,
-         the reviewers, the model and effort ══▶ HUMAN reviews it and gives the OK
+ 4 questions ══▶ HUMAN answers (again, until the lead agent knows exactly what must be done)
       │
       ▼
- 5 worker: plan in its own words ──▶ lead agent accepts ──▶ worker builds, and its
-   test-verifier and reviewer subagents check
+ 5 plan: the tasks, each with its criteria and its definition of done, the worker team
+         of each, the reviewers, the model and effort; the advisor sharpens it
       │
       ▼
- 6 lead agent checks each report ──▶ 7 two outside reviewers ──▶ fixes ──▶ the same two
-                                                                        check the fixes
+ 6 plan review, for a plan that starts a worker team: two new reviewers, up to 2 rounds,
+   until the lead agent and both agree on the criteria and the definition of done
       │
       ▼
- 8 report ══▶ the merge, only when the HUMAN asks for it
+ 7 the plan, the verdicts and each open point ══▶ HUMAN decides each open point and
+                                                  gives the OK; a change of a worker team
+      │                                           plan goes back to the plan review; not
+      │                                           a change: a pick of the reviewed text
+      │                                           or of a reviewer's view, and a word fix
+      │                                           that keeps the meaning
+      ▼
+ 8 worker: plan in its own words ──▶ lead agent accepts ──▶ worker builds, and its
+   test-verifier and reviewer subagents check, after each build and each fix
+      │
+      ▼
+ 9 lead agent checks each report ──▶ 10 two outside reviewers ──▶ fixes ──▶ the same two
+                                                                         check the fixes
+      │
+      ▼
+ 11 report ══▶ the merge, only when the HUMAN asks for it
+
+ The lead agent's own change, after the explorer: the advisor rates it. A minor change needs
+ no plan, no OK and no reviewers: the advisor agrees on the solution and checks the diff, and
+ the next report tells the HUMAN. A major or critical change gets a short plan, the HUMAN's OK
+ and the two outside reviewers, with no plan review. With no advisor tool, each own change
+ takes that path.
 ```
 
 `══▶` is a gate: the work that depends on it waits for the human.
@@ -82,15 +103,21 @@ The skill was tested on Linux (WSL2) only.
 ## One task, turn by turn
 
 ```
- Human            Lead agent                   Worker team              Outside reviewers
-   │                  │                        (one Codex session)      (Claude Opus and
-   │                  │                              │                   Codex Astra, new)
+ Human            Lead agent                   Worker team              Reviewers (new:
+   │                  │                        (one Codex session)      Claude Opus and
+   │                  │                              │                   Codex Astra)
    │── task ─────────▶│                              │                         │
-   │◀─ questions ─────│ all the open questions; again while one is open        │
+   │                  │ the explorer (Explore on Haiku) gathers the facts      │
+   │◀─ questions ─────│                              │                         │
+   │                  │ all the open questions; again while one is open        │
    │── answers ──────▶│                              │                         │
-   │                  │ the explorer (Explore on Haiku) gathers facts          │
-   │◀─ the plan ──────│ tasks, worker teams, reviewers, models and efforts     │
-   │── OK ───────────▶│                              │                         │
+   │                  │ writes the plan; the advisor sharpens it               │
+   │                  │── the plan to review (for a worker team) ─────────────▶│ plan
+   │                  │◀─ AGREE or CHANGE for each criterion ──────────────────│ reviewers,
+   │                  │ round 2 if a point is open; then the open points       │ both at
+   │                  │                              │                         │ the same time
+   │◀─ plan, verdicts │                              │                         │
+   │── decisions, OK ▶│                              │                         │
    │                  │── brief ────────────────────▶│ reads, changes no file  │
    │                  │◀─ its plan, with questions ──│                         │
    │                  │── answers or corrections ───▶│ (while the plan needs   │
@@ -107,14 +134,17 @@ The skill was tested on Linux (WSL2) only.
    │                  │◀─ the handoff ───────────────│                         │
    │                  │ checks and corrects it; a new worker session gets the  │
    │                  │ brief and the handoff, and sends its plan for the rest │
-   │                  │◀─ report (each checkpoint) ──│ commits, push, checks,  │
-   │                  │                              │ its subagents' results  │
+   │                  │◀─ report (each checkpoint) ──│ commits, checks; push   │
+   │                  │                              │ if the brief names a    │
+   │                  │                              │ remote branch; its      │
+   │                  │                              │ subagents' results      │
    │                  │ compares each claim with the diff, the test results,   │
    │                  │ and the remote checks if the worker pushed             │
    │                  │── review briefs ──────────────────────────────────────▶│ both at
    │                  │◀─ findings ────────────────────────────────────────────│ the same
    │                  │ checks each finding                                    │ time
-   │                  │── the findings ─────────────▶│ fixes them              │
+   │                  │── the findings ─────────────▶│ fixes them; its         │
+   │                  │                              │ subagents check again   │
    │                  │◀─ report of the fixes ───────│                         │
    │                  │── the fixes to check ─────────────────────────────────▶│
    │                  │◀─ the checks of the fixes ─────────────────────────────│
