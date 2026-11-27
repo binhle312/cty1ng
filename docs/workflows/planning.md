@@ -1,6 +1,6 @@
 # Plan a slice
 
-Read this workflow before a new slice or a change that needs a plan. Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
+Read this workflow before a new slice or a change that needs a plan. The lead agent does the steps of this workflow: the spec gap pass, the risk probes (it can give one to a worker), the plan, the UI and code designs, and the test strategy. Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
 
 ## Brief
 
@@ -19,8 +19,7 @@ are cheap; the same decisions made during the build stop it.
 
 Keep UI work and infrastructure in separate slices or PRs. Static serving,
 docs pages, code generation, CI jobs and launch scripts are one PR; the screens that use
-them are another. Smaller PRs mean shorter builds, smaller reviews and fewer full gate runs
-([coordination](coordination.md#when-things-go-wrong), "Slice too big"). A screen with saves under a lock, live events or requests that can
+them are another. Smaller PRs mean shorter builds, smaller reviews and fewer full gate runs. A screen with saves under a lock, live events or requests that can
 answer after the owner moved on is its own part, and so is a set of dialogs or cards with
 their own requests. A plan that touches more than about 30 files is a sign to split (lesson
 `state-table-before-stateful-code.md`).
@@ -28,7 +27,7 @@ their own requests. A plan that touches more than about 30 files is a sign to sp
 ## Plan
 
 Every slice has a plan before its code, checkpointed or not (owner, 2026-11-04).
-The builder reads the brief and the documents it lists, then writes a short plan (files to
+Read the brief and the documents it lists, then write a short plan (files to
 touch, migrations, tests to add, risks) in `docs/plans/<slice>-<name>.md`. The file goes in a
 draft PR, so the owner reviews it there and the repository keeps it for reference. The rules
 for the file are in [plans/README.md](../plans/README.md). The plan holds the design and the
@@ -37,8 +36,8 @@ For M3 and later parts, the EGM design step comes before the plan ([egm.md](egm.
 
 ### Risk probes first
 
-Before the builder writes the plan, it runs short checks on every
-part that it has not used in this repository yet, and puts the results in the plan as
+Before you write the plan, run short checks on every
+part that you have not used in this repository yet, also when an earlier slice used it, and put the results in the plan as
 evidence. For example: does the library work under our CSP (no `new Function`, no inline
 style; `docs/security.md` §2.1)? Does the generated client type-check with the new endpoints?
 Does the component library give the roles and close behaviour that the spec and the tests
@@ -62,7 +61,7 @@ checkpointed or not. The approved design then replaces the sketch (`docs/design/
 
 ### Design skills
 
-The builder may use the vendored `ui-ux-pro-max` skill
+The agent that writes the UI design, and the agent that builds the screen, may use the vendored `ui-ux-pro-max` skill
 (`.agents/skills/`, linked into `.claude/skills/`) to generate options and check
 accessibility for that section. Its output is input to the proposal, never a decision:
 `docs/design/themes.md`, the D-decisions and the approved plan win where they disagree, and
@@ -72,7 +71,7 @@ plan or `docs/design/`, never with `--persist`.
 Its `SKILL.md` gives the search command with a path that does not exist in this repository. Use
 `python3 .agents/skills/ui-ux-pro-max/scripts/search.py "<query>" --domain <domain>`. Ignore its
 rules for mobile screens: the owner uses a laptop (owner, 2026-11-10).
-The builder may also use the `impeccable` skill. It reads `PRODUCT.md`, `DESIGN.md` and
+Both may also use the `impeccable` skill. It reads `PRODUCT.md`, `DESIGN.md` and
 `.impeccable/design.json` at the repository root: a short snapshot of the product brief and
 of the Command dark theme, so the skill keeps the agreed look. The snapshot is not a spec;
 `docs/` wins where they differ, and whoever changes the owning document updates the
@@ -81,9 +80,9 @@ snapshot. `pnpm check:index` fails when a snapshot colour differs from
 
 ### Test strategy before code
 
-After the plan, and before any code, the builder writes the
+After the plan, and before any code, write the
 test strategy as a section of the plan file (owner, 2026-11-03). For each acceptance
-criterion it lists the behaviour, the test level (unit, component, API, contract, end to
+criterion, list the behaviour, the test level (unit, component, API, contract, end to
 end) and the cases beyond the normal path: the edge cases in `docs/testing.md` §3, and above all
 the order and timing cases (an answer that comes late, a change in another tab, a Discard
 while a request waits, a value that changes and changes back). Most review findings are
@@ -96,8 +95,8 @@ across several screens or a new requirement that changes an existing design, the
 one-page code design before any code (owner, 2026-11-04; `principle-design-first`). The design
 names the state owner, the modules, the data flow and the failure paths, and it compares at
 least two options with their costs. For a new requirement in an existing design, one option
-builds as if the requirement always existed. A reviewer who did not write it tries to break
-it. The owner approves it in every such slice, checkpointed or not, from a short form (see
+builds as if the requirement always existed. Before the owner approves it, a reviewer that did not write it
+tries to break it: the lead agent starts this review before the owner's OK. This project rule comes before the rule of the `leader` skill that starts no reviewer before the OK. The owner approves it in every such slice, checkpointed or not, from a short form (see
 [human review](human-review.md)). The state table below is part of this design. A slice that
 stays inside one module skips this step, unless a new requirement changes its design.
 
@@ -111,14 +110,15 @@ its state owner and `docs/testing.md` §3 for cell and sequence tests.
 Write the plan, table and test strategy at `xhigh` effort; the build can run at `high`
 (owner, 2026-11-03; lesson `state-table-before-stateful-code.md`).
 
-For parallel work or role assignment, read [coordination](coordination.md).
+For parallel work, read [parallel work](../development-plan.md#parallel-work).
 
-## Builder prompt
+## Lead agent prompt
 
-Start a **fresh session per slice** so context is not polluted by earlier work. Paste:
+Start a **fresh session per slice** so context is not polluted by earlier work. The session
+becomes the lead agent with the `leader` skill. Type:
 
 ```
-You are the builder for slice <M#> of this repository.
+/leader Slice <M#> of this repository.
 1. Read AGENTS.md, docs/README.md, and docs/tasks/<M#>-<name>.md, then every document the
    brief lists under "Read first", using its section references.
 2. Write a plan as described in docs/workflows/planning.md: run the risk probes first, and
@@ -128,8 +128,10 @@ You are the builder for slice <M#> of this repository.
    Stop and wait for my approval if the brief says "checkpoint: plan".
    If a screen has saves under a lock, live events or late answers, the plan has its state
    table (planning.md, "State table for stateful screens").
-3. Follow docs/workflows/implementation.md. Build the slice on branch <m#-name>, test first. Keep to the brief's scope; list anything else you
-   notice under "Follow-ups" in the PR instead of doing it.
-4. Run every check in AGENTS.md §4 and fill the PR description per docs/workflows/pull-request.md.
+3. Build on branch <m#-name> as the leader skill says, by
+   docs/workflows/implementation.md, test first. Keep to the brief's scope; list
+   anything else that you notice under "Follow-ups" in the PR instead of doing it.
+4. Run every check in AGENTS.md §4, and fill the PR description per
+   docs/workflows/pull-request.md.
 If the docs and the code disagree, or the brief is ambiguous, stop and ask.
 ```

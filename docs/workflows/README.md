@@ -5,7 +5,7 @@ Implementers use the implementation or bug-fix workflow; reviewers use the revie
 
 | File | Read when |
 | --- | --- |
-| [planning.md](planning.md) | Start a slice, prepare its plan, or choose a design; includes the builder prompt |
+| [planning.md](planning.md) | Start a slice, prepare its plan, or choose a design; includes the lead agent prompt |
 | [implementation.md](implementation.md) | Build an approved slice, verify it, or respond to review findings |
 | [bug-fix.md](bug-fix.md) | Handle a bug report, regression, or defect from an issue, review, or audit |
 | [audit.md](audit.md) | Audit the repository or one area of it, for example the plan's second audit |
@@ -13,7 +13,6 @@ Implementers use the implementation or bug-fix workflow; reviewers use the revie
 | [merge-bar.md](merge-bar.md) | Give a finding a severity, decide what blocks a merge, use the failure scope in a state table or order test, set the limits of a pattern rule, or decide when the review of a P3 PR ends |
 | [human-review.md](human-review.md) | Present a proposal, plan, design, or review item to the owner |
 | [pull-request.md](pull-request.md) | Write the description of an authorized draft PR, and check its records before each push |
-| [coordination.md](coordination.md) | Check roles, shared guidance, parallel work, or escalation |
 | [egm.md](egm.md) | Start an M3 or later part, or the owner mentions EGM: the EGM trial steps and what to suggest next |
 
 These files own the project workflow rules. [Principle skills](../../.agents/skills/README.md)

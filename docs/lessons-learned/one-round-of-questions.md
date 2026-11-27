@@ -12,4 +12,4 @@ The workflow records later questions as missed probes or spec gaps.
 
 **Reusable principles.** [Resolve unknowns before the build](../../.agents/skills/principle-resolve-unknowns/SKILL.md).
 
-**Project guidance.** [planning workflow](../workflows/planning.md#one-round-of-questions), [planning workflow](../workflows/planning.md#builder-prompt).
+**Project guidance.** [planning workflow](../workflows/planning.md#one-round-of-questions), [planning workflow](../workflows/planning.md#lead-agent-prompt).

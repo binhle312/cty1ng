@@ -3,6 +3,7 @@
 Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
 
 For every local code review, PR review or review of fixes, follow [review-guide.md](../review-guide.md).
+A reviewer that did not build the change does this review. An outside reviewer reports its findings to the lead agent; the team reviewer of a worker reports to that worker. It pushes nothing to the builder's branch.
 Keep its evidence table with the review record. Record the review per [delivery quality](../delivery-quality.md#7-update-and-assess). Use this prompt for a slice PR:
 
 ```
@@ -12,7 +13,7 @@ Read the approved plan revision. Follow the guide's evidence table and completio
 Check, in order:
 1. Every acceptance criterion: is it implemented, and does the cited test really prove it?
    Run the tests of the diff yourself, and your own breaks. Do not run the full gates or the
-   full e2e suite again: the builder's gate run and CI cover them (owner, 2026-11-09).
+   full e2e suite again: the gate run of the PR and CI cover them (owner, 2026-11-09).
 2. Architecture rules in AGENTS.md §5 (domain purity, events in the same transaction,
    generated client only, immutability rules, workspace port use, Markdown rendering).
 3. Security: anything touching docs/security.md controls.
