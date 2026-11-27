@@ -1004,6 +1004,8 @@ batch; the tokens per run are in the records.
 
 - Run 5: "both team plans before the first build message" was not tested. The test leader put both
   tasks on one branch, one after the other; the rule for a team that waits held.
+  The owner accepts criterion 10 as partly met, with no rerun (owner, 2026-11-27: "A"). The test of
+  plan revision 12 (waiting worker teams) will need two teams, and that run can test this rule.
 - Removal test: in all four hard-task runs, the explorer and the test leader found the `toCents`
   bug and raised the 0-people case before the plan, before any part that a variant removes, and the
   hidden tests pass (3 of 3) in each. So this test could not tell the variants apart. The checkpoint
