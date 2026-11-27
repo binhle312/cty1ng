@@ -130,7 +130,7 @@ Other text names a stage by its name, not by its number.
 
    Write each revision of the plan as its own file in your folder, such as `plan-r1.md`. If the
    project's rules keep plans in the repository, write each revision there, and name it by its
-   commit. A commit of the plan file is not a build.
+   commit. The plan file is one of your records, and its commit is not a build.
 
 6. **Plan review:** for a plan that starts a worker team, see [Plan review](#plan-review).
 7. **Owner's OK:** give the owner the plan. After a plan review, give each plan reviewer's verdict
@@ -147,12 +147,11 @@ Other text names a stage by its name, not by its number.
      view of a plan reviewer, that is not a change of the plan. An OK in the same message as these
      decisions approves the plan with the decisions written in. Each other answer is a change of
      the plan, also a pick of a change that you gave after the last round (owner, 2026-11-27).
-   - If the owner changes the plan at the OK, and the change adds, removes or changes a task, a
-     criterion or the definition of done, a changed plan that starts a worker team gets a
-     [plan review](#plan-review) again. The same two plan reviewers do it if a plan review ran,
-     else two new ones, and the rounds count from 1. Then the owner approves the changed plan. For
-     each other change, such as a word fix or a pick between options of the plan, show the changed
-     plan, and the owner approves it (owner, 2026-11-27).
+   - If the owner changes the plan at the OK, and the changed plan starts a worker team, it gets a
+     [plan review](#plan-review): by the same two plan reviewers if a plan review ran, else by two
+     new ones, and the rounds count from 1. Then the owner approves the changed plan. A word fix
+     that keeps the meaning is not a change. For a word fix, and for a changed plan that starts no
+     worker team, show the changed plan, and the owner approves it (owner, 2026-11-27).
 
    After the OK, ask the owner before you change a task, the number of workers or reviewers, a model or an effort. A new
    session with the same task, model and effort is not a change: one that replaces a worker or a
@@ -365,7 +364,7 @@ when all of these are true:
   for its task.
 
 If the worker's plan needs corrections, send them. Accept the plan of each team that starts now
-before the first build message to any of them, and before you start your own change of the same
+before the first build message to any of them, and before you start your own task in the same
 plan. A team that waits for another task gives its plan before its own build. When you accept it, do the
 [order check](#order-check) before you send the message to build. Your OK is not the owner's
 approval. A reviewer commits nothing, so it has no plan turn.

@@ -703,14 +703,15 @@ come after the explorer; 3A after 2 rounds with no agreement, the owner decides 
   keeps its path (minor, major or critical, 4A).
 - **Stage 4, the gate:** "Before the owner's OK, start no build and no worker. The only reviewers
   that start before the OK are the plan reviewers, and a review that the project's rules ask for
-  before an approval." An OK that comes before the owner saw the plan does not approve it: the
-  owner approves the plan after seeing it, with each reviewer's verdict and each open point. The
+  before an approval." Only an OK that comes after the owner saw this revision of the plan, with
+  each reviewer's verdict and each open point, approves it; an OK in the task, or an OK of an
+  earlier revision, does not. The
   OK needs the owner's decision on each open point, so no worker starts while a point is open.
 - **Stage 5:** if you have no advisor tool, check the plan yourself for gaps, risks and criteria
   that no test can check, and say so in the plan.
 - **Plan review** (a new part of "Outside reviewers"):
   - Before you start the OpenAI plan reviewer, do the account check. If a limit is near or used,
-    ask the owner first. An account error moves to the [backup](#when-codex-cannot-run), as for
+    or the data is old or missing, ask the owner first. An account error moves to the [backup](#when-codex-cannot-run), as for
     each OpenAI reviewer: no new text there.
   - Start two new reviewers at the same time, with the models of the outside reviewers. Each one
     gets the plan, the owner's words and the facts that the plan uses, and reads the project files
@@ -727,9 +728,9 @@ come after the explorer; 3A after 2 rounds with no agreement, the owner decides 
 - **Stop and tell the owner:** the line "a reviewer disagrees about a finding" gets "for a plan
   review, after 2 rounds".
 - **Get the plan first:** check that the worker's checkpoints cover each criterion of the approved
-  plan for its task (the worker brief tells the worker to map them and not to change them). With
-  teams that start at the same time, accept each team's plan before the first build message to any
-  of them. A team that waits for another task gives its plan before its own build.
+  plan for its task (the worker brief tells the worker to map them and not to change them). Accept
+  the plan of each team that starts now (also one team) before the first build message to any of
+  them, and before the lead agent starts its own task in the same plan. A team that waits for another task gives its plan before its own build.
 - **Your files:** the `handoff.md` row holds the plan review state: the plan revision, the round,
   the path of each report that arrived, the reviewer that has not reported, your answer to each
   point, and the next step. Write it when each report arrives. `goal.md` keeps the owner's words; for
@@ -737,20 +738,24 @@ come after the explorer; 3A after 2 rounds with no agreement, the owner decides 
   the completion criteria.
 - **Claude Code subagents** (the restart line, the one home for what a replacement gets after a
   session ended): "the brief, the work (the diff and the commits, or the plan revision), its last
-  report if it gave one, and each message or answer that it did not get". So a plan reviewer that
+  report if it gave one, and each message or answer after that report (after the brief, if it gave
+  no report)". So a plan reviewer that
   ended before it reported starts again from the saved brief and plan revision. The 50% step keeps
   its own list, because there the old session writes a handoff first.
-- **Owner's OK** (owner decision 2, widened by fix check decision 2): if the owner changes the plan
-  at the OK, and the change adds, removes or changes a task, a criterion or the definition of done,
-  a changed plan that starts a worker team gets a plan review again: the same two reviewers if a
-  plan review ran, else two new ones, and the rounds count from 1; then the owner approves the
-  changed plan. Each other change (a word fix, a pick between options of the plan): the owner sees
-  the changed plan and approves it.
+- **Owner's OK** (owner decision 2, widened by fix check decisions 2 and 4): if the owner changes
+  the plan at the OK, and the changed plan starts a worker team, it gets a plan review: the same two
+  reviewers if a plan review ran, else two new ones, and the rounds count from 1; then the owner
+  approves the changed plan. A word fix that keeps the meaning is not a change. For a word fix, and
+  for a changed plan that starts no worker team, the owner sees the changed plan and approves it.
 - **After the last round** (fix check decision 1): the lead agent changes the plan only to write in
   the owner's decisions, and gives each other change to the owner as an open point. The owner's pick
   of the text of the last reviewed revision, or of a plan reviewer's view, is not a change of the
   plan; an OK in the same message approves the plan with the decisions written in. Each other answer
   is a change, also a pick of a change that the lead agent gave after the last round.
+- **Plan stage:** each revision of the plan is its own file in the lead agent's folder, such as
+  `plan-r1.md`; if the project's rules keep plans in the repository, each revision is written
+  there and named by its file and commit. The plan file is one of the lead agent's records, and its
+  commit is not a build.
 - **After the OK:** a change of the plan that the lead agent proposes (a new task, or its own change
   that grows into a worker task) is a change of the plan: ask the owner, as now.
 - One term in all files: "the criteria of the approved plan".
@@ -824,6 +829,26 @@ criterion that the owner writes (back to review); a weaker criterion that the le
 round 2 (an open point, and the owner's pick of it goes back to review); an OK in the message with
 the decisions. Test run 2 needs no change: the test project keeps no plans in the repository, so a
 commit before the OK there is still a failure.
+
+### Fix check 2 decision (2026-11-27)
+
+Fix check 2 (`ba3fb01..721f133`): both reviewers agree that the redesign does what the owner
+decided, and cases (a) to (e) each give one order. Astra FC2-1 (major): at the OK, the owner gives
+an existing task to a worker; the plan now starts a worker team, but the rule named only a change of
+a task, a criterion or the definition of done, so no review ran. Opus N-b: the rule called "a pick
+between options of the plan" a change, against the pick rule. Same cause again: the rule named the
+changes that need a review, and each list missed a case. The owner's words: "B".
+
+4. Name the exceptions, not the triggers: each change at the OK of a plan that starts a worker team
+   gets a plan review, except a word fix that keeps the meaning and the owner's pick of the reviewed
+   text or of a reviewer's view. A changed plan that starts no worker team: the owner sees it and
+   approves it. The other option (A) added "the worker of a task" to the list.
+
+Fixed in the same commit: "gets a plan review again" (N-a); "your own task in the same plan" (N-c);
+the plan file is a record of the lead agent (N-d); a plan in the repository is named by its file and
+commit (FC2-2); the rule list agrees with `SKILL.md` (N-f); the status names F7 (FC2-3). N-e (a
+plan with no worker team) is covered by decision 4. Test strategy: the copy check and the fact map
+again, then the same two reviewers check the fixes, with the case of FC2-1 and the cases (a) to (e).
 
 ### Files
 

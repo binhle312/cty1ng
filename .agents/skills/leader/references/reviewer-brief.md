@@ -32,7 +32,7 @@ Worktree: [absolute path]. Branch: [branch name].
 > For a diff:
 Diff: [base commit or branch]..[head commit].
 > For a plan:
-Plan: [the file of the plan revision, such as `plan-r2.md`, or its commit].
+Plan: [the file of the plan revision, such as `plan-r2.md`, or the file and its commit].
 </review_target>
 
 <paths>
