@@ -740,11 +740,17 @@ come after the explorer; 3A after 2 rounds with no agreement, the owner decides 
   report if it gave one, and each message or answer that it did not get". So a plan reviewer that
   ended before it reported starts again from the saved brief and plan revision. The 50% step keeps
   its own list, because there the old session writes a handoff first.
-- **Owner's OK** (owner decision 2): if the owner changes the plan at the OK, and the change adds,
-  removes or changes a task, a criterion or the definition of done, the changed plan goes back to
-  the same two reviewers by the plan review rules; then the owner approves the changed plan. Each
-  other change (a word fix, a pick between options of the plan): the owner sees the changed plan and
-  approves it.
+- **Owner's OK** (owner decision 2, widened by fix check decision 2): if the owner changes the plan
+  at the OK, and the change adds, removes or changes a task, a criterion or the definition of done,
+  a changed plan that starts a worker team gets a plan review again: the same two reviewers if a
+  plan review ran, else two new ones, and the rounds count from 1; then the owner approves the
+  changed plan. Each other change (a word fix, a pick between options of the plan): the owner sees
+  the changed plan and approves it.
+- **After the last round** (fix check decision 1): the lead agent changes the plan only to write in
+  the owner's decisions, and gives each other change to the owner as an open point. The owner's pick
+  of the text of the last reviewed revision, or of a plan reviewer's view, is not a change of the
+  plan; an OK in the same message approves the plan with the decisions written in. Each other answer
+  is a change, also a pick of a change that the lead agent gave after the last round.
 - **After the OK:** a change of the plan that the lead agent proposes (a new task, or its own change
   that grows into a worker task) is a change of the plan: ask the owner, as now.
 - One term in all files: "the criteria of the approved plan".
@@ -785,6 +791,39 @@ ping reviewers when you done", "3. A", "4. A", "5 A", then "2A, approve".
 3. The worker session gives the plan in its own words; its subagents start only after a build turn.
 4. FX8 (the guide sketches) is in this PR; the other five follow-ups stay for a later PR.
 5. An OK in the task text does not approve a plan.
+
+### Fix check 1 decisions (2026-11-27)
+
+Fix check 1 of the diff review (`6db7add..ba3fb01`) found three new majors in the rules at the OK:
+the lead agent's fix widened rule 2A with no owner OK (Opus N1); a pick between views could change
+a criterion with no review (Astra FC1-1); the lead agent could change the plan after the last round
+and only tell the owner (Astra FC1-2, Opus N6). Same cause as round 1 (R11-1, F1, F6) and as #156:
+gaps in the rules at the OK. So the patches stopped, and the lead agent proposed one rule for each
+change after the last verdicts.
+
+The owner's words: "1A 2A Confirm".
+
+1. The redesign "After the last round" above (option A). The other option was one more round after
+   each owner decision.
+2. Keep the widened rule "Owner's OK" above (option A): a plan with no plan review that gains a
+   worker team at the OK gets two new plan reviewers.
+3. Confirm: R11-3 and R11-7 (same cause as #156 fixes) get no redesign.
+
+The redesign's plan: the text above, in the Owner's OK stage of `SKILL.md`; the sentence "If you
+changed the plan after the last round, tell the owner" is removed. The minor points of fix check 1
+are fixed in the same commit: the plan revision file moves to the Plan stage, for each plan (F2);
+a project that keeps plans in the repository names each revision by its commit, so the reviewer
+brief says "or its commit" (N2); the team plans before your own change of the same plan, also with
+one team (R11-2, N3); the restart line starts after the brief when no report exists (FC1-3, N4);
+NOT VERIFIED names the evidence that is missing (R11-4); the handoff keeps the explorer's facts
+before the plan exists (F3); an OK with the decisions in the same message (N5).
+
+Its test strategy: the copy check and the fact map against `b894bc6` again; then the same two
+reviewers check the fixes, with these cases: a pick of a reviewer's CHANGE view (no review); a new
+criterion that the owner writes (back to review); a weaker criterion that the lead agent wants after
+round 2 (an open point, and the owner's pick of it goes back to review); an OK in the message with
+the decisions. Test run 2 needs no change: the test project keeps no plans in the repository, so a
+commit before the OK there is still a failure.
 
 ### Files
 

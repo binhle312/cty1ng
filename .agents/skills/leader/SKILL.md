@@ -128,6 +128,10 @@ Other text names a stage by its name, not by its number.
    Make the plan as short as the work. For a change that you make yourself, a few lines are
    enough. Work that starts no worker and no reviewer needs no plan: do it.
 
+   Write each revision of the plan as its own file in your folder, such as `plan-r1.md`. If the
+   project's rules keep plans in the repository, write each revision there, and name it by its
+   commit. A commit of the plan file is not a build.
+
 6. **Plan review:** for a plan that starts a worker team, see [Plan review](#plan-review).
 7. **Owner's OK:** give the owner the plan. After a plan review, give each plan reviewer's verdict
    and each open point with it.
@@ -136,17 +140,19 @@ Other text names a stage by its name, not by its number.
 
    - Only an OK that comes after the owner saw this revision of the plan, with the verdicts and
      each open point, approves it. An OK in the task, or an OK of an earlier revision, does not.
+   - After the last round of a plan review, change the plan only to write in the owner's
+     decisions. Give each other change that you want to the owner as an open point.
    - The OK needs the owner's decision on each open point, so no worker starts while a point is
-     open. A decision between the views that you and the plan reviewers gave is not a change of
-     the plan.
+     open. If the owner picks the text of the last revision that the plan reviewers read, or the
+     view of a plan reviewer, that is not a change of the plan. An OK in the same message as these
+     decisions approves the plan with the decisions written in. Each other answer is a change of
+     the plan, also a pick of a change that you gave after the last round (owner, 2026-11-27).
    - If the owner changes the plan at the OK, and the change adds, removes or changes a task, a
      criterion or the definition of done, a changed plan that starts a worker team gets a
      [plan review](#plan-review) again. The same two plan reviewers do it if a plan review ran,
      else two new ones, and the rounds count from 1. Then the owner approves the changed plan. For
      each other change, such as a word fix or a pick between options of the plan, show the changed
      plan, and the owner approves it (owner, 2026-11-27).
-   - If you changed the plan after the last round, tell the owner each change that no plan
-     reviewer read.
 
    After the OK, ask the owner before you change a task, the number of workers or reviewers, a model or an effort. A new
    session with the same task, model and effort is not a change: one that replaces a worker or a
@@ -194,7 +200,7 @@ as `tmp/leader/<task>/`. The write rules below apply to your task's own folder.
 | File | What it holds | When to write it |
 | --- | --- | --- |
 | `goal.md` | The goal in the owner's words; for a task with a plan, where the plan is, for its criteria; for a task with no plan, the completion criteria; the scope, and the owner's constraints and standing instructions | At the start, and after each owner decision that changes it |
-| `handoff.md` | The worktree, the branch and the PR, if one exists; the plan, and the owner's OK of it or "no OK yet"; until the OK, the explorer's facts that the plan uses, with paths and lines; the plan review state: the plan revision, the round, the path of each report that arrived, the reviewer that has not reported, your answer to each point, and the next step; the current state with commits; the checks and their results; the owner's decisions in the owner's words, each with the question that it answers; the failed attempts with their reasons; the session list of your workers and reviewers; the next action; the open questions. Give the commit where you checked each claim. | Write it in full each time, not as a patch: at the start, at the end of each stage, after each owner decision, and when each plan review report arrives, and before you stop to wait for the owner |
+| `handoff.md` | The worktree, the branch and the PR, if one exists; the plan, and the owner's OK of it or "no OK yet"; until the OK, the facts of the explorer and of your reads, with paths and lines; the plan review state: the plan revision, the round, the path of each report that arrived, the reviewer that has not reported, your answer to each point, and the next step; the current state with commits; the checks and their results; the owner's decisions in the owner's words, each with the question that it answers; the failed attempts with their reasons; the session list of your workers and reviewers; the next action; the open questions. Give the commit where you checked each claim. | Write it in full each time, not as a patch: at the start, at the end of each stage, after each owner decision, and when each plan review report arrives, and before you stop to wait for the owner |
 
 Give the owner the absolute folder path in each report. Never give your folder to a worker as a writable
 folder.
@@ -262,10 +268,7 @@ plan review.
 - Before you start the OpenAI plan reviewer, do the
   [account check in `references/codex.md`](references/codex.md#account-limit). If a limit is near or
   used, or the data is old or missing, ask the owner first.
-- Write each revision of the plan as its own file in your folder, such as `plan-r1.md`, and give
-  the reviewers its path. If the project's rules keep plans in the repository, a commit of the plan
-  file is not a build.
-- Each reviewer gets the plan, the owner's words and the facts that the plan uses, and reads the
+- Each reviewer gets the plan revision (see the Plan stage), the owner's words and the facts that the plan uses, and reads the
   project files that it needs.
 - A plan review is not split. A plan that is too large for one reviewer is too large: make it
   shorter, or split the work into smaller plans.
@@ -289,7 +292,8 @@ subagent that [takes a Codex place](#when-codex-cannot-run).
 - You cannot read its context use. Keep its task small.
 - It ends with this conversation. Start a new one, in a new conversation or in place of a Codex
   session that was in a task, with the brief, the work (the diff and the commits, or the plan
-  revision), its last report if it gave one, and each message or answer after that report, such as
+  revision), its last report if it gave one, and each message or answer after that report (after the brief, if
+  it gave no report), such as
   a finding to fix or your answer to a point (owner, 2026-11-26).
 
 ### Briefs
@@ -360,10 +364,9 @@ when all of these are true:
 - it names its checkpoints, and its checkpoints cover each of the criteria of the approved plan
   for its task.
 
-If the worker's plan needs corrections, send them. With teams that start at the same time, accept
-each team's plan before the first build message to any of them, and before you start your own
-change of that plan. A team that waits for another task
-gives its plan before its own build. When you accept it, do the
+If the worker's plan needs corrections, send them. Accept the plan of each team that starts now
+before the first build message to any of them, and before you start your own change of the same
+plan. A team that waits for another task gives its plan before its own build. When you accept it, do the
 [order check](#order-check) before you send the message to build. Your OK is not the owner's
 approval. A reviewer commits nothing, so it has no plan turn.
 

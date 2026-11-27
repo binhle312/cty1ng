@@ -32,7 +32,7 @@ Worktree: [absolute path]. Branch: [branch name].
 > For a diff:
 Diff: [base commit or branch]..[head commit].
 > For a plan:
-Plan: [the file and its revision, such as a commit].
+Plan: [the file of the plan revision, such as `plan-r2.md`, or its commit].
 </review_target>
 
 <paths>
@@ -71,8 +71,8 @@ First line: "I agree with this revision of the plan" or "I do not agree", with t
 Then the verdict of each criterion and each definition of done. Then the findings.
 > For each user:
 For each finding: an id, the severity (blocker, major, minor), the file and line, what is wrong,
-a concrete case that fails (for NOT VERIFIED: the command, and why it could not run), and the
-evidence.
+a concrete case that fails (for NOT VERIFIED: the evidence that is missing, such as a command that
+could not run, or no test that checks the criterion), and the evidence.
 Then: each requirement that you checked and found correct, with the evidence.
 Then: what you did not check, and why.
 If you found nothing wrong, say what you checked. Do not write "no issues" alone.
