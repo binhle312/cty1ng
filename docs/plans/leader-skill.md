@@ -1153,7 +1153,8 @@ Branch `leader-wait-teams` in worktree `../cty1ng-leader-wait`, from `main`; a d
 - **C6** Not changed: at most 2 teams, own worktree and branch, the order check, team plans before
   the first build message. The copy check finds each of these phrases.
 - **C7** This section and `docs/status.md` are current at the PR head.
-- **C8** The run "wait-full" passes (see the test strategy).
+- **C8** The run "wait-full" passes (see the test strategy). A pass through the fallback does not
+  show way 1.
 - **C9** The run "wait-off" ran, and the PR gives the measures of both runs, one sample each: a sign,
   not proof.
 
@@ -1174,11 +1175,16 @@ Runs: the revision 11 harness (`claude -p`, the scripted owner, the Codex wrappe
 `gate-r12.sh` with a new task "wait"; the scripted owner of decision 4.
 
 - **Task "wait"**, on the `slug` test repository: Task 1 adds `slugify(text)` to `src/text.mjs`, with
-  tests. Task 2 adds `bin/slug.mjs`, a command that prints `slugify` of its argument, with a test in
-  `test/slug-cli.test.mjs`. No shared file. The task text does not say "parallel", "one branch" or
+  tests. Task 2 adds `bin/slug.mjs`, a command that prints `slugify` of each argument on its own
+  line, reads lines from standard input when it has no argument, has the options `--sep <text>` (the
+  separator in place of `-`) and `--help`, exits with 2 on an unknown option, and has tests for each
+  in `test/slug-cli.test.mjs`, and a section "Command" in `README.md`. No shared file. Task 2's work
+  without `slugify` (the argument and option parsing, standard input, the help text, the exit codes
+  and the README) is much longer than a merge, so way 1 pays. The task text does not say "parallel", "one branch" or
   "a branch": "Commit each task locally. Do not push. Do not merge into `master`."
-- **wait-full** (the skill at the PR head). Task 2 is short, so the cost condition can lead to the
-  fallback. Each case passes with its own items, and all cases need items 5 to 9.
+- **wait-full** (the skill at the PR head). Each case passes with its own items, and all cases need
+  items 5 to 9. A pass through the fallback does not show way 1 or revision 11 criterion 10: then
+  the PR says "not shown by a run", and one rerun at most is allowed for it.
   - Way 1: (1) the plan names `slugify(text)`, its input and its output; (2) both team plans are
     accepted before the first build message to either team (revision 11 criterion 10); (3) the
     first build message of worker 2 comes before Task 1 ended; (4) Task 2's early report starts no
@@ -1203,7 +1209,14 @@ Runs: the revision 11 harness (`claude -p`, the scripted owner, the Codex wrappe
 - No worker team for the change: the lead agent (Opus 5.5) writes it. The runs use the skill's own
   teams (Sol workers; Opus and Astra reviewers).
 - Plan review: an Opus 5.5 subagent at high, and Codex `gpt-6.2-astra` at high, read-only; up to 2
-  rounds, then the open points go to the owner.
+  rounds. The skill gives no plan review to the lead agent's own change; this plan gets one because
+  the lead agent told the owner that it comes next, and revision 11 had one by the owner's order.
+- The owner's order of 2026-11-28 (`/goal`): "let work with the team to finish the PR. Follow the
+  workflow in our leader skill. Advisor will be the final judge … For anything that you uncertain,
+  consultants are there for you. Don't merge any PR … no more than 10 runs for testing." The lead
+  agent takes it as the owner's OK of this plan within the five decisions above. A review point that
+  changes or shrinks an owner decision or a criterion is not applied: it goes under `Needs human
+  review`. A point still open after round 2 goes to the consultants, then the advisor; no round 3.
 - Diff review after the change: two new outside reviewers, Opus 5.5 high and Astra high read-only;
   the same two check the fixes.
 - Codex account: 6.0% of the 10080-minute window used (data 2026-11-27 21:58 local; resets
