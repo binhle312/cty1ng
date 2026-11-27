@@ -698,13 +698,13 @@ come after the explorer; 3A after 2 rounds with no agreement, the owner decides 
 
 - **Stages of a task** (the stage list): the 11 stages. Other text names a stage by its name, not
   its number, so that a new stage changes no other line.
-- **The lead agent's own work:** the explorer text moves to stage 3, as a link. A change of the lead
-  agent (minor, major or critical) keeps its path (4A). A short read and the advisor's rating come
-  first for it; the explorer runs if the change needs a broad search.
+- **The lead agent's own work:** the explorer text moves to stage 3, as a link. The explorer runs
+  for each new task, also for a change of the lead agent; then the advisor rates that change, and it
+  keeps its path (minor, major or critical, 4A).
 - **Stage 4, the gate:** "Before the owner's OK, start no build and no worker. The only reviewers
   that start before the OK are the plan reviewers, and a review that the project's rules ask for
-  before an approval." An OK in the task does not skip the plan review: it covers the plan only
-  when the plan is agreed, and each open point waits for the owner.
+  before an approval." An OK that comes before the owner saw the plan does not approve it: the
+  owner approves the plan after seeing it, with each reviewer's verdict and each open point.
 - **Stage 5:** if you have no advisor tool, check the plan yourself for gaps, risks and criteria
   that no test can check, and say so in the plan.
 - **Plan review** (a new part of "Outside reviewers"):
@@ -713,7 +713,8 @@ come after the explorer; 3A after 2 rounds with no agreement, the owner decides 
     each OpenAI reviewer: no new text there.
   - Start two new reviewers at the same time, with the models of the outside reviewers. Each one
     gets the plan, the owner's words and the facts that the plan uses, and reads the project files
-    that it needs. A plan too large for one reviewer is split as a review is split now.
+    that it needs. A plan review is not split: a plan too large for one reviewer is too large,
+    so make it shorter or split the work into smaller plans.
   - The plan is agreed when the lead agent and both reviewers agree on the same revision of the
     plan: each criterion and each definition of done has AGREE, and each missing criterion or risk
     that a reviewer named is in the plan or answered. Round 2 runs only if a point is open: the
@@ -722,14 +723,19 @@ come after the explorer; 3A after 2 rounds with no agreement, the owner decides 
   - The checkpoint reviewers stay as they are.
 - **Stop and tell the owner:** the line "a reviewer disagrees about a finding" gets "for a plan
   review, after 2 rounds".
-- **Get the plan first:** the brief gives each worker the criteria of the approved plan for its
-  task. The worker maps them to its checkpoints and does not change them. With teams that start
-  at the same time, accept each team's plan before the first build message to any of them. A team
-  that waits for another task gives its plan before its own build.
-- **Your files:** the `handoff.md` row holds the plan review state: the plan revision, the paths of
-  the reports, your answer to each point, and the next step. A reviewer that replaces one (the
-  conversation ended, or the limit) gets the plan, the old report and your answers. `goal.md`
-  keeps the owner's words and points to the plan for the criteria.
+- **Get the plan first:** check that the worker's checkpoints cover each criterion of the approved
+  plan for its task (the worker brief tells the worker to map them and not to change them). With
+  teams that start at the same time, accept each team's plan before the first build message to any
+  of them. A team that waits for another task gives its plan before its own build.
+- **Your files:** the `handoff.md` row holds the plan review state: the plan revision, the round,
+  the path of each report that arrived, the reviewer that has not reported, your answer to each
+  point, and the next step. Write it when each report arrives. `goal.md` keeps the owner's words; for
+  a task with a plan it points to the plan for the criteria, and for a task with no plan it keeps
+  the completion criteria.
+- **Claude Code subagents** (the restart line, the one home for what a replacement gets): "the
+  brief, the work under review (the diff or the plan), its last report, and each message or answer
+  that it did not get". A reviewer that ended before it reported starts again from the saved brief
+  and plan revision.
 - **After the OK:** a change of the plan that the lead agent proposes (a new task, or its own change
   that grows into a worker task) is a change of the plan: ask the owner, as now.
 - One term in all files: "the criteria of the approved plan".
@@ -770,28 +776,34 @@ lead agent stops and asks the owner.
 ### Test strategy
 
 The runs use a scripted owner: when a run ends and waits for the owner, the script resumes the
-same conversation (`claude -p --resume`) with a fixed answer, at most 4 times. The answers: to a
-question, "I am away: decide it yourself, and write your choice in the report"; to a plan with the
-verdicts, "OK"; to anything else, "Go on as the skill says". The same answers in each run. The
-script checks the order from the stream of the run (each tool call in order) and the worktree.
+same conversation (`claude -p --resume`) with one fixed answer, at most 4 times: "I am away. For
+each question, decide it yourself and write your choice in the report. OK for the plan that you
+showed me. Go on as the skill says." The same answer in each state and in each run, so the script
+does not need to know what the lead agent waits for. An OK that comes before the lead agent showed a
+plan must not count (the stage 4 gate). The script checks the order from the stream of the run
+(each tool call in order), and the commits and the project files of the worktree (the lead agent's
+own records are allowed before the OK).
 
 1. Checks: the fact map against `b894bc6`, with an exception and a reason for each changed
    sentence; `copycheck.py` with the new phrases of revision 11, and a planted copy that makes it
    fail; the standalone check (the skill folder alone in an empty repository, and the links);
    prettier, check:index, check:status; CI.
-2. Gate run, the new order (slugify task, scripted owner). A `codex` wrapper first in PATH logs
+2. Gate run, the new order (the hard task below, which has an open question; scripted owner). A `codex` wrapper first in PATH logs
    each call; it passes `login status`, `exec -s read-only` and `exec resume ... sandbox_mode="read-only"`
    to the real Codex, and before the OK it fails each other call. Pass: the explorer reports
-   before the first question or the plan; the advisor is asked after the plan draft and before the
-   plan reviewers; an Opus subagent and a read-only Astra session review the plan; the owner's
-   "OK" comes after the verdicts; no worker, no build and no change in the worktree before the OK.
-3. Small task run: "fix one word in `README.md`". Pass: no plan review and no Codex call; the
-   advisor rates it.
-4. Backup run (the stub fails each Codex call with an account error). Pass: the error comes at the
-   plan review; two Opus subagents review the plan; then the team checks and two Opus reviewers at
+   before the first question to the owner, and a question comes before the plan; the advisor is
+   asked after the plan draft and before the plan reviewers; an Opus 5.5 subagent (the model id in
+   the stream) and a read-only Astra session review the plan; the plan with the verdicts comes
+   before the owner's OK; no worker, no commit and no change to a project file before the OK.
+3. Small task run: "fix one word in `README.md`". Pass: the explorer runs, the advisor rates the
+   change, and no plan review and no Codex call happen.
+4. Backup run (the stub passes `login status` and fails each `codex exec` with an account error).
+   Pass: the error comes at the start of the Astra plan reviewer; two Opus subagents review the plan; then the team checks and two Opus reviewers at
    the checkpoint, as in revision 10.
-5. Two-task run (real Codex). Pass: one plan review covers both tasks; both teams' plans are
-   accepted before the first build message; then as in revision 10.
+5. Two-task run (real Codex), with "My OK for your plan is given now" in the task text. Pass: the
+   plan review still runs, and the lead agent shows the plan with the verdicts and waits; one plan
+   review covers both tasks; both teams' plans are accepted before the first build message; then as
+   in revision 10. A correction of a worker's plan is checked only if one happens.
 6. **The removal test (5A).** Question: which parts find problems that the other parts miss?
    - Tasks: the small task (`slugify`), and the hard task. The hard task: the base project gets
      `src/money.mjs` with `toCents(text)`, which has a planted rounding bug
@@ -803,16 +815,18 @@ script checks the order from the stream of the run (each tool call in order) and
      `<your_team>`, no team checks); no outside reviewers at checkpoints (also no wait for them).
      The lead agent reads each patched skill before its run.
    - Eight runs (2 tasks × 4 variants) on the final head, real Codex, scripted owner, one at a time.
-   - Hidden tests, outside the test project, run after the end, with fixed expected values: the sum
-     of the parts equals `toCents(totalText)` of the delivered code; the extra cents go first; the
-     true cents for `"0.29"` and `"1.15"` (information only: a fix of `toCents` is outside the task).
+   - Hidden tests, outside the test project, run after the end, with literal expected values for
+     inputs that the planted bug does not touch: `splitBill("10.00", 3)` gives `[334, 333, 333]`,
+     `splitBill("0.05", 2)` gives `[3, 2]`, `splitBill("7.00", 1)` gives `[700]`; and, information
+     only (a fix of `toCents` is outside the task), the true cents for `"0.29"` and `"1.15"`.
    - The table: one row for each run, with these columns: the head and the variant; the stages
      that ran (from the stream); a worker team started (if no team starts, "no plan review" is
      the same as "full"); the end (built, stopped, failed); each hidden test; the `toCents` bug,
      named or fixed, and the first stage that found it; the 0-people and negative cases, raised or
      not, and the first stage; the scope (a change outside the task); the time; the Claude cost
      (`total_cost_usd`); the Codex use (the change of the account check's used percent, and the
-     tokens of the sessions whose folder is the test project).
+     tokens of the sessions whose folder is the test project). A run that never reached the stage
+     that its variant removes is marked "inconclusive" for that variant.
    - Eight runs can show no difference, and one run for each cell is a sign, not proof. No rule
      changes from the table without the owner's decision. Time: about 30 minutes for each run.
    - The script, its wrapper, the hard task and the hidden tests are in `tmp/`, not in the PR.
@@ -823,13 +837,13 @@ two reviewers disagree on purpose; the text checks cover it.
 ### Acceptance criteria and definition of done
 
 1. The PR starts from `main` after the merge of #156.
-2. `SKILL.md` gives the 11 stages in order, and each rule above is in its one home and nowhere
+2. `SKILL.md` gives the 11 stages in order (the explorer for each new task), and each rule above is in its one home and nowhere
    else (the copy check, with the new phrases).
 3. No sentence of the skill, its guide or the project documents still says that no reviewer starts
    before the OK, except the old revisions of this plan.
-4. An OK in the task does not skip the plan review, and an open point after 2 rounds waits for the
-   owner.
-5. The criteria of the approved plan have one home; the worker brief, "Get the plan first" and the
+4. An OK that comes before the owner saw the plan does not approve it: the owner approves the plan
+   after seeing it with the verdicts and each open point (run 5).
+5. The criteria of the approved plan have one home (`goal.md` keeps them only for a task with no plan); the worker brief, "Get the plan first" and the
    verifier text use them.
 6. The reviewer brief template serves its four users with no false fixed line: the lead agent fills
    it for each of the four, and reads each result.
@@ -840,9 +854,22 @@ two reviewers disagree on purpose; the text checks cover it.
 11. The eight removal runs ran on the final head, and the owner has the table.
 12. The owner decided the four owner points.
 
-Done: criteria 1 to 10 and 12 are met on the final head; the diff review and its fix check ran by
+Done: criteria 1 to 12 are met on the final head; the diff review and its fix check ran by
 the merge bar; the PR description and `docs/status.md` are current; the owner has the table of
 criterion 11 and each open issue. The merge is the owner's.
+
+### The plan review of this plan
+
+Round 1 (`d48feca`): Opus 5.5 `high` (reviewer subagent), 3 major and 20 minor; GPT-6.2 Astra `high`
+(read-only), 9 major and 1 minor. Both: not ready. Round 2 (`103a734`, after the answers): Opus
+agrees, with 4 minor points; Astra does not agree: 5 points of round 1 still open (the explorer
+rule, the model of the Opus reviewer, the time to save the review state, the gate run, the scripted
+owner), and two new ones (an OK before the owner sees the plan; a split plan review). After round
+2, the lead agent accepted each open point and changed the text (this revision): the explorer for
+each new task; the owner approves only a plan that the owner saw; no split plan review; the state
+saved at each report; one fixed answer of the scripted owner; literal expected values; a gate run
+with a real question; the backup stub passes `login status`; the replacement text in one home.
+No reviewer read these last changes (the limit of 2 rounds). Reports: `tmp/reviews/leader-r11/`.
 
 ### Risks
 
