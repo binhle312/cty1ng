@@ -62,7 +62,8 @@ Your records are not project files in this rule: your folder, and the records th
 instructions give to you, such as a status file or a PR description. Give each other change to a
 worker, including a simple one.
 
-- Run the checks of your plan on your own change before you commit it.
+- Run the checks of your plan on your own change before you commit it. For a minor change, run the
+  project's checks for the files that it changes.
 - Start your own change only on a worktree with no other change: `git status --porcelain`
   gives nothing. If it gives a line, give the change to a worker.
 - To count the changed lines, mark each new file of the change with `git add -N <file>`, then
@@ -70,7 +71,7 @@ worker, including a simple one.
   of the added and the removed lines of each changed file, except your records. If your change grows to 5 lines or more, stop, and give it to a worker. After the OK, that
   is a change of the plan: ask the owner first.
 
-Before you make your own change, ask the `advisor` tool to rate it (owner, 2026-11-26):
+Before you plan or make your own change, ask the `advisor` tool to rate it (owner, 2026-11-26):
 
 - **Critical:** the code needs a refactor to meet a future requirement or to solve a problem that
   you can foresee.
@@ -132,7 +133,7 @@ owner's OK and the two outside reviewers.
 7. **Review:** start the [outside reviewers](#outside-reviewers). Send the findings that you
    accept to the worker session, or fix them in your own change. Let a worker build its next
    checkpoint only after the outside reviewers reported and the same two checked the fixes
-   (owner, 2026-11-26): they read the same worktree, and their findings can change the next step.
+   (owner, 2026-11-26).
 
 8. **Report** to the owner. Merge only when the owner asks for the merge of that work.
 
@@ -196,12 +197,10 @@ its own work with subagents that it starts (owner, 2026-11-25).
 | Member | Its job | Codex | When Codex cannot run |
 | --- | --- | --- | --- |
 | Implementer | The worker session of a coding task: its plan first, then the code, the tests and the commits; it fixes the findings | The worker column of the model table | A building role, such as `implementer` |
-| Test verifier | A subagent of the worker: tests the acceptance criteria of each checkpoint, PASS, FAIL or NOT VERIFIED, with evidence | The worker starts a subagent with the role `test-verifier` | You start a test role, such as `test-verifier` |
-| Team reviewer | A subagent of the worker: reviews the change and its evidence, and changes no file | The worker starts a subagent with the role `reviewer` | You start a review role that cannot edit files, such as `reviewer` |
+| Test verifier | A subagent of the worker; its job is in the part `<your_team>` of the worker brief | The worker starts a subagent with the role `test-verifier` | You start a test role, such as `test-verifier` |
+| Team reviewer | A subagent of the worker; its job is in the part `<your_team>` of the worker brief | The worker starts a subagent with the role `reviewer` | You start a review role that cannot edit files, such as `reviewer` |
 | Default worker | The worker session of a task that is not code and is not [your own work](#the-lead-agents-own-work), such as documents, research or a measurement; its only subagent is the team reviewer | The worker column of the model table | A general subagent |
 
-- The worker ends its turn with a report at each checkpoint of its plan, after the team checks of
-  the part `<your_team>` of the worker brief.
 - Run at most 2 worker teams at the same time (owner, 2026-11-25; the owner can change it). A new
   session at the limit adds no team. Your plan gives the order of the tasks that wait.
 
@@ -284,9 +283,10 @@ error, such as a wrong option or a sandbox refusal, is an ordinary obstacle: fin
   Start the team reviewer, and for a coding task also the test verifier, or send the same ones a
   new message. Their models are the defaults of their roles (owner, 2026-11-26). Write their briefs
   from `references/reviewer-brief.md`. The limits of the team reviewer: it changes no file and
-  makes no commit or push. For the test verifier, put the acceptance criteria of the checkpoint in `<checks>`, and at
-  the last checkpoint all of them: each
-  FAIL or NOT VERIFIED is a finding. Its limits: it may run the tests and let them write their output
+  makes no commit or push. For the test verifier, the only requirements of its brief are the acceptance
+  criteria of the checkpoint, and at the last checkpoint all of them. Put them in `<facts>` and
+  `<checks>`, and ask for PASS, FAIL or NOT VERIFIED for each, with evidence: each FAIL or NOT
+  VERIFIED is a finding. Its limits: it may run the tests and let them write their output
   files, it changes no project file, and it makes no commit or push. Send their findings to the
   implementer.
 - Start the outside reviewers of a checkpoint after the team checks ran and the implementer fixed

@@ -35,14 +35,14 @@ reviewer is always a new `gpt-6.2-astra` session at `high` (owner, 2026-11-25).
 A worker with no branch name makes its own branch.
 
 ```bash
-sh -c 'echo $$ > "$0"; exec "$@"' <pid file> \
+sh -c 'echo $$ > "$0" && exec "$@"' <pid file> \
   codex exec -m <model> -c model_reasoning_effort="<effort>" -c service_tier="default" \
   -s workspace-write -C <worktree> --json -o <report file> - \
   < <brief file> > <events file> 2> <log file>
 ```
 
 The first line writes the process id of the run to the pid file, and then starts Codex in the same
-process. Use a new pid file for each run.
+process. If the write fails, Codex does not start. Use a new pid file for each run.
 
 The session id is in the first line of the events file:
 `{"type":"thread.started","thread_id":"<session id>"}`.
@@ -56,7 +56,7 @@ Add `-i <image file>` before `-s`.
 ### Send a message
 
 ```bash
-cd <worktree> && sh -c 'echo $$ > "$0"; exec "$@"' <pid file> \
+cd <worktree> && sh -c 'echo $$ > "$0" && exec "$@"' <pid file> \
   codex exec resume <session id> -m <model> -c model_reasoning_effort="<effort>" -c service_tier="default" \
   -c sandbox_mode="<sandbox mode>" --json -o <report file> - \
   < <message file> > <events file> 2> <log file>
@@ -144,8 +144,12 @@ If the command finds no data, or a reset time has passed, the values are not kno
 ### Stop a run
 
 ```bash
-kill -INT "$(cat <pid file of that run>)"
+pid="$(cat <pid file of that run>)"
+ps -p "$pid" -o comm=
+kill -INT "$pid"
 ```
+
+Send the signal only if `ps` shows the Codex process: a pid file stays after its run ends.
 
 The session stays usable: send it the next message with `resume`.
 

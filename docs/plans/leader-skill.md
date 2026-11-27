@@ -643,6 +643,15 @@ clear, backup and real runs on the final head. A run with two checkpoints shows 
 shows R4 (a Codex account error in the middle of a task) or a minor change rated by the advisor:
 not claimed.
 
+**Fix check 1** (`ac9410d..9d57cdb`; the Opus subagent of round 1, and a new Astra `high` session
+because the old one was at 40.6%). Opus: no major, 8 minor. Astra: 6 major, 4 minor. Both repeat
+causes came back (a rule in two places; a new rule with a new gap), so the lead agent stopped and
+asked the owner. Rated with the merge bar, one finding is major: in the backup, the verifier's brief
+still asked for a verdict on each requirement. The owner (2026-11-27): "Decision 1: A" (fix the
+major, the copies, the gaps of the new rules, the pid file and the status claim in one commit; the
+other minors become follow-ups in `docs/status.md`) and "Decision 2: Keep" (the document line of
+the advisor scale stays). The same pair checks that one commit.
+
 ## Open questions
 
 None. The owner answered each question on 2026-11-24 and 2026-11-26.

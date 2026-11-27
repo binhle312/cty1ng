@@ -3,7 +3,7 @@
 Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
 
 For every local code review, PR review or review of fixes, follow [review-guide.md](../review-guide.md).
-A reviewer that did not build the change does this review. It reports its findings to the lead agent, and it pushes nothing to the builder's branch.
+A reviewer that did not build the change does this review. An outside reviewer reports its findings to the lead agent; the team reviewer of a worker reports to that worker. It pushes nothing to the builder's branch.
 Keep its evidence table with the review record. Record the review per [delivery quality](../delivery-quality.md#7-update-and-assess). Use this prompt for a slice PR:
 
 ```
