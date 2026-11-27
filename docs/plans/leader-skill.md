@@ -698,7 +698,7 @@ come after the explorer; 3A after 2 rounds with no agreement, the owner decides 
 
 - **Stages of a task** (the stage list): the 11 stages. Other text names a stage by its name, not
   its number, so that a new stage changes no other line.
-- **The lead agent's own work:** the explorer text moves to stage 3, as a link. The explorer runs
+- **The lead agent's own work:** the explorer text moves to the Explore stage, as a link. The explorer runs
   for each new task, also for a change of the lead agent; then the advisor rates that change, and it
   keeps its path (minor, major or critical, 4A).
 - **Owner's OK stage, the gate:** "Before the owner's OK, start no build and no worker. The only reviewers
@@ -707,7 +707,7 @@ come after the explorer; 3A after 2 rounds with no agreement, the owner decides 
   each reviewer's verdict and each open point, approves it; an OK in the task, or an OK of an
   earlier revision, does not. The
   OK needs the owner's decision on each open point, so no worker starts while a point is open.
-- **Stage 5:** if you have no advisor tool, check the plan yourself for gaps, risks and criteria
+- **Plan stage:** if you have no advisor tool, check the plan yourself for gaps, risks and criteria
   that no test can check, and say so in the plan.
 - **Plan review** (a new part of "Outside reviewers"):
   - Before you start the OpenAI plan reviewer, do the account check. If a limit is near or used,
@@ -872,7 +872,7 @@ same conversation (`claude -p --resume`) with one fixed answer, at most 4 times:
 each question, decide it yourself and write your choice in the report. OK for the plan that you
 showed me. Go on as the skill says." The same answer in each state and in each run, so the script
 does not need to know what the lead agent waits for. An OK that comes before the lead agent showed a
-plan must not count (the stage 4 gate). The script checks the order from the stream of the run
+plan must not count (the gate of the Owner's OK stage). The script checks the order from the stream of the run
 (each tool call in order), and the commits and the project files of the worktree (the lead agent's
 own records are allowed before the OK).
 
