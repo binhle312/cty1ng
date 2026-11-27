@@ -1031,6 +1031,196 @@ batch; the tokens per run are in the records.
 - The Astra plan reviewer uses Codex credits before the owner's OK; the account check comes first.
 - The scripted owner is not a real owner: a run can take a turn that a real owner would stop.
 
+## Revision 12 (2026-11-28): keep a waiting worker team busy
+
+### Goal
+
+The owner (2026-11-27): "we should focus on the plan to reduce the idle time of worker team when
+they have to wait others to finish." The owner also said "no independent worktree for each worker
+team": two teams do not change one file and resolve the conflicts at the merge. Each team keeps its
+own worktree and branch, and two tasks never change the same file.
+
+Why: in revision 11 test run 5, Task 2 (a README list of the functions in `src/text.mjs`) needed
+only the name `slugify(text)` from Task 1. The plan had that name, but worker 2 started at 18:52:33,
+8 min 14 s after worker 1 (18:44:19), in a run of 34 minutes. Task 2 itself took about 3 minutes
+(18:52:33 to its reviewer at 18:55:30), so a parallel start could save at most about 3 minutes
+there. A way to start early pays only when the waiting work is long. Run 5 also put Task 2 in Task
+1's worktree and on its branch (its `plan-r4.md:19-20`), and both plan reviewers passed it: the skill
+does not say where the branch of a task that waits comes from.
+
+### Owner decisions (2026-11-28)
+
+1. **1A, with a cost condition:** three ways, in this order; the plan takes the first one that
+   fits, and only when the work that it starts early takes longer than its cost: (1) write the
+   shared names, inputs and outputs first, so that the task that uses them starts at once; (2)
+   split the task into a part that needs nothing and a small part that waits; (3) give the free
+   team another task that waits for nothing. The lead agent first said that the cost of 1A is "one
+   bullet in the plan stage"; that was wrong (way 1 adds a merge, way 2 adds a task), and the owner
+   kept 1A with the condition.
+2. **2A:** in way 1, the early team's last checkpoint starts only after the other task ended, on
+   its own branch with the other task's code merged in; its last checks and outside reviews run
+   there.
+3. **Q2, the shorter C′ (advisor's recommendation after two consultants, Opus 5.5 and GPT-6.2 Astra;
+   records in `tmp/reviews/leader-r12/`):** one sentence for all three cases: before a task or a
+   part builds on another task's code, its own branch holds that code. A new branch starts from the
+   commit at which that task ended, or from a base that already holds it; a branch that already has
+   work merges that commit. The worker brief and `handoff.md` name the commit. The reviewer brief's
+   diff starts at that commit. A check of each worker against its brief is not added: it would not
+   have stopped run 5, whose plan named the shared worktree.
+4. **Q3 A:** in the test runs, the scripted owner answers a commit question with "Yes, commit" and
+   the files and the branch from the question; a run gets up to 8 resumes (4 in revision 11).
+5. **Q4 A:** the removal run "wait-off" runs.
+
+### Facts (explorer report; each line checked by the lead agent)
+
+All in `.agents/skills/leader/` at `main` (`771d530`).
+
+- `SKILL.md:110-115`, Plan stage, "The tasks": "Make the tasks independent: no task changes a file of
+  another task or waits for another task. … A task that needs the result of another task starts
+  after that task is done. Name the files of each task, and the order if one exists." The first and
+  the last rule do not fit a task with a part that waits.
+- Not changed: at most 2 teams and "Your plan gives the order of the tasks that wait"
+  (`SKILL.md:239-240`); the order check (`SKILL.md:311-316`); "Start the worker in its own worktree
+  and branch" (`SKILL.md:321`); "Accept the plan of each team that starts now before the first build
+  message to any of them … A team that waits for another task gives its plan before its own build"
+  (`SKILL.md:366-368`).
+- `references/worker-brief.md` `<limits>`: "[The limits of parallel work: other agents in other
+  worktrees, and files that they change.]"
+- `references/reviewer-brief.md` `<review_target>`: "Diff: [base commit or branch]..[head commit]."
+- `GUIDE.md` stage 5 sketch: "5 plan: the tasks, each with its criteria and its definition of done,
+  the worker team of each, the reviewers, the model and effort; the advisor sharpens it".
+- Revision 11 criterion 10 (both team plans before the first build message) is partly met; the owner
+  said that the revision 12 test can cover it.
+
+### The change (the lead agent's own change; not minor)
+
+The lead agent writes the text (owner, 2026-11-27).
+
+1. `SKILL.md`, Plan stage: "The tasks" and a new bullet "The waits". Draft:
+
+   > **The tasks:** break the owner's goal into small tasks, each with one outcome and its own
+   > checks, so that each worker and each reviewer ends well under the limit (owner, 2026-11-25).
+   > Give them to different worker teams, and check each task apart. Two tasks never change the
+   > same file. Name the files of each task.
+   >
+   > **The waits:** if a task needs the result of another task, keep its team busy (owner,
+   > 2026-11-28). Use the first way that fits, and only when the work that it starts early takes
+   > longer than its cost:
+   >
+   > 1. Write the shared names, inputs and outputs in the plan, such as a function, its arguments
+   >    and its result. The task that uses them starts at the same time as the task that makes
+   >    them. Its worker builds what it can, and reports with no team checks: this report is not a
+   >    checkpoint, so no outside reviewer starts. Its last checkpoint starts after the other task
+   >    ended. Cost: a merge.
+   > 2. Split the task: a part that needs nothing starts now, and a small part waits. Each part is a
+   >    task, with its own checks and reviews. Cost: one more task.
+   > 3. Give the free team another task of the plan that waits for nothing.
+   >
+   > Else the task starts after the other task ended. Name the order of the tasks that wait, and
+   > the reason. A task ended when its last checkpoint is committed and its outside reviewers have
+   > no open finding; write that commit in `handoff.md`. Before a task or a part builds on the code
+   > of another task, its own branch holds that code: a new branch starts from the commit at which
+   > that task ended, or from a base that already holds it, and a branch that already has work
+   > merges that commit. The shared names are part of the approved plan, so a change of one is a
+   > change of the plan.
+
+2. `references/worker-brief.md`, `<limits>` guidance: "[For a task that builds on another task: the
+   commit at which that task ended, and how this branch gets it: it starts from it, or merges it
+   when the lead agent says so. For way 1, also the shared names, inputs and outputs.]"
+3. `references/reviewer-brief.md`, after the diff line: "> For a task that builds on another task,
+   the base is the commit at which that task ended, so that the diff holds only this task's work."
+4. `GUIDE.md`, stage 5 sketch: add "how a task that waits keeps its team busy" (lines of 98
+   characters or less).
+5. This section, with the test results.
+6. `docs/status.md`: the Now line (#158 merged; the state of revision 12), a Done row for #158; the
+   Follow-ups row of revision 12 goes when this PR merges.
+
+Branch `leader-wait-teams` in worktree `../cty1ng-leader-wait`, from `main`; a draft PR.
+
+### Acceptance criteria and definition of done
+
+- **C1** "The tasks" no longer says "no task … waits for another task"; it keeps "Two tasks never
+  change the same file" and "Name the files of each task".
+- **C2** "The waits" has the three ways in the order of decision 1, "the first way that fits", the
+  cost condition for ways 1 and 2, the fallback, and the owner's date.
+- **C3** Way 1: the early report is not a checkpoint (no team checks, no outside reviewer); the last
+  checkpoint starts after the other task ended.
+- **C4** One sentence covers all three cases: the task's own branch holds the other task's code, from
+  the commit at which that task ended (a new branch starts from it, or a base that holds it; a branch
+  with work merges it). "Ended" has one definition, and `handoff.md` holds that commit.
+- **C5** The worker brief `<limits>` and the reviewer brief's diff base name the commit; the GUIDE
+  stage 5 sketch names the rule; no other file holds a copy of the rule text.
+- **C6** Not changed: at most 2 teams, own worktree and branch, the order check, team plans before
+  the first build message. The copy check finds each of these phrases.
+- **C7** This section and `docs/status.md` are current at the PR head.
+- **C8** The run "wait-full" passes (see the test strategy).
+- **C9** The run "wait-off" ran, and the PR gives the measures of both runs, one sample each: a sign,
+  not proof.
+
+**Definition of done:** each criterion has its evidence in the PR description; the two outside
+reviewers have no open major point; CI passes on the head; the PR stays a draft, and the owner
+decides the merge.
+
+### Test strategy
+
+Static (the lead agent):
+
+- `copycheck-r12.py`: each new phrase is in its home, the removed phrase is gone, and the C6 phrases
+  are still there; a planted change makes it fail (rc 1).
+- The fact map and its exception list: rc 0.
+- Prettier on the changed files, `pnpm check:index`, `pnpm check:status`, `git diff --check`; CI.
+
+Runs: the revision 11 harness (`claude -p`, the scripted owner, the Codex wrapper), copied as
+`gate-r12.sh` with a new task "wait"; the scripted owner of decision 4.
+
+- **Task "wait"**, on the `slug` test repository: Task 1 adds `slugify(text)` to `src/text.mjs`, with
+  tests. Task 2 adds `bin/slug.mjs`, a command that prints `slugify` of its argument, with a test in
+  `test/slug-cli.test.mjs`. No shared file. The task text does not say "parallel", "one branch" or
+  "a branch": "Commit each task locally. Do not push. Do not merge into `master`."
+- **wait-full** (the skill at the PR head). Task 2 is short, so the cost condition can lead to the
+  fallback. Each case passes with its own items, and all cases need items 5 to 9.
+  - Way 1: (1) the plan names `slugify(text)`, its input and its output; (2) both team plans are
+    accepted before the first build message to either team (revision 11 criterion 10); (3) the
+    first build message of worker 2 comes before Task 1 ended; (4) Task 2's early report starts no
+    outside reviewer, and its last checkpoint starts after Task 1 ended.
+  - Way 2: the plan splits Task 2, and the part that needs nothing starts before Task 1 ended.
+  - Fallback: the plan gives the reason (the cost condition), and Task 2 starts after Task 1 ended.
+  - (5) Task 2's diff, from the commit at which Task 1 ended, shares no file with Task 1's diff;
+    (6) each worker has its own worktree and branch (the `-C` path of each worker in the Codex
+    wrapper log); (7) before the OK: no worker, no build command, no project edit, no commit; (8) on
+    Task 2's final branch, `node bin/slug.mjs "Hello, World!"` prints `hello-world` (the proof), and
+    Task 1's ended commit is an ancestor (a second sign); (9) the order check ran before each build
+    message while two teams ran.
+- **wait-off** (the same skill, with the old "The tasks" text and no "The waits"): a measurement,
+  not a pass or fail.
+- **Measures** of each run, from the Codex wrapper log and the stream: the time from the OK to both
+  tasks ended; the time that worker 2 waited (no turn running) between its first report and its next
+  message; the price. The gap between the two first build messages alone is not a measure: it is
+  about 0 in way 1 by design.
+
+### Workers and reviewers
+
+- No worker team for the change: the lead agent (Opus 5.5) writes it. The runs use the skill's own
+  teams (Sol workers; Opus and Astra reviewers).
+- Plan review: an Opus 5.5 subagent at high, and Codex `gpt-6.2-astra` at high, read-only; up to 2
+  rounds, then the open points go to the owner.
+- Diff review after the change: two new outside reviewers, Opus 5.5 high and Astra high read-only;
+  the same two check the fixes.
+- Codex account: 6.0% of the 10080-minute window used (data 2026-11-27 21:58 local; resets
+  2026-12-03).
+- Cost of the runs: about 35 min and 35 USD each (revision 11 run 5: 34 min, 33.27 USD), so about
+  70 min and 70 USD for both.
+
+### Risks
+
+- The owner's global Git rule asks for a yes before each commit; 5 of 11 revision 11 runs ended with
+  no commit. Way 1 and the fallback need Task 1's commit. Decision 4 is the mitigation; a Codex worker
+  can still refuse a commit that the lead agent passes on (revision 11 R3).
+- One run of each kind is a sign, not proof: the model can run the tasks in parallel with no rule, or
+  wait with the rule.
+- The branch of a task that waits also holds the other task's commits, so the other task's PR
+  merges first.
+
 ## Open questions
 
-None. The owner answered each question on 2026-11-24, 2026-11-26 and 2026-11-27.
+None. The owner answered each question on 2026-11-24, 2026-11-26, 2026-11-27 and 2026-11-28.
