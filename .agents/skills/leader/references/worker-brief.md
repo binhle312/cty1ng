@@ -47,6 +47,13 @@ test is wrong, say so in the report, and do not work around it.
 [The limits of the machine: commands that only one agent can run at a time, fixed ports, the
 network, packages.]
 [The limits of parallel work: other agents in other worktrees, and files that they change.]
+[For a task that uses the shared names of a task that has not ended: the names, inputs and outputs.
+Do not write the code of that task, and do not change its files. Put each criterion that needs that
+code in your last checkpoint. It starts when the lead agent sends the commit at which that task
+ended: merge it into your branch first.]
+[For a task that builds on tasks that ended: the commits at which they ended. Start from one of
+them, or from a base that already holds one of them, and merge each other one before your first
+change.]
 Stop each background job that you start, and remove your temporary files before you report.
 </limits>
 

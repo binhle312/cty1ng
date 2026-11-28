@@ -67,7 +67,8 @@ The skill was tested on Linux (WSL2) only.
       │
       ▼
  5 plan: the tasks, each with its criteria and its definition of done, the worker team
-         of each, the reviewers, the model and effort; the advisor sharpens it
+         of each, how a task that waits keeps its place busy, the reviewers, the model
+         and effort; the advisor sharpens it
       │
       ▼
  6 plan review, for a plan that starts a worker team: two new reviewers, up to 2 rounds,

@@ -31,6 +31,25 @@ decisions, the project rules that apply. Give the text, not a link to the lead a
 Worktree: [absolute path]. Branch: [branch name].
 > For a diff:
 Diff: [base commit or branch]..[head commit].
+> The base holds the last commit of this task's branch before its own work, each commit that the
+> branch merged after that commit from outside this task (an ended commit, or a newer commit of the
+> main branch), and none of this task's work. That commit is the parent of the task's first own
+> commit; commits that a fast-forward merge brings in are not the task's own. If the task has no own
+> commit, the diff is empty. Start with that commit as the base. Then, for each merged commit in
+> turn: if `git merge-base --is-ancestor <base> <merged commit>` succeeds, the merged commit becomes
+> the base; else make a new base without a checkout:
+> `git merge-tree --write-tree <base> <merged commit>` prints a tree, and
+> `git commit-tree <tree> -p <base> -p <merged commit> -m "review base"` prints the new base. These
+> two commands need Git 2.38 or later; with an older Git, check out the base in a temporary
+> worktree, merge that commit there, use its last commit, and then remove that worktree. If a merge
+> fails, stop and find the cause. If a merged commit holds work of this task, stop and ask the
+> owner. To see it, before each step compare two lists: the files from the base to the commit
+> before that merge (this task's work), and the files from `git merge-base <base> <merged commit>`
+> to the merged commit (with no merge base, all files of the merged commit). If a file is in both
+> lists, read its incoming commits for this task's work.
+> If the first own commit has no parent, start with no base: the first merged commit becomes the
+> base, add `--allow-unrelated-histories` to each later merge, and with no merged commit the diff
+> is all files of the head.
 > For a plan:
 Plan: [the file of the plan revision, such as `plan-r2.md`, or the file and its commit].
 </review_target>
