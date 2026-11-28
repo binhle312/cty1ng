@@ -1155,8 +1155,9 @@ files-only diff are gone.
    other one before the first change (owner Q2 A).
 3. `references/reviewer-brief.md`, after the diff line, one rule for the base (owner Q4 D, then A
    after fix check 3): the base holds the last commit of the task's branch before its own work, each
-   ended commit that the branch merged after it, and none of the task's work; that commit, or the
-   ended commit when it already holds it, else a temporary base made without a checkout.
+   commit that the branch merged after it from outside the task (an ended commit, or a newer commit
+   of the main branch), and none of the task's work; built step by step, with a temporary base made
+   without a checkout when needed (fix checks 4 to 6).
 4. `GUIDE.md`, stage 5 sketch: add "how a task that waits keeps its place busy" (lines of 98
    characters or less).
 5. This section, with the plan review and the test results.
@@ -1185,7 +1186,7 @@ Branch `leader-wait-teams` in worktree `../cty1ng-leader-wait`, from `main`; dra
   `handoff.md` holds the commit.
 - **C5** The worker brief `<limits>` and the reviewer brief's diff base give the task fields (the
   reviewer brief gives one rule for the base: the last commit before the task's own work and each
-  ended commit merged after it, owner Q4 D and the fix check 3 decision); the
+  commit merged after it from outside the task, owner Q4 D and the fix check 3 decision); the
   GUIDE stage 5 sketch names the rule; no other file holds a copy of the rule text. Not claimed: the
   fact map skips the whole worker and reviewer templates and the stages sketch (its three `BLOCK`
   exceptions), so a change elsewhere in them is seen only by the copy check phrases and by reading.
@@ -1454,8 +1455,24 @@ worked. Astra: 2 major, 1 minor; Opus: no major, 2 minor, 1 record item.
 | The `git log --first-parent` hint misleads after a fast-forward merge (Opus M2) | Yes: L3 | Fixed: the hint is gone; "commits that a fast-forward merge brings in are not the task's own" |
 | Needs human review: "6 histories"; the two-merge clause (Astra F3; Opus R1) | Yes: stale records | Fixed |
 
-The probe has 14 cases now: the 10 of fix check 4, a newer main merged after the own work, a
-fast-forward merge before it, a first own commit with a later merge, and a failed fallback merge.
+The probe had 13 numbered cases then (the 10 of fix check 4 with its first-commit case replaced,
+a newer main merged after the own work, a fast-forward merge before it, a first own commit with a
+later merge, and a failed fallback merge); fix check 6 found the count of 14 wrong.
+
+### Fix check 6 (`36f0e6f..b6f68c5`, review round 3 of 5)
+
+The same two reviewers (`astra-fix6.report.md`, `opus-fix6.report.md`). Each fix of fix check 5
+worked. Astra: 3 major, 1 minor; Opus: no major, 1 minor, 1 record item.
+
+| Finding | Same cause? | State |
+| --- | --- | --- |
+| A main that holds a cherry-pick of the task's own work hides that work after the merge (Astra F1, major) | Yes: Opus M1 | Fixed: "If a merged commit holds work of this task, such as a cherry-pick of it, stop and ask the owner" (probe case 14 shows the hidden file) |
+| The fallback stops only on a conflict; `merge.ff=only` fails with no conflict (Astra F2, major) | Yes: Astra F2 of fix check 5 | Fixed: "If a merge fails, stop" (case 17) |
+| A first own commit with no parent and two unrelated merged commits: `git merge-tree` refuses (Astra F3, major) | Yes: Astra F1 of fix check 5 | Fixed: `--allow-unrelated-histories` for each later merge in that case (case 15) |
+| The records overcount the probe, and "The change" and C5 name only ended commits (Astra F4; Opus R1) | Yes: stale records | Fixed; the first commit with no merge is a probe case again (case 16) |
+| "a newer main branch": a branch is not a commit (Opus W1) | No | Fixed: "a newer commit of the main branch" |
+
+The probe has 17 numbered cases now, and the 4b and 7b lines that show a wrong base.
 
 ### Test results
 
@@ -1523,7 +1540,7 @@ too high; not checked again.
   starts at "an ended commit plus another commit", when two merged commits do not hold each other,
   or for a temporary base (owner option A after fix check 3).
 - The base rule of the reviewer brief came from the consultants (Q4 D) and both reviewers (fix check
-  3). `probe-review-base.sh` tests it on 14 histories, not a run. The slug task merges one ended
+  3). `probe-review-base.sh` tests it on 17 histories, not a run. The slug task merges one ended
   commit, so run 3 uses only the branch start and the ended commit as bases; the temporary base is
   not used by a run. Git 2.38 or later is needed only for the temporary base made without a
   checkout; the fallback for an older Git (a temporary worktree) runs in the probe on Git 2.53.0,
