@@ -31,13 +31,14 @@ decisions, the project rules that apply. Give the text, not a link to the lead a
 Worktree: [absolute path]. Branch: [branch name].
 > For a diff:
 Diff: [base commit or branch]..[head commit].
-> For a task that builds on other tasks, the base is a commit that holds the code of each of them
-> and none of this task's work, such as the commit at which that task ended.
-> At an early checkpoint of a task that uses shared names, the base is the commit at which its
-> branch started. If no commit holds the code of each of them and none of this task's work, make
-> one outside the worktrees: `git merge-tree --write-tree <commit 1> <commit 2>` prints a tree, and
-> `git commit-tree <tree> -p <commit 1> -p <commit 2> -m "review base"` prints the base (Git 2.38
-> or later).
+> The base holds the last commit of this task's branch before its own work, each ended commit that
+> the branch merged after that commit, and none of this task's work. Use that commit if the branch
+> merged nothing after it, or the ended commit if it already holds that commit. Else make the base
+> without a checkout: `git merge-tree --write-tree <commit> <ended commit>` prints a tree, and
+> `git commit-tree <tree> -p <commit> -p <ended commit> -m "review base"` prints the base. Repeat
+> it with the new base for each other ended commit. If `git merge-tree` reports a conflict, two
+> tasks changed one file: stop and find the cause. The commands need Git 2.38 or later; with an
+> older Git, merge the commits in a temporary worktree and use its last commit.
 > For a plan:
 Plan: [the file of the plan revision, such as `plan-r2.md`, or the file and its commit].
 </review_target>

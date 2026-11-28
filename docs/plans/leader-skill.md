@@ -1128,7 +1128,7 @@ files-only diff are gone.
      team busy. Use the first way that fits and pays (the work that it starts early takes longer
      than its cost); if no way fits and pays, the task starts after the other task ended, and the
      plan gives the reason.
-     1. Shared names first, when a task needs one task that has not ended: the shared names, inputs
+     1. Shared names first: the shared names, inputs
         and outputs are a criterion of the task that makes them. The task that uses them starts with
         that task. Its early checkpoints are ordinary checkpoints (team checks and outside reviews),
         and each criterion that needs the other task's code goes to its last checkpoint. Cost: a
@@ -1142,7 +1142,8 @@ files-only diff are gone.
      commit at which it ended", and the lead agent writes it in `handoff.md` (also in the
      `handoff.md` row of the skill).
    - A task that starts after other tasks ended starts its branch from the commit at which one of
-     them ended, and its worker merges each other one before its first change. In way 1, the lead
+     them ended, or from a base that already holds one of them, and its worker merges each other one
+     before its first change. In way 1, the lead
      agent sends the commit to the worker when the other task ended, and the worker merges it before
      the last checkpoint. These merges are not the merge of the work into the main branch.
    - The shared names are part of the approved plan, so a change of one is a change of the plan.
@@ -1150,10 +1151,12 @@ files-only diff are gone.
    task that has not ended: the names, inputs and outputs; do not write that task's code or change
    its files; each criterion that needs that code goes to the last checkpoint, which starts when the
    lead agent sends the commit, merged first. For a task that builds on tasks that ended: their
-   commits; start from the first one and merge each other one before the first change.
-3. `references/reviewer-brief.md`, after the diff line: for a task that builds on other tasks, the
-   base is a commit that holds the code of each of them and none of this task's work, such as the
-   commit at which that task ended.
+   commits; start from one of them, or from a base that already holds one of them, and merge each
+   other one before the first change (owner Q2 A).
+3. `references/reviewer-brief.md`, after the diff line, one rule for the base (owner Q4 D, then A
+   after fix check 3): the base holds the last commit of the task's branch before its own work, each
+   ended commit that the branch merged after it, and none of the task's work; that commit, or the
+   ended commit when it already holds it, else a temporary base made without a checkout.
 4. `GUIDE.md`, stage 5 sketch: add "how a task that waits keeps its place busy" (lines of 98
    characters or less).
 5. This section, with the plan review and the test results.
@@ -1181,8 +1184,8 @@ Branch `leader-wait-teams` in worktree `../cty1ng-leader-wait`, from `main`; dra
   into itself). "Ended" and its commit have one definition, and
   `handoff.md` holds the commit.
 - **C5** The worker brief `<limits>` and the reviewer brief's diff base give the task fields (the
-  reviewer brief also gives the base at an early checkpoint, and a temporary base when no commit
-  holds the other code without this task's work, owner Q4 D); the
+  reviewer brief gives one rule for the base: the last commit before the task's own work and each
+  ended commit merged after it, owner Q4 D and the fix check 3 decision); the
   GUIDE stage 5 sketch names the rule; no other file holds a copy of the rule text. Not claimed: the
   fact map skips the whole worker and reviewer templates and the stages sketch (its three `BLOCK`
   exceptions), so a change elsewhere in them is seen only by the copy check phrases and by reading.
@@ -1356,7 +1359,7 @@ stop rule, no other text changes:
 | --- | --- | --- |
 | The reviewers' base at an early checkpoint of way 1, before the other task ended (Astra N1) | Yes: the early report and the checkpoint rules | The owner chose Q4 D (2026-11-28): applied in `references/reviewer-brief.md` |
 | No clean base when a branch with work merges a second task (Astra N2, second part) | Yes: a task that builds on two tasks | The owner chose Q4 D: a temporary merge base in place of this files-only diff |
-| An early checkpoint must pass its criteria, and a static import of a missing export fails at load (Opus N3) | Yes: the early report | Open minor point; the run shows whether it happens |
+| An early checkpoint must pass its criteria, and a static import of a missing export fails at load (Opus N3) | Yes: the early report | Open minor point; seen in run 2 (Test results) |
 | A fix after a task ended; an open minor point left for the owner blocks "ended" (Opus F5) | Yes: the end of a task | Open minor point; a written limit (Risks) |
 | The records C4, `Needs human review` and the status Now line were stale (Opus N4) | No | Fixed in the same commit |
 | The run can pass without proving the new C3 (Astra N4) | No | Open minor point |
@@ -1385,12 +1388,37 @@ high) and to the advisor as the judge, by the owner's order. Records in `tmp/rev
 | Q1 | **A:** keep ordinary reviews for early checkpoints | C; A 85%; A 60%; A | None. The early review of run 2 found a real test gap. C (merge first) and the Opus idea D (the last build starts while the early reviews run) are a later redesign (Follow-ups). |
 | Q2 | **A:** "a base that already holds one of them" | A; A 99%; A 85%; A | `references/worker-brief.md` |
 | Q3 | **B:** keep "before its first change" | B; A 95%; B 90%; B | None. The commits of ended tasks exist at the start, so the merge costs little; it is narrower than decision 3, by the owner's choice. |
-| Q4 | **D:** N1, plus a temporary merge base | B; A 92%; B + D 65%; D after a probe | `references/reviewer-brief.md`. A probe in a scratch repo (Git 2.53.0): the diff from the temporary base showed only the task's changes, and its edit in the other task's file. |
+| Q4 | **D:** N1, plus a temporary merge base | B; A 92%; B + D 65%; D after a probe | `references/reviewer-brief.md`. A probe in a scratch repo (Git 2.53.0): the diff from the temporary base showed only the task's changes, and its edit in the other task's file. Fix check 3 found a wrong case; the owner then chose one rule (below). |
 | Q5 | **A:** one new wait-full run on the final text | A; A 99%; B if Q1 is A 60%; A | Fix the question test of `gate-r12.sh` first; then run 3 of 10 |
 | Q6 | **A:** each team keeps its own worktree and branch | A; A 75%; A 85%; A | None; the Goal records the confirmation |
 
 The consultants found six claims of the first morning page wrong or bigger than their proof; the
 page was corrected before the owner's answer.
+
+### Fix check 3 (`2f93d11..969920f`)
+
+The same two reviewers (`astra-fix3.report.md`, `opus-fix3.report.md`). Each owner answer is
+applied, with no other rule change. Astra: 2 major, 1 minor; Opus: 4 minor, 3 record items.
+
+| Finding | Same cause? | State |
+| --- | --- | --- |
+| Two base rules apply at an early checkpoint (Astra F1; Opus K3) | Yes: Astra N1, the early report | Owner decision below: one rule |
+| The temporary base from the ended commits shows an unrelated commit X as the task's work when the branch starts at "A plus X" (Astra F2; Opus K1) | Yes: Astra N2, two tasks | One rule; probe case 4b shows the old text wrong |
+| A way 1 task that also builds on ended tasks gets the branch start, which misses one of them (Opus K2) | Yes: two tasks | One rule |
+| Git 2.38 floor, "outside the worktrees", a conflict in `git merge-tree` (Opus K4) | No | Fixed: "without a checkout", a fallback for an older Git, a stop on a conflict |
+| "The change" keeps superseded text (Astra F3) | Yes: stale records | Fixed |
+| Needs human review: the Q4 D line; C8 left the list; Opus N3 state (Opus R1, R2, R3) | No | Fixed |
+| No copy check phrase covers the new base text (Opus) | Yes: F7, checks weaker than claimed | `copycheck-r12.py` gets the phrase "before its own work" (home: the reviewer brief) |
+
+By the stop rule, the lead agent asked the owner (2026-11-28). The owner chose **A, one rule**: the
+base holds the last commit of the branch before the task's own work, each ended commit that the
+branch merged after it, and none of the task's work; that commit, or the ended commit when it
+already holds it, else a temporary base. Both reviewers proposed it alone. The probe
+`tmp/reviews/leader-r12/probe-review-base.sh` (output `probe-review-base.out`) passes 6 histories:
+an early checkpoint; a merge before the own work; the way 1 last checkpoint (the ended commit
+itself); a start at "A plus X" with a later merge; two merges before and one after the own work; two
+merges after it. The owner also set the end of the review: up to 5 more rounds; fix as much as
+possible; each major and blocker is fixed; minor points left after round 5 are recorded.
 
 ### Test results
 
@@ -1452,8 +1480,12 @@ too high; not checked again.
 
 ### Needs human review
 
-- Q4 D is a new idea of one consultant (Opus), tested by a probe in a scratch repo, not by a run.
-  The slug task has one task to wait for, so no run uses it. The fix check reads it.
+- C8 is not met at the head until run 3 passes (owner Q5 A).
+- The base rule of the reviewer brief came from the consultants (Q4 D) and both reviewers (fix check
+  3). `probe-review-base.sh` tests it on 6 histories, not a run. The slug task merges one ended
+  commit, so run 3 uses only the branch start and the ended commit as bases; the temporary base is
+  not used by a run. Git 2.38 or later is needed only for the temporary base; the fallback for an
+  older Git (a temporary worktree) is not tested.
 - Q3 B keeps a text that is narrower than decision 3, by the owner's choice of 2026-11-28.
 - The early review of way 1 can hold the merge when the other task is short (run 2). The owner kept
   it (Q1 A); the redesign ideas are a Follow-ups row.
