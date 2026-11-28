@@ -1497,12 +1497,27 @@ worked. Astra: 1 major, 2 minor; Opus: no major, 3 minor.
 
 | Finding | Same cause? | State |
 | --- | --- | --- |
-| A squash or backport of several own commits into main hides them: neither `git merge-base --is-ancestor` nor `git cherry` finds it (Astra F1, major, normal use; Opus P1, minor, not normal use) | Yes: Astra F1 of fix check 6 and Opus N1 of fix check 7, the third fix on one cause | Fixed by the owner's option A (2026-11-28): a content check in place of the two commands. Before each step, the files from the base to the commit before that merge are compared with the incoming files; a shared file is read for this task's work. `proto-content-check.sh`, 26 histories: it stops on each of the 5 that hold own work, gives the right diff on 20, and stops with no need on 1 (main and the task change one file; the lead reads that file's commits) |
+| A squash or backport of several own commits into main hides them: neither `git merge-base --is-ancestor` nor `git cherry` finds it (Astra F1, major, normal use; Opus P1, minor, not normal use) | Yes: Astra F1 of fix check 6 and Opus N1 of fix check 7, the third fix on one cause | Fixed by the owner's option A (2026-11-28): a content check in place of the two commands. Before each step, the files from the base to the commit before that merge are compared with the incoming files; a shared file is read for this task's work. `proto-content-check.sh`, 26 histories: it stops on each of the 5 that hold own work, gives the right diff on 20, and stops with no need on 1 (main and the task change one file; the lead reads that file's commits). Fix check 9 found that the first version of this prototype printed PASS with no helper scripts and did not check the diff; the fixed version gives the same result |
 | The worker brief repeats the branch and last-checkpoint rules (Astra F2) | Yes: Astra F5, Opus F6, recorded | Open, minor, listed |
 | `docs/status.md` and the test strategy line are stale (Astra F3; Opus P2) | Yes: stale records | Fixed |
 | The base rule is 17 lines, mostly for rare histories (Opus P3) | Yes: the repeated patches of fix checks 3 to 7 | Open, minor; option A keeps the length (18 lines) |
 
 The probe has 20 numbered cases (not in number order in its output).
+
+### Fix check 9 (`5c46c45..8cc0280`, one narrow review of option A)
+
+The same two reviewers (`astra-fix9.report.md`, `opus-fix9.report.md`). Astra: 2 major, 1 minor;
+Opus: no major, 3 minor.
+
+| Finding | Same cause? | State |
+| --- | --- | --- |
+| A revert of this task's work in main, or a backport to another path, is not found (Astra F1, major, normal use; Opus Q1, minor, not normal use) | Yes: Astra F1 of fix checks 6 and 8, Opus N1 of fix check 7; the fourth finding on one cause | Owner option A (2026-11-28): no fifth patch; recorded as a limit in Needs human review |
+| The prototype printed PASS with no helper scripts, and PASS did not check the diff (Astra F2, major; Opus Q2, minor) | Yes: F7, a check proves less than claimed | Fixed: the helpers are beside it, it exits 2 when one is missing or a commit is not found, and it checks each diff; result 25 PASS, 1 extra stop |
+| More routes to an extra read: an octopus merge (Astra F3) and an ended commit that holds a main change of a shared file (Opus Q3) | Yes: x6-14 | Recorded: the cost is a read, not a stop |
+
+Measured on 33 histories (`proto-content-check.sh`, `probe-extra9.sh`, `astra-probe-fix9.sh`): 7 of
+10 that hold this task's work are found (merge, cherry-pick, squash, partial backport at one path);
+2 reverts and 1 move are not. Of the other 23, 20 give the right diff and 3 need an extra read.
 
 ### Test results
 
@@ -1569,6 +1584,10 @@ too high; not checked again.
   finds a merged commit that holds this task's work. It replaced two commands after the third fix on
   one cause. One narrow review checks it; no reviewer has read its final text before that review.
   Not claimed: a check that finds each such history; 26 probe histories, not a run.
+- Not claimed (owner option A after fix check 9, 2026-11-28): the content check does not find a
+  revert or a move of this task's work in a merged commit (Opus case 23, Astra cases 27 and 28). On
+  33 histories it found 7 of the 10 that hold this task's work; on the other 23 it gave 20 right
+  diffs and 3 extra reads.
 - The one base rule changes the words of decision 3 ("The reviewer brief's diff starts at that
   commit"): the base is the ended commit in the usual case, and another commit when the branch
   starts at "an ended commit plus another commit", when two merged commits do not hold each other,
