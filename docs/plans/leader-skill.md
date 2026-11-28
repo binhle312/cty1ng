@@ -1628,6 +1628,8 @@ strategy (Follow-ups).
   showed way 1 with the same `SKILL.md` and the briefs before fix checks 3 to 9. The worker brief's
   merge line and the reviewer base rule ran only in their simplest case (a branch that starts at, or
   fast-forwards to, the ended commit); the merge steps and the content check ran only in probes.
+  The owner, on the lead agent's view that the fallback was reasonable on this task and that a task
+  that shows way 1 is a Follow-ups row (2026-11-28): "your view makes sense".
 - After review round 5, the owner chose option A for the last major (2026-11-28): a content check
   finds a merged commit that holds this task's work. It replaced two commands after the third fix on
   one cause. One narrow review (fix check 9) read it, and its findings are the next line. Not
