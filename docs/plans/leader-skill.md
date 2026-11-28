@@ -1605,8 +1605,11 @@ answer was the plain text. The lead agent took the fallback again, by its own re
 "The waits": way 1 does not pay, because a static import of a missing export fails at load, so no
 command test can pass before the merge, and an early checkpoint adds one more pair of outside
 reviews for a few minutes; way 2 does not pay; no way 3. Task 2's plan turn ran during Task 1's
-build (both workers started at 15:47:22), and its build started after Task 1 ended, with `git merge
---ff-only 644f999`. Items 5 to 8 pass by script (`check-wait.py` FAILS []; 6 of 6 hidden checks,
+build (both workers started at 15:47:22), and its build message (15:54:06) came after Task 1 ended
+(15:53:54, both reviews reported), with `git merge --ff-only 644f999`. The worker plans: Task 1's was
+accepted at 15:48:59, and Task 2's with its build message; `SKILL.md` asks this of a team that
+waits ("A team that waits for another task gives its plan before its own build"), so revision 11
+criterion 10 (teams that start together) is not tested. Items 5 to 8 pass by script (`check-wait.py` FAILS []; 6 of 6 hidden checks,
 `npm test` 0), and Task 2 ended. Item 7: `check-r11.py` found no plan turn with verdicts, so it counts
 4 worker calls "before the OK"; the OK turn began at 15:43:21, the first worker call was at
 15:47:22, and the p0 and p1 snapshots show no change. The reviewers of Task 2 got `Diff:
@@ -1629,10 +1632,13 @@ strategy (Follow-ups).
   finds a merged commit that holds this task's work. It replaced two commands after the third fix on
   one cause. One narrow review (fix check 9) read it, and its findings are the next line. Not
   claimed: a check that finds each such history; probe histories, not a run.
-- Not claimed (owner option A after fix check 9, 2026-11-28): the content check does not find a
-  revert or a move of this task's work in a merged commit (Opus case 23, Astra cases 27 and 28). On
-  33 histories it found 7 of the 10 that hold this task's work; on the other 23 it gave 20 right
-  diffs and 3 extra reads.
+- Not claimed (owner option A after fix check 9, 2026-11-28): the content check does not find three
+  histories: this task's work merged into main and reverted there (Opus case 23); the task reverts
+  its own work, and a merged backport brings part of it back (Astra case 27); a backport at another
+  path (Astra case 28). On 33 histories it found 7 of the 10 that hold this task's work; on the other
+  23 it gave 20 right diffs and 3 extra reads (`proto-content-check.sh`, `probe-extra9.sh` and
+  `astra-probe-fix9.sh`, each rerun by the lead agent). `probe-review-base.sh` cases 14, 18 and 20
+  still print the result of the two commands that the content check replaced.
 - The one base rule changes the words of decision 3 ("The reviewer brief's diff starts at that
   commit"): the base is the ended commit in the usual case, and another commit when the branch
   starts at "an ended commit plus another commit", when two merged commits do not hold each other,
