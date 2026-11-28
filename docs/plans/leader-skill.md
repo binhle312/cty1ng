@@ -1230,7 +1230,8 @@ on a failed item. Not seen by it: a branch switch during a build that is undone 
   place of each `-` in the output) and `--help`, exits with 2 on an unknown option, with tests for
   each in `test/slug-cli.test.mjs` and a section "Command" in `README.md`. No shared file. Task 2's
   work without `slugify` (the parsing of arguments and options, standard input, the help text, the
-  exit codes and the README) is much longer than a merge, so way 1 pays. The task text does not say
+  exit codes and the README) is much longer than a merge, so way 1 should pay (the early reviews add
+  to its cost; Test results say what the runs show). The task text does not say
   "parallel", "one branch" or "a branch": "Commit each task locally. Do not push. Do not merge into
   `master`."
 - **wait-full** (the skill at the PR head). Each case passes with its own items, and all cases need
@@ -1489,6 +1490,20 @@ a major. Astra: 3 minor; Opus: 1 minor, 1 style point. Each fix of fix check 6 w
 
 The probe has 19 numbered cases now, and the 4b and 7b lines.
 
+### Fix check 8 (`23bd17d..5c46c45` and the whole revision, review round 5 of 5)
+
+The same two reviewers (`astra-fix8.report.md`, `opus-fix8.report.md`). Each fix of fix check 7
+worked. Astra: 1 major, 2 minor; Opus: no major, 3 minor.
+
+| Finding | Same cause? | State |
+| --- | --- | --- |
+| A squash or backport of several own commits into main hides them: neither `git merge-base --is-ancestor` nor `git cherry` finds it (Astra F1, major, normal use; Opus P1, minor, not normal use) | Yes: Astra F1 of fix check 6 and Opus N1 of fix check 7, the third fix on one cause | Open: waits for the owner. A content check in place of the two commands (`proto-content-check.sh`) stops on each of the 5 histories that hold own work and gives the right diff on 20 others; it also stops when main changes a file that the task changed |
+| The worker brief repeats the branch and last-checkpoint rules (Astra F2) | Yes: Astra F5, Opus F6, recorded | Open, minor, listed |
+| `docs/status.md` and the test strategy line are stale (Astra F3; Opus P2) | Yes: stale records | Fixed |
+| The base rule is 17 lines, mostly for rare histories (Opus P3) | Yes: the repeated patches of fix checks 3 to 7 | Open, minor; the owner's decision on the major also decides the length |
+
+The probe has 20 numbered cases (not in number order in its output).
+
 ### Test results
 
 Two runs of the 10 that the owner allowed; the records are in
@@ -1555,7 +1570,7 @@ too high; not checked again.
   starts at "an ended commit plus another commit", when two merged commits do not hold each other,
   or for a temporary base (owner option A after fix check 3).
 - The base rule of the reviewer brief came from the consultants (Q4 D) and both reviewers (fix check
-  3). `probe-review-base.sh` tests it on 19 histories, not a run. The slug task merges one ended
+  3). `probe-review-base.sh` tests it on 20 histories, not a run. The slug task merges one ended
   commit, so run 3 uses only the branch start and the ended commit as bases; the temporary base is
   not used by a run. Git 2.38 or later is needed only for the temporary base made without a
   checkout; the fallback for an older Git (a temporary worktree) runs in the probe on Git 2.53.0,
