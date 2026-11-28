@@ -1521,7 +1521,7 @@ Measured on 33 histories (`proto-content-check.sh`, `probe-extra9.sh`, `astra-pr
 
 ### Test results
 
-Three runs of the 10 that the owner allowed (run 3 is below the table); the records are in
+Four runs of the 10 that the owner allowed (runs 3 and 4 are below the table); the records are in
 `tmp/leader-skill/measure/results-r12.md`. One sample of each: a sign, not proof.
 
 | Measure | wait-off (`771d530`) | wait-full (`74dfe63`) |
@@ -1599,11 +1599,32 @@ lines are quoted. A replay on 59 recorded turns (revision 11 and runs 1 to 3): i
 commit question, and it does not fire on the turns of runs 2 and 3. Runs 1 to 3 used the old test.
 By the test strategy, a fallback pass allows one rerun: run 4.
 
+**Run 4** (the rerun, at `06403a4`, whose skill files are those of `d0a1f81`): 2890 s; M1 10.8 min,
+M2 28.9 min (ended), M3 $15.66 and 5.95 M Codex tokens, M4 7.3 min. No scripted "Yes, commit": each
+answer was the plain text. The lead agent took the fallback again, by its own reasons in plan r3
+"The waits": way 1 does not pay, because a static import of a missing export fails at load, so no
+command test can pass before the merge, and an early checkpoint adds one more pair of outside
+reviews for a few minutes; way 2 does not pay; no way 3. Task 2's plan turn ran during Task 1's
+build (both workers started at 15:47:22), and its build started after Task 1 ended, with `git merge
+--ff-only 644f999`. Items 5 to 8 pass by script (`check-wait.py` FAILS []; 6 of 6 hidden checks,
+`npm test` 0), and Task 2 ended. Item 7: `check-r11.py` found no plan turn with verdicts, so it counts
+4 worker calls "before the OK"; the OK turn began at 15:43:21, the first worker call was at
+15:47:22, and the p0 and p1 snapshots show no change. The reviewers of Task 2 got `Diff:
+644f999..6bcd37a`: the brief's sentence on a fast-forward merge in use.
+
+C8 at the final text: runs 3 and 4 pass through the fallback, and the one rerun is used. Way 1 and
+revision 11 criterion 10: not shown by a run at the final text. Run 2 showed way 1 with the same
+`SKILL.md`. The two runs at the final text are a sign that on this task, where Task 1 takes a few
+minutes, way 1 does not pay under the skill's rule; a task that shows way 1 would change the test
+strategy (Follow-ups).
+
 ### Needs human review
 
-- C8 at the final head: run 3 passes through the fallback, which does not show way 1, and its wait
-  choice rests in part on an echo of the test script; run 4 is the one rerun. Way 1 was shown by run
-  2, with the same `SKILL.md` and the briefs before fix checks 3 to 9.
+- C8 at the final head: runs 3 and 4 pass through the fallback (run 4 is the one rerun, with no
+  echo of the test script). Not claimed: way 1 and revision 11 criterion 10 at the final text. Run 2
+  showed way 1 with the same `SKILL.md` and the briefs before fix checks 3 to 9. The worker brief's
+  merge line and the reviewer base rule ran only in their simplest case (a branch that starts at, or
+  fast-forwards to, the ended commit); the merge steps and the content check ran only in probes.
 - After review round 5, the owner chose option A for the last major (2026-11-28): a content check
   finds a merged commit that holds this task's work. It replaced two commands after the third fix on
   one cause. One narrow review checks it; no reviewer has read its final text before that review.
