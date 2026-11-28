@@ -1462,7 +1462,7 @@ later merge, and a failed fallback merge); fix check 6 found the count of 14 wro
 ### Fix check 6 (`36f0e6f..b6f68c5`, review round 3 of 5)
 
 The same two reviewers (`astra-fix6.report.md`, `opus-fix6.report.md`). Each fix of fix check 5
-worked. Astra: 3 major, 1 minor; Opus: no major, 1 minor, 1 record item.
+worked for its reported case; the fallback stop still covered only a conflict (F2 below). Astra: 3 major, 1 minor; Opus: no major, 1 minor, 1 record item.
 
 | Finding | Same cause? | State |
 | --- | --- | --- |
@@ -1473,6 +1473,21 @@ worked. Astra: 3 major, 1 minor; Opus: no major, 1 minor, 1 record item.
 | "a newer main branch": a branch is not a commit (Opus W1) | No | Fixed: "a newer commit of the main branch" |
 
 The probe has 17 numbered cases now, and the 4b and 7b lines that show a wrong base.
+
+### Fix check 7 (`b6f68c5..23bd17d`, review round 4 of 5)
+
+The same two reviewers (`astra-fix7.report.md`, `opus-fix7.report.md`). Neither found a blocker or
+a major. Astra: 3 minor; Opus: 1 minor, 1 style point. Each fix of fix check 6 worked.
+
+| Finding | Same cause? | State |
+| --- | --- | --- |
+| Probe case 14 can make no real merge: the cherry-pick can get the same commit id (Astra F1) | Yes: F7, a check proves less than claimed | Fixed: main moves first; the probe prints that the pick is a new commit and the branch has a merge |
+| No base for a task with no own commit, such as a report-only checkpoint (Astra F2) | No | Fixed: "If the task has no own commit, the diff is empty" (case 19) |
+| "Each fix of fix check 5 worked" overstates (Astra F3) | Yes: stale records | Fixed |
+| "Holds work of this task" gives no way to see it (Opus N1) | Yes: Astra F1 of fix check 6 | Fixed: `git merge-base --is-ancestor <first own commit> <merged commit>` for a merge (case 18), and `git cherry <merged commit> <the commit before that merge>` for a cherry-pick (case 14). The probe found that `git cherry` against the head shows nothing. |
+| One line of 111 characters (Opus S1) | No | Fixed |
+
+The probe has 19 numbered cases now, and the 4b and 7b lines.
 
 ### Test results
 
@@ -1540,7 +1555,7 @@ too high; not checked again.
   starts at "an ended commit plus another commit", when two merged commits do not hold each other,
   or for a temporary base (owner option A after fix check 3).
 - The base rule of the reviewer brief came from the consultants (Q4 D) and both reviewers (fix check
-  3). `probe-review-base.sh` tests it on 17 histories, not a run. The slug task merges one ended
+  3). `probe-review-base.sh` tests it on 19 histories, not a run. The slug task merges one ended
   commit, so run 3 uses only the branch start and the ended commit as bases; the temporary base is
   not used by a run. Git 2.38 or later is needed only for the temporary base made without a
   checkout; the fallback for an older Git (a temporary worktree) runs in the probe on Git 2.53.0,

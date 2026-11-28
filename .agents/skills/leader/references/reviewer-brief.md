@@ -33,18 +33,22 @@ Worktree: [absolute path]. Branch: [branch name].
 Diff: [base commit or branch]..[head commit].
 > The base holds the last commit of this task's branch before its own work, each commit that the
 > branch merged after that commit from outside this task (an ended commit, or a newer commit of the
-> main branch), and none of this task's work. That commit is the parent of the task's first own commit; commits
-> that a fast-forward merge brings in are not the task's own. Start with it as the base. Then, for
-> each merged commit in turn: if `git merge-base --is-ancestor <base> <merged commit>` succeeds,
-> the merged commit becomes the base; else make a new base without a checkout:
+> main branch), and none of this task's work. That commit is the parent of the task's first own
+> commit; commits that a fast-forward merge brings in are not the task's own. If the task has no own
+> commit, the diff is empty. Start with that commit as the base. Then, for each merged commit in
+> turn: if `git merge-base --is-ancestor <base> <merged commit>` succeeds, the merged commit becomes
+> the base; else make a new base without a checkout:
 > `git merge-tree --write-tree <base> <merged commit>` prints a tree, and
 > `git commit-tree <tree> -p <base> -p <merged commit> -m "review base"` prints the new base. These
 > two commands need Git 2.38 or later; with an older Git, check out the base in a temporary
 > worktree, merge that commit there, use its last commit, and then remove that worktree. If a merge
-> fails, stop and find the cause. If a merged commit holds work of this task, such as a cherry-pick
-> of it, stop and ask the owner. If the first own commit has no parent, start with no base: the
-> first merged commit becomes the base, add `--allow-unrelated-histories` to each later merge, and
-> with no merged commit the diff is all files of the head.
+> fails, stop and find the cause. If a merged commit holds work of this task, stop and ask the
+> owner: `git merge-base --is-ancestor <first own commit> <merged commit>` shows a merge of it, and
+> `git cherry <merged commit> <the commit before that merge>` shows a cherry-pick of it (a line
+> with "-" for an own commit).
+> If the first own commit has no parent, start with no base: the first merged commit becomes the
+> base, add `--allow-unrelated-histories` to each later merge, and with no merged commit the diff
+> is all files of the head.
 > For a plan:
 Plan: [the file of the plan revision, such as `plan-r2.md`, or the file and its commit].
 </review_target>
