@@ -1420,6 +1420,27 @@ itself); a start at "A plus X" with a later merge; two merges before and one aft
 merges after it. The owner also set the end of the review: up to 5 more rounds; fix as much as
 possible; each major and blocker is fixed; minor points left after round 5 are recorded.
 
+### Fix check 4 (`969920f..f8bf61e`, review round 1 of 5)
+
+The same two reviewers (`astra-fix4.report.md`, `opus-fix4.report.md`). Opus: no blocker, no major;
+the rule gave one valid base in 13 histories. Astra: 2 major, 2 minor.
+
+| Finding | Same cause? | State |
+| --- | --- | --- |
+| After two ended commits merged after the own work, "the ended commit" is unclear (Astra F1, major) | Yes: two tasks | Fixed: "for each ended commit … in turn", with the new base each time |
+| A task that makes the first commit of the repository has no base (Astra F2, major) | No | Fixed: the diff is all files of the head |
+| A conflict does not prove that two tasks changed one file (Astra F3) | Yes: Opus K4 | Fixed: "stop and find the cause" |
+| The Git 2.38 risk line is unconditional (Astra F4) | Yes: K4, stale records | Fixed |
+| "Holds" has no command; a content compare picks a wrong base after a newer main (Opus L1) | No | Fixed: `git merge-base --is-ancestor` |
+| The fallback does not say where the worktree starts, or to remove it (Opus L2) | Yes: K4 | Fixed |
+| `handoff.md` does not record the last commit before the own work (Opus L3) | No | Fixed in the brief: the parent of the first own commit (`git log --first-parent`) |
+| No record line says that the rule changes decision 3's words (Opus R1) | No | Fixed: Needs human review |
+| The copy check phrase covers only the first sentence (Opus) | Yes: F7 | Two more phrases: "merge-base --is-ancestor" and "merge-tree --write-tree" |
+
+The probe has 10 cases now (`probe-review-base.sh`, `probe-review-base.out`): the 6 of fix check 3,
+a start at a newer `main` (the ended commit as the base is wrong there), a second ended commit that
+holds the first, the older-Git fallback, and a first commit of a repository.
+
 ### Test results
 
 Two runs of the 10 that the owner allowed; the records are in
@@ -1481,11 +1502,16 @@ too high; not checked again.
 ### Needs human review
 
 - C8 is not met at the head until run 3 passes (owner Q5 A).
+- The one base rule changes the words of decision 3 ("The reviewer brief's diff starts at that
+  commit"): the base is the ended commit in the usual case, and another commit when the branch
+  starts at "an ended commit plus another commit", when two ended commits are merged after the own
+  work, or for a temporary base (owner option A after fix check 3).
 - The base rule of the reviewer brief came from the consultants (Q4 D) and both reviewers (fix check
   3). `probe-review-base.sh` tests it on 6 histories, not a run. The slug task merges one ended
   commit, so run 3 uses only the branch start and the ended commit as bases; the temporary base is
-  not used by a run. Git 2.38 or later is needed only for the temporary base; the fallback for an
-  older Git (a temporary worktree) is not tested.
+  not used by a run. Git 2.38 or later is needed only for the temporary base made without a
+  checkout; the fallback for an older Git (a temporary worktree) runs in the probe on Git 2.53.0,
+  not on an older Git.
 - Q3 B keeps a text that is narrower than decision 3, by the owner's choice of 2026-11-28.
 - The early review of way 1 can hold the merge when the other task is short (run 2). The owner kept
   it (Q1 A); the redesign ideas are a Follow-ups row.
@@ -1523,7 +1549,9 @@ too high; not checked again.
   merged its ended commit; the skill gives no step for it.
 - Not covered: a cap of more than 2 teams, where a task that starts early can run beside two tasks
   that have not ended.
-- The temporary review base needs Git 2.38 or later (`git merge-tree --write-tree`).
+- The temporary review base without a checkout needs Git 2.38 or later (`git merge-tree
+  --write-tree`); an older Git uses the fallback (a temporary worktree), which is not tested on an
+  older Git.
 
 ## Open questions
 

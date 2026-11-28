@@ -32,13 +32,16 @@ Worktree: [absolute path]. Branch: [branch name].
 > For a diff:
 Diff: [base commit or branch]..[head commit].
 > The base holds the last commit of this task's branch before its own work, each ended commit that
-> the branch merged after that commit, and none of this task's work. Use that commit if the branch
-> merged nothing after it, or the ended commit if it already holds that commit. Else make the base
-> without a checkout: `git merge-tree --write-tree <commit> <ended commit>` prints a tree, and
-> `git commit-tree <tree> -p <commit> -p <ended commit> -m "review base"` prints the base. Repeat
-> it with the new base for each other ended commit. If `git merge-tree` reports a conflict, two
-> tasks changed one file: stop and find the cause. The commands need Git 2.38 or later; with an
-> older Git, merge the commits in a temporary worktree and use its last commit.
+> the branch merged after that commit, and none of this task's work. That commit is the parent of
+> the task's first own commit (`git log --first-parent`). Start with it as the base. Then, for each
+> ended commit that the branch merged after it, in turn: if
+> `git merge-base --is-ancestor <base> <ended commit>` succeeds, the ended commit becomes the base;
+> else make a new base without a checkout: `git merge-tree --write-tree <base> <ended commit>`
+> prints a tree, and `git commit-tree <tree> -p <base> -p <ended commit> -m "review base"` prints
+> the new base. If `git merge-tree` reports a conflict, stop and find the cause. These two commands
+> need Git 2.38 or later; with an older Git, check out the base in a temporary worktree, merge the
+> ended commit there, use its last commit, and then remove that worktree. If the task's first own
+> commit is the first commit of the repository, the diff is all files of the head.
 > For a plan:
 Plan: [the file of the plan revision, such as `plan-r2.md`, or the file and its commit].
 </review_target>
