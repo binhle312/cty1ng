@@ -1037,10 +1037,10 @@ batch; the tokens per run are in the records.
 
 The owner (2026-11-27): "we should focus on the plan to reduce the idle time of worker team when
 they have to wait others to finish." The owner also said "alright, no independent worktree for each worker
-team" in answer to the lead agent's idea that two teams change one file and resolve the conflicts
-at the merge. The lead agent's reading: drop that idea; each team keeps its own worktree and branch,
-and two tasks never change the same file. The owner did not confirm this reading in other words;
-it is a question for the owner (Opus diff review F8).
+team" in answer to the owner's own idea that two teams in their own worktrees change one file and
+resolve the conflicts at the merge. The lead agent's reading: drop that idea; each team keeps its own
+worktree and branch, and two tasks never change the same file. The owner confirmed this reading on
+2026-11-28 (the morning page, Q6 A; Opus diff review F8 had flagged it).
 
 Why: in revision 11 test run 5, Task 2 (a README list of the functions in `src/text.mjs`) needed
 only the name `slugify(text)` from Task 1. The plan had that name, but worker 2 started at 18:52:33,
@@ -1180,7 +1180,9 @@ Branch `leader-wait-teams` in worktree `../cty1ng-leader-wait`, from `main`; dra
   it, and its worker merges each other one before its first change; a branch with work merges it
   into itself). "Ended" and its commit have one definition, and
   `handoff.md` holds the commit.
-- **C5** The worker brief `<limits>` and the reviewer brief's diff base give the task fields; the
+- **C5** The worker brief `<limits>` and the reviewer brief's diff base give the task fields (the
+  reviewer brief also gives the base at an early checkpoint, and a temporary base when no commit
+  holds the other code without this task's work, owner Q4 D); the
   GUIDE stage 5 sketch names the rule; no other file holds a copy of the rule text. Not claimed: the
   fact map skips the whole worker and reviewer templates and the stages sketch (its three `BLOCK`
   exceptions), so a change elsewhere in them is seen only by the copy check phrases and by reading.
@@ -1352,8 +1354,8 @@ stop rule, no other text changes:
 
 | Finding | Same cause? | State |
 | --- | --- | --- |
-| The reviewers' base at an early checkpoint of way 1, before the other task ended (Astra N1) | Yes: the early report and the checkpoint rules | Not ready. Proposed text, not applied (`references/reviewer-brief.md`): "For an early checkpoint of a task that uses shared names, the base is the commit at which its branch started." |
-| No clean base when a branch with work merges a second task (Astra N2, second part) | Yes: a task that builds on two tasks | Not ready. Proposed text, not applied: "If no such commit exists, the diff starts at the commit at which this task's branch started, and it covers only the files of this task." |
+| The reviewers' base at an early checkpoint of way 1, before the other task ended (Astra N1) | Yes: the early report and the checkpoint rules | The owner chose Q4 D (2026-11-28): applied in `references/reviewer-brief.md` |
+| No clean base when a branch with work merges a second task (Astra N2, second part) | Yes: a task that builds on two tasks | The owner chose Q4 D: a temporary merge base in place of this files-only diff |
 | An early checkpoint must pass its criteria, and a static import of a missing export fails at load (Opus N3) | Yes: the early report | Open minor point; the run shows whether it happens |
 | A fix after a task ended; an open minor point left for the owner blocks "ended" (Opus F5) | Yes: the end of a task | Open minor point; a written limit (Risks) |
 | The records C4, `Needs human review` and the status Now line were stale (Opus N4) | No | Fixed in the same commit |
@@ -1367,9 +1369,28 @@ record? Opus: none (`opus-fix2.report.md`). Astra: yes, decision 3, in two place
 
 | Finding | Same cause? | State |
 | --- | --- | --- |
-| The worker brief says "a base that already holds them"; decision 3 allows a base that holds one of them, and the worker merges the others (Astra) | Yes: a task that builds on two tasks. The words "holds them" are the lead agent's, in `d422578` | Not ready. Proposed text, not applied: "Start from one of them, or from a base that already holds one of them, and merge each other one before your first change." |
-| "Before its first change" is earlier than "before a task builds on the code of other tasks" in decision 3 (Astra) | Yes: a task that builds on two tasks. The words came from `984fb19`, which both reviewers accepted in fix check 1 | Not ready. Proposed text, not applied: "and its worker merges each other one before it builds on that code." |
+| The worker brief says "a base that already holds them"; decision 3 allows a base that holds one of them, and the worker merges the others (Astra) | Yes: a task that builds on two tasks. The words "holds them" are the lead agent's, in `d422578` | The owner chose Q2 A (2026-11-28): applied in `references/worker-brief.md` |
+| "Before its first change" is earlier than "before a task builds on the code of other tasks" in decision 3 (Astra) | Yes: a task that builds on two tasks. The words came from `984fb19`, which both reviewers accepted in fix check 1 | The owner chose Q3 B: the text stays |
 | The way 1 brief line is singular (Opus R1) | Yes: a task that builds on two tasks | Open minor point |
+
+### Owner decisions on the morning page (2026-11-28)
+
+The six questions of the morning page went to two consultants (Opus 5.5 and GPT-6.2 Astra, effort
+high) and to the advisor as the judge, by the owner's order. Records in `tmp/reviews/leader-r12/`:
+`consultants-morning.md`, `astra-morning.report.md`, `opus-morning.report.md` (condensed),
+`consultants-morning-answers.md`. The owner: "let go with final pick".
+
+| Q | Decision | Votes (lead first pick; Astra; Opus; advisor) | Change |
+| --- | --- | --- | --- |
+| Q1 | **A:** keep ordinary reviews for early checkpoints | C; A 85%; A 60%; A | None. The early review of run 2 found a real test gap. C (merge first) and the Opus idea D (the last build starts while the early reviews run) are a later redesign (Follow-ups). |
+| Q2 | **A:** "a base that already holds one of them" | A; A 99%; A 85%; A | `references/worker-brief.md` |
+| Q3 | **B:** keep "before its first change" | B; A 95%; B 90%; B | None. The commits of ended tasks exist at the start, so the merge costs little; it is narrower than decision 3, by the owner's choice. |
+| Q4 | **D:** N1, plus a temporary merge base | B; A 92%; B + D 65%; D after a probe | `references/reviewer-brief.md`. A probe in a scratch repo (Git 2.53.0): the diff from the temporary base showed only the task's changes, and its edit in the other task's file. |
+| Q5 | **A:** one new wait-full run on the final text | A; A 99%; B if Q1 is A 60%; A | Fix the question test of `gate-r12.sh` first; then run 3 of 10 |
+| Q6 | **A:** each team keeps its own worktree and branch | A; A 75%; A 85%; A | None; the Goal records the confirmation |
+
+The consultants found six claims of the first morning page wrong or bigger than their proof; the
+page was corrected before the owner's answer.
 
 ### Test results
 
@@ -1410,12 +1431,18 @@ plan turns ended at 02:34:46 and 02:34:51, and both build turns started at 02:35
 session files); (3) worker 2's build started before Task 1 ended (02:39:55, the review files);
 (4) the merge of `4583aea` at 02:52:10 (`2abc131`), and the last checkpoint after it. Task 2 did not
 end in the run: the lead agent's last stop had no "?", and the question test of `gate-r12.sh` ended
-the run. So C8 is not shown as "passes"; it is a question for the owner.
+the run. No item names "Task 2 ended", but C8 tests the skill at the PR head, and the owner's
+answers of 2026-11-28 change it; the owner chose one new wait-full run on the final text (Q5 A). For
+that run, the question test of `gate-r12.sh` also finds "waiting for your", "wait for your" and
+"your answer". A replay on the 8 recorded turns of runs 1 and 2: only the last turn of run 1 ends a
+run ("your decision" was dropped, because the final report of run 1 has "is your decision").
 
 The reviewers of the early checkpoint got the diff from the branch start (`239cdac..b562641`), the
-text proposed for Astra N1 of fix check 1. Its tests could not run before the merge (a static import
-of `slugify`): the Opus reviewer used a stand-in in memory, and the Codex reviewer left the run-time
-check to the last checkpoint (Opus N3 of fix check 1, seen).
+text proposed for Astra N1 of fix check 1. Its tests could not pass before the merge (`npm test` ran
+and failed on the static import of `slugify`): the Opus reviewer used a stand-in in memory, and the
+Codex reviewer left the run-time check to the last checkpoint (Opus N3 of fix check 1, seen). The
+Opus review found a real test gap: no test for a lone `""` argument, and a mutant passed all 39
+tests (`task2-cp1-opus.md` F1); a fix turn and a fix check followed.
 
 Measurement errors found and corrected after the runs: the script took a subagent's session file for
 worker 2 of run 1 (M1 15.9 → 13.0, M4 9.1 → 7.5); M3 summed the cost of each turn, but the value
@@ -1425,31 +1452,24 @@ too high; not checked again.
 
 ### Needs human review
 
-- C8 is not shown as a pass: way 1 items 1 to 8 pass, but Task 2 did not end in run 2 (Test
-  results). The lead agent cannot make C8 smaller; the owner decides.
-- In run 2, the outside review of the early checkpoint started after Task 1 had ended, and the
-  merge waited for it (Test results, one sample). The advisor's cut made early checkpoints ordinary,
-  and the Codex plan reviewer of that run proposed one final checkpoint. No text changed; a question
-  for the owner.
+- Q4 D is a new idea of one consultant (Opus), tested by a probe in a scratch repo, not by a run.
+  The slug task has one task to wait for, so no run uses it. The fix check reads it.
+- Q3 B keeps a text that is narrower than decision 3, by the owner's choice of 2026-11-28.
+- The early review of way 1 can hold the merge when the other task is short (run 2). The owner kept
+  it (Q1 A); the redesign ideas are a Follow-ups row.
 - The Claude costs of revision 11 may be too high (`check-r11.py` sums cumulative values).
-- Fix check 2: Astra found decision 3 still smaller in two places (above); Opus found none. Not
-  fixed, by the stop rule.
 - The §9 cut after diff review round 1 was made with no owner decision, by the advisor's ruling. For
   one commit (`984fb19`), it made decisions 1 and 3 smaller, on the advisor's advice; the next commit
   puts them back.
 - Two clauses go past the words of decisions 1A and 2A (Astra N3): the shared names are a criterion
   of the task that makes them, and each criterion that needs the other task's code goes to the last
   checkpoint.
-- Way 1 has outside reviews of its early checkpoints.
 - "Ended" got the clause "both outside reviewers reported", a patch on a repeated cause.
-- Two more points are not ready (Fix check 1): the reviewers' base at an early checkpoint of way 1, and
-  the clean base when a branch with work merges a second task. Proposed texts are above.
-- Open minor points: Opus N3, F5, F6; Astra F5 (the brief restates the last-checkpoint rule), N4.
+- Open minor points: Opus N3, F5, F6, R1; Astra F5 (the brief restates the last-checkpoint rule), N4.
 - Plan r3 changed the plan after the last round of the plan review, which `SKILL.md` allows only for
   the owner's decisions; the advisor judged r3 in the owner's place, by the owner's order.
 - Both plan reviewers ended at "do not agree", and neither read r3.
 - The lead agent rewrote the record of two owner decisions in r2, and r3 put it back.
-- The reading of "no independent worktree" (Goal).
 - The `/goal` order as the OK of the plan.
 - Item 9 of the run checks is not verified by a run.
 - The scripted owner also answers "Yes, commit" to a text that only mentions a commit and asks
@@ -1471,6 +1491,7 @@ too high; not checked again.
   merged its ended commit; the skill gives no step for it.
 - Not covered: a cap of more than 2 teams, where a task that starts early can run beside two tasks
   that have not ended.
+- The temporary review base needs Git 2.38 or later (`git merge-tree --write-tree`).
 
 ## Open questions
 

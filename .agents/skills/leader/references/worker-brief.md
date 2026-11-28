@@ -52,7 +52,8 @@ Do not write the code of that task, and do not change its files. Put each criter
 code in your last checkpoint. It starts when the lead agent sends the commit at which that task
 ended: merge it into your branch first.]
 [For a task that builds on tasks that ended: the commits at which they ended. Start from one of
-them, or from a base that already holds them, and merge each other one before your first change.]
+them, or from a base that already holds one of them, and merge each other one before your first
+change.]
 Stop each background job that you start, and remove your temporary files before you report.
 </limits>
 

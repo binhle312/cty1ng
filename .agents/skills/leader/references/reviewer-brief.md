@@ -33,6 +33,11 @@ Worktree: [absolute path]. Branch: [branch name].
 Diff: [base commit or branch]..[head commit].
 > For a task that builds on other tasks, the base is a commit that holds the code of each of them
 > and none of this task's work, such as the commit at which that task ended.
+> At an early checkpoint of a task that uses shared names, the base is the commit at which its
+> branch started. If no commit holds the code of each of them and none of this task's work, make
+> one outside the worktrees: `git merge-tree --write-tree <commit 1> <commit 2>` prints a tree, and
+> `git commit-tree <tree> -p <commit 1> -p <commit 2> -m "review base"` prints the base (Git 2.38
+> or later).
 > For a plan:
 Plan: [the file of the plan revision, such as `plan-r2.md`, or the file and its commit].
 </review_target>
