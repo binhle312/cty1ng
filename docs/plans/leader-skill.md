@@ -1441,6 +1441,22 @@ The probe has 10 cases now (`probe-review-base.sh`, `probe-review-base.out`): th
 a start at a newer `main` (the ended commit as the base is wrong there), a second ended commit that
 holds the first, the older-Git fallback, and a first commit of a repository.
 
+### Fix check 5 (`f8bf61e..36f0e6f`, review round 2 of 5)
+
+The same two reviewers (`astra-fix5.report.md`, `opus-fix5.report.md`). Each fix of fix check 4
+worked. Astra: 2 major, 1 minor; Opus: no major, 2 minor, 1 record item.
+
+| Finding | Same cause? | State |
+| --- | --- | --- |
+| A first own commit with no parent, then a merge of another task: "all files of the head" shows that task's files (Astra F1, major) | Yes: fix check 4 F2 | Fixed: with no parent, the first merged commit becomes the base |
+| After a failed `git merge` in the fallback, its last commit is the old head (Astra F2, major) | Yes: K4, conflict | Fixed: "If a merge reports a conflict, stop" covers both ways |
+| A newer main merged after the own work shows as own work (Opus M1) | Partly: K1 | Fixed: each commit merged from outside the task, "an ended commit, or a newer main branch" |
+| The `git log --first-parent` hint misleads after a fast-forward merge (Opus M2) | Yes: L3 | Fixed: the hint is gone; "commits that a fast-forward merge brings in are not the task's own" |
+| Needs human review: "6 histories"; the two-merge clause (Astra F3; Opus R1) | Yes: stale records | Fixed |
+
+The probe has 14 cases now: the 10 of fix check 4, a newer main merged after the own work, a
+fast-forward merge before it, a first own commit with a later merge, and a failed fallback merge.
+
 ### Test results
 
 Two runs of the 10 that the owner allowed; the records are in
@@ -1504,10 +1520,10 @@ too high; not checked again.
 - C8 is not met at the head until run 3 passes (owner Q5 A).
 - The one base rule changes the words of decision 3 ("The reviewer brief's diff starts at that
   commit"): the base is the ended commit in the usual case, and another commit when the branch
-  starts at "an ended commit plus another commit", when two ended commits are merged after the own
-  work, or for a temporary base (owner option A after fix check 3).
+  starts at "an ended commit plus another commit", when two merged commits do not hold each other,
+  or for a temporary base (owner option A after fix check 3).
 - The base rule of the reviewer brief came from the consultants (Q4 D) and both reviewers (fix check
-  3). `probe-review-base.sh` tests it on 6 histories, not a run. The slug task merges one ended
+  3). `probe-review-base.sh` tests it on 14 histories, not a run. The slug task merges one ended
   commit, so run 3 uses only the branch start and the ended commit as bases; the temporary base is
   not used by a run. Git 2.38 or later is needed only for the temporary base made without a
   checkout; the fallback for an older Git (a temporary worktree) runs in the probe on Git 2.53.0,

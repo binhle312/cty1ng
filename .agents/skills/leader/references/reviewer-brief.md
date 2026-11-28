@@ -31,17 +31,19 @@ decisions, the project rules that apply. Give the text, not a link to the lead a
 Worktree: [absolute path]. Branch: [branch name].
 > For a diff:
 Diff: [base commit or branch]..[head commit].
-> The base holds the last commit of this task's branch before its own work, each ended commit that
-> the branch merged after that commit, and none of this task's work. That commit is the parent of
-> the task's first own commit (`git log --first-parent`). Start with it as the base. Then, for each
-> ended commit that the branch merged after it, in turn: if
-> `git merge-base --is-ancestor <base> <ended commit>` succeeds, the ended commit becomes the base;
-> else make a new base without a checkout: `git merge-tree --write-tree <base> <ended commit>`
-> prints a tree, and `git commit-tree <tree> -p <base> -p <ended commit> -m "review base"` prints
-> the new base. If `git merge-tree` reports a conflict, stop and find the cause. These two commands
-> need Git 2.38 or later; with an older Git, check out the base in a temporary worktree, merge the
-> ended commit there, use its last commit, and then remove that worktree. If the task's first own
-> commit is the first commit of the repository, the diff is all files of the head.
+> The base holds the last commit of this task's branch before its own work, each commit that the
+> branch merged after that commit from outside this task (an ended commit, or a newer main branch),
+> and none of this task's work. That commit is the parent of the task's first own commit; commits
+> that a fast-forward merge brings in are not the task's own. Start with it as the base. Then, for
+> each merged commit in turn: if `git merge-base --is-ancestor <base> <merged commit>` succeeds,
+> the merged commit becomes the base; else make a new base without a checkout:
+> `git merge-tree --write-tree <base> <merged commit>` prints a tree, and
+> `git commit-tree <tree> -p <base> -p <merged commit> -m "review base"` prints the new base. These
+> two commands need Git 2.38 or later; with an older Git, check out the base in a temporary
+> worktree, merge that commit there, use its last commit, and then remove that worktree. If a merge
+> reports a conflict, stop and find the cause. If the first own commit has no parent, start with no
+> base: the first merged commit becomes the base, and with no merged commit the diff is all files
+> of the head.
 > For a plan:
 Plan: [the file of the plan revision, such as `plan-r2.md`, or the file and its commit].
 </review_target>
