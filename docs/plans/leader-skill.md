@@ -1627,8 +1627,8 @@ strategy (Follow-ups).
   fast-forwards to, the ended commit); the merge steps and the content check ran only in probes.
 - After review round 5, the owner chose option A for the last major (2026-11-28): a content check
   finds a merged commit that holds this task's work. It replaced two commands after the third fix on
-  one cause. One narrow review checks it; no reviewer has read its final text before that review.
-  Not claimed: a check that finds each such history; 26 probe histories, not a run.
+  one cause. One narrow review (fix check 9) read it, and its findings are the next line. Not
+  claimed: a check that finds each such history; probe histories, not a run.
 - Not claimed (owner option A after fix check 9, 2026-11-28): the content check does not find a
   revert or a move of this task's work in a merged commit (Opus case 23, Astra cases 27 and 28). On
   33 histories it found 7 of the 10 that hold this task's work; on the other 23 it gave 20 right
@@ -1639,8 +1639,8 @@ strategy (Follow-ups).
   or for a temporary base (owner option A after fix check 3).
 - The base rule of the reviewer brief came from the consultants (Q4 D) and both reviewers (fix check
   3). `probe-review-base.sh` tests it on 20 histories and `proto-content-check.sh` on 26, not a run. The slug task merges one ended
-  commit, so run 3 uses only the branch start and the ended commit as bases; the temporary base is
-  not used by a run. Git 2.38 or later is needed only for the temporary base made without a
+  commit, so runs 3 and 4 use only the ended commit as the base (run 4 after a fast-forward); the
+  temporary base is not used by a run. Git 2.38 or later is needed only for the temporary base made without a
   checkout; the fallback for an older Git (a temporary worktree) runs in the probe on Git 2.53.0,
   not on an older Git.
 - Q3 B keeps a text that is narrower than decision 3, by the owner's choice of 2026-11-28.
@@ -1654,7 +1654,10 @@ strategy (Follow-ups).
   of the task that makes them, and each criterion that needs the other task's code goes to the last
   checkpoint.
 - "Ended" got the clause "both outside reviewers reported", a patch on a repeated cause.
-- Open minor points: Opus N3, F5, F6, R1; Astra F5 (the brief restates the last-checkpoint rule), N4.
+- Open minor points: Opus N3, F5, F6, R1; Astra F5 (the brief restates the last-checkpoint rule), N4;
+  the base rule is 18 lines, mostly for rare histories (Opus P3 of fix check 8); the content check
+  also asks for a read when an outside change and the task touch one file (x6-14, Opus Q3, Astra F3
+  of fix check 9).
 - Plan r3 changed the plan after the last round of the plan review, which `SKILL.md` allows only for
   the owner's decisions; the advisor judged r3 in the owner's place, by the owner's order.
 - Both plan reviewers ended at "do not agree", and neither read r3.
