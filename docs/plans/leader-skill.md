@@ -1497,10 +1497,10 @@ worked. Astra: 1 major, 2 minor; Opus: no major, 3 minor.
 
 | Finding | Same cause? | State |
 | --- | --- | --- |
-| A squash or backport of several own commits into main hides them: neither `git merge-base --is-ancestor` nor `git cherry` finds it (Astra F1, major, normal use; Opus P1, minor, not normal use) | Yes: Astra F1 of fix check 6 and Opus N1 of fix check 7, the third fix on one cause | Open: waits for the owner. A content check in place of the two commands (`proto-content-check.sh`) stops on each of the 5 histories that hold own work and gives the right diff on 20 others; it also stops when main changes a file that the task changed |
+| A squash or backport of several own commits into main hides them: neither `git merge-base --is-ancestor` nor `git cherry` finds it (Astra F1, major, normal use; Opus P1, minor, not normal use) | Yes: Astra F1 of fix check 6 and Opus N1 of fix check 7, the third fix on one cause | Fixed by the owner's option A (2026-11-28): a content check in place of the two commands. Before each step, the files from the base to the commit before that merge are compared with the incoming files; a shared file is read for this task's work. `proto-content-check.sh`, 26 histories: it stops on each of the 5 that hold own work, gives the right diff on 20, and stops with no need on 1 (main and the task change one file; the lead reads that file's commits) |
 | The worker brief repeats the branch and last-checkpoint rules (Astra F2) | Yes: Astra F5, Opus F6, recorded | Open, minor, listed |
 | `docs/status.md` and the test strategy line are stale (Astra F3; Opus P2) | Yes: stale records | Fixed |
-| The base rule is 17 lines, mostly for rare histories (Opus P3) | Yes: the repeated patches of fix checks 3 to 7 | Open, minor; the owner's decision on the major also decides the length |
+| The base rule is 17 lines, mostly for rare histories (Opus P3) | Yes: the repeated patches of fix checks 3 to 7 | Open, minor; option A keeps the length (18 lines) |
 
 The probe has 20 numbered cases (not in number order in its output).
 
@@ -1565,12 +1565,16 @@ too high; not checked again.
 ### Needs human review
 
 - C8 is not met at the head until run 3 passes (owner Q5 A).
+- After review round 5, the owner chose option A for the last major (2026-11-28): a content check
+  finds a merged commit that holds this task's work. It replaced two commands after the third fix on
+  one cause. One narrow review checks it; no reviewer has read its final text before that review.
+  Not claimed: a check that finds each such history; 26 probe histories, not a run.
 - The one base rule changes the words of decision 3 ("The reviewer brief's diff starts at that
   commit"): the base is the ended commit in the usual case, and another commit when the branch
   starts at "an ended commit plus another commit", when two merged commits do not hold each other,
   or for a temporary base (owner option A after fix check 3).
 - The base rule of the reviewer brief came from the consultants (Q4 D) and both reviewers (fix check
-  3). `probe-review-base.sh` tests it on 20 histories, not a run. The slug task merges one ended
+  3). `probe-review-base.sh` tests it on 20 histories and `proto-content-check.sh` on 26, not a run. The slug task merges one ended
   commit, so run 3 uses only the branch start and the ended commit as bases; the temporary base is
   not used by a run. Git 2.38 or later is needed only for the temporary base made without a
   checkout; the fallback for an older Git (a temporary worktree) runs in the probe on Git 2.53.0,

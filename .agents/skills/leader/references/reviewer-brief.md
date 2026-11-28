@@ -43,9 +43,10 @@ Diff: [base commit or branch]..[head commit].
 > two commands need Git 2.38 or later; with an older Git, check out the base in a temporary
 > worktree, merge that commit there, use its last commit, and then remove that worktree. If a merge
 > fails, stop and find the cause. If a merged commit holds work of this task, stop and ask the
-> owner: `git merge-base --is-ancestor <first own commit> <merged commit>` shows a merge of it, and
-> `git cherry <merged commit> <the commit before that merge>` shows a cherry-pick of it (a line
-> with "-" for an own commit).
+> owner. To see it, before each step compare two lists: the files from the base to the commit
+> before that merge (this task's work), and the files from `git merge-base <base> <merged commit>`
+> to the merged commit (with no merge base, all files of the merged commit). If a file is in both
+> lists, read its incoming commits for this task's work.
 > If the first own commit has no parent, start with no base: the first merged commit becomes the
 > base, add `--allow-unrelated-histories` to each later merge, and with no merged commit the diff
 > is all files of the head.
