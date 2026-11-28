@@ -1218,7 +1218,7 @@ Runs: the revision 11 harness, copied as `gate-r12.sh` (`tmp/leader-skill/measur
 turn in `end.txt`; and the scripted owner of decision 4 (`reply()`: it reads every result of the
 turn; if the text has "commit" and a "?", the answer starts with "Yes, commit, with the files and the
 branch of your question: " and quotes each line with "commit" or "branch" and the list lines after
-it). The
+it; from run 4, only a line with "commit" and "?" counts, and only those lines are quoted). The
 checks: `check-r11.py` for the gate items, and `check-wait.py` for the task items; `check-wait.py`
 counts an edit before the OK on each path inside the run clone and its worktrees, except `tmp/`,
 `.agents/` and `.claude/`, takes the commit at which Task 1 ended from `handoff.md`, and exits with 1
@@ -1521,7 +1521,7 @@ Measured on 33 histories (`proto-content-check.sh`, `probe-extra9.sh`, `astra-pr
 
 ### Test results
 
-Two runs of the 10 that the owner allowed; the records are in
+Three runs of the 10 that the owner allowed (run 3 is below the table); the records are in
 `tmp/leader-skill/measure/results-r12.md`. One sample of each: a sign, not proof.
 
 | Measure | wait-off (`771d530`) | wait-full (`74dfe63`) |
@@ -1577,9 +1577,33 @@ adds up across resumes, so the run cost is its last value (run 1 $20.06 → $14.
 $30.64). `check-r11.py` sums the turns too, so the Claude costs of revision 11 in this plan may be
 too high; not checked again.
 
+**Run 3** (wait-full at the final head `d0a1f81`, owner Q5 A): 3015 s; M1 13.6 min, M2 33.0 min
+(ended), M3 $14.87 and 8.15 M Codex tokens, M4 8.1 min. The lead agent took the fallback: Task 2
+started after Task 1 ended (the two Task 1 reviews ended at 14:57:57 and 14:58:04; worker 2 started
+at 14:59:20). Items 5 to 8 pass by script (`check-wait.py` FAILS []; `check-r11.py`: no worker, build
+command, edit or commit before the OK; 6 of 6 hidden checks, `npm test` 0), and Task 2 ended. The
+fallback item: plan r1 gives the reason (each Task 2 check runs `slugify`; a split does not pay;
+Task 1 is small), and the lead chose it in turn 0. Task 2's branch starts at the commit at which
+Task 1 ended (`664926b`, no merge), and its reviewers got `Diff: 664926b..dd4aff8`. The run used
+no merge, no temporary base and no content check of the reviewer brief.
+
+The run does not show the wait choice cleanly. The scripted owner's first answer quoted the lead's
+point 8 ("Task 2 … made from Task 1's last commit") after "Yes, commit": the commit test of
+`reply()` matched the whole text, not a commit question. Both plan reviewers then named "D8
+(owner)" the main reason to wait, and plan r2 and r3 say "Main reason: D8, the owner's answer". The
+same echo fired in run 2 (turns p1 and p3). `SKILL.md` is the same at `74dfe63` and `d0a1f81` (only
+the two briefs changed), so one text gave way 1 once and the fallback once.
+
+`reply()` changed before run 4: a commit question is a line with "commit" and "?", and only those
+lines are quoted. A replay on 59 recorded turns (revision 11 and runs 1 to 3): it misses no real
+commit question, and it does not fire on the turns of runs 2 and 3. Runs 1 to 3 used the old test.
+By the test strategy, a fallback pass allows one rerun: run 4.
+
 ### Needs human review
 
-- C8 is not met at the head until run 3 passes (owner Q5 A).
+- C8 at the final head: run 3 passes through the fallback, which does not show way 1, and its wait
+  choice rests in part on an echo of the test script; run 4 is the one rerun. Way 1 was shown by run
+  2, with the same `SKILL.md` and the briefs before fix checks 3 to 9.
 - After review round 5, the owner chose option A for the last major (2026-11-28): a content check
   finds a merged commit that holds this task's work. It replaced two commands after the third fix on
   one cause. One narrow review checks it; no reviewer has read its final text before that review.
@@ -1616,8 +1640,10 @@ too high; not checked again.
 - The lead agent rewrote the record of two owner decisions in r2, and r3 put it back.
 - The `/goal` order as the OK of the plan.
 - Item 9 of the run checks is not verified by a run.
-- The scripted owner also answers "Yes, commit" to a text that only mentions a commit and asks
-  something else (a limit of the test, Astra N2 of plan round 2).
+- The scripted owner also answered "Yes, commit" to a text that only mentions a commit and asks
+  something else (a limit of the test, Astra N2 of plan round 2). In runs 2 and 3 it quoted the
+  lead's own branch plan back as the owner's answer. It is narrowed for run 4 (a line with "commit"
+  and "?"); it still answers "Yes, commit" to a line that asks about a merge or a base commit.
 - `pnpm check:status` ran `pnpm install` in the new worktree (hard links from the store).
 
 ### Risks
